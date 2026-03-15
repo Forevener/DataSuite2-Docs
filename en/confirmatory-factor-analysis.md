@@ -1,5 +1,5 @@
 ---
-title: Confirmatory factor analysis in DataSuite 2
+title: Confirmatory factor analysis
 description: CFA model specification, fit indices, modification indices, measurement invariance testing, discriminant validity, and model comparison in DataSuite 2.
 ---
 

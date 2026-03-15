@@ -1,5 +1,5 @@
 ---
-title: Cluster analysis in DataSuite 2
+title: Cluster analysis
 description: K-Means, K-Medoids, hierarchical clustering, biclustering, silhouette analysis, gap statistic, dendrograms, and heatmaps in DataSuite 2.
 ---
 

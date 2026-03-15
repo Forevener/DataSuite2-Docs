@@ -1,5 +1,5 @@
 ---
-title: Getting started with DataSuite 2
+title: Getting started
 description: Learn how to load data, configure variables, and run your first analysis in DataSuite 2 — a free browser-based statistics application.
 ---
 

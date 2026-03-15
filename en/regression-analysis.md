@@ -1,5 +1,5 @@
 ---
-title: Regression analysis in DataSuite 2
+title: Regression analysis
 description: Linear, logistic, ordinal, multinomial, Poisson, and negative binomial regression with regularization and model comparison in DataSuite 2.
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: R console in DataSuite 2
+title: R console
 description: Use the built-in R console in DataSuite 2 to run R commands directly in the browser, access your loaded data, and render results alongside your analyses.
 ---
 

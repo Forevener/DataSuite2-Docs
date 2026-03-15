@@ -1,5 +1,5 @@
 ---
-title: Descriptive statistics in DataSuite 2
+title: Descriptive statistics
 description: Compute means, medians, standard deviations, confidence intervals, and other summary statistics for numeric and categorical variables in DataSuite 2.
 ---
 

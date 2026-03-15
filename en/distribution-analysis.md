@@ -1,5 +1,5 @@
 ---
-title: Distribution analysis in DataSuite 2
+title: Distribution analysis
 description: Frequency tables, normality tests, histograms, box plots, Q-Q plots, violin plots, and ECDF plots in DataSuite 2.
 ---
 

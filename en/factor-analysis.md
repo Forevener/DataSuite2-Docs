@@ -1,5 +1,5 @@
 ---
-title: EFA and PCA in DataSuite 2
+title: EFA and PCA
 description: Exploratory factor analysis, principal component analysis, extraction methods, rotation, scree plots, Schmid-Leiman transformation, and factor scores in DataSuite 2.
 ---
 

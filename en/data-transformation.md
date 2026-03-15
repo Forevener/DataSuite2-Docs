@@ -1,5 +1,5 @@
 ---
-title: Data transformation in DataSuite 2
+title: Data transformation
 description: Recode values, compute formulas, apply regex replacements, standardize variables, reshape data, and manage reusable transformation rules in DataSuite 2.
 ---
 

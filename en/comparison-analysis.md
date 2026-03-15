@@ -1,5 +1,5 @@
 ---
-title: Comparison analysis in DataSuite 2
+title: Comparison analysis
 description: Compare groups and conditions using t-tests, ANOVA, Mann-Whitney, chi-square, mixed models, and more in DataSuite 2.
 ---
 

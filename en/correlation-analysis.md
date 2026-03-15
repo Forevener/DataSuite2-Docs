@@ -1,5 +1,5 @@
 ---
-title: Correlation analysis in DataSuite 2
+title: Correlation analysis
 description: Pearson, Spearman, Kendall, polychoric, point-biserial, Cramer's V, and other correlation methods with matrix and long-format output in DataSuite 2.
 ---
 

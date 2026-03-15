@@ -369,6 +369,7 @@ a.lang-option:hover {
 .content-area {
 	display: flex;
 	flex: 1;
+	justify-content: center;
 	margin-left: var(--sidebar-width);
 	min-width: 0;
 }

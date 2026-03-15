@@ -1,5 +1,5 @@
 ---
-title: Regex reference for DataSuite 2
+title: Regex reference
 description: Pattern syntax, replacement tokens, and practical examples for the regex replace transformation in DataSuite 2.
 ---
 

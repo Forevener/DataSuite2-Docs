@@ -1,5 +1,5 @@
 ---
-title: Questionnaire scoring guide for DataSuite 2
+title: Questionnaire scoring guide
 description: Step-by-step examples of scoring psychological questionnaires in DataSuite 2 — from Google Forms text responses to computed scale scores.
 ---
 

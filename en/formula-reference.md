@@ -1,5 +1,5 @@
 ---
-title: Formula reference for DataSuite 2
+title: Formula reference
 description: Variables, operators, math functions, string functions, and advanced expressions available in DataSuite 2 formula transformations.
 ---
 

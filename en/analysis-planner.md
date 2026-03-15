@@ -1,5 +1,5 @@
 ---
-title: Analysis planner in DataSuite 2
+title: Analysis planner
 description: Power analysis, effect size conversion, alpha correction, reliability planning, precision planning, and group allocation optimization in DataSuite 2.
 ---
 

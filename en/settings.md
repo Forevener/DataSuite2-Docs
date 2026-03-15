@@ -1,5 +1,5 @@
 ---
-title: Settings of DataSuite 2
+title: Settings
 description: Configure output formatting, p-value display, table styles, missing data handling, and other options in DataSuite 2.
 ---
 

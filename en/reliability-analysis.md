@@ -1,5 +1,5 @@
 ---
-title: Reliability analysis in DataSuite 2
+title: Reliability analysis
 description: Cronbach's alpha, McDonald's omega, split-half reliability, item analysis, and other internal consistency metrics in DataSuite 2.
 ---
 
