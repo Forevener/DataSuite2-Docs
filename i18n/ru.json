@@ -1,0 +1,9 @@
+{
+	"documentation": "Документация",
+	"on_this_page": "На этой странице",
+	"filter_pages": "Поиск по страницам...",
+	"aria_filter_nav": "Фильтр навигации",
+	"aria_toggle_nav": "Переключить навигацию",
+	"aria_toggle_theme": "Переключить тему",
+	"aria_change_lang": "Сменить язык"
+}
