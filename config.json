@@ -1,0 +1,45 @@
+{
+	"nav_groups": [
+		{
+			"key": "nav_getting_started",
+			"pages": ["getting-started", "settings"]
+		},
+		{
+			"key": "nav_reference",
+			"pages": [
+				"data-transformation",
+				"formula-reference",
+				"regex-reference",
+				"questionnaire-scoring-guide",
+				"r-console"
+			]
+		},
+		{
+			"key": "nav_analysis",
+			"pages": [
+				"descriptive-statistics",
+				"distribution-analysis",
+				"correlation-analysis",
+				"comparison-analysis",
+				"reliability-analysis",
+				"regression-analysis",
+				"factor-analysis",
+				"confirmatory-factor-analysis",
+				"cluster-analysis",
+				"analysis-planner"
+			]
+		}
+	],
+	"languages": {
+		"en": { "name": "English", "flag": "gb" },
+		"ru": { "name": "Русский", "flag": "ru" },
+		"zh": { "name": "中文", "flag": "cn" },
+		"de": { "name": "Deutsch", "flag": "de" },
+		"fr": { "name": "Français", "flag": "fr" },
+		"es": { "name": "Español", "flag": "es" },
+		"pt": { "name": "Português", "flag": "br" },
+		"ja": { "name": "日本語", "flag": "jp" },
+		"ko": { "name": "한국어", "flag": "kr" },
+		"ar": { "name": "العربية", "flag": "sa" }
+	}
+}
