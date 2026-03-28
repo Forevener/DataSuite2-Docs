@@ -331,7 +331,7 @@ If no nested pairs are detected, a note advises comparing via information criter
 
 > **Nested vs. non-nested models:** two models are nested when one is a constrained version of the other (e.g. an orthogonal model is nested within an oblique model — it adds the constraint that correlations = 0). The chi-square difference test only applies to nested pairs. For non-nested models (different factor structures entirely), compare AIC and BIC — lower values indicate better balance of fit and parsimony.
 
-## Missing data
+## Missing data handling
 
 Missing values are handled by the [missing data option](#missing-data) in the CFA options panel. Unlike other modules that use the global setting, CFA offers FIML as an alternative to listwise deletion.
 

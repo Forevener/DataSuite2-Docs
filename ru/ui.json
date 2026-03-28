@@ -10,5 +10,10 @@
 	"aria_back_to_top": "Наверх",
 	"nav_getting_started": "Начало работы",
 	"nav_reference": "Справочник",
-	"nav_analysis": "Анализ"
+	"nav_analysis": "Анализ",
+	"page_not_found": "Страница не найдена",
+	"page_not_found_message": "Такой страницы не существует.",
+	"page_not_found_link": "Вернуться к документации",
+	"redirecting": "Перенаправление...",
+	"redirecting_to_docs": "Перенаправление к документации"
 }

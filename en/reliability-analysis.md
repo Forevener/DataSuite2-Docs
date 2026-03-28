@@ -88,7 +88,7 @@ A summary block at the top listing:
 - Which items were reverse-scored (if any)
 - Which variables were excluded for being non-numeric (if any)
 
-### Reliability metrics
+### Reliability metrics table
 
 A table with one row per selected metric:
 

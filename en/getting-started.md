@@ -29,6 +29,35 @@ After import, each variable is automatically classified as continuous or categor
 
 > **Tip:** if you have a saved DataSuite project file (.json), loading it restores everything — variable types, filters, transformation rules, and settings.
 
+### Spreadsheet import options
+
+When opening an XLSX or ODS file with multiple sheets (or a single sheet with ambiguous headers), an import modal appears with a live preview that updates as you change settings. Single-sheet files with clear headers skip the modal entirely.
+
+**Sheet selection:** each sheet is listed with a checkbox and its dimensions. Select one or more sheets to import.
+
+**Merge strategies** (when multiple sheets are selected):
+
+- **Append rows** — stacks sheets vertically. Columns are matched by header name (case-insensitive, whitespace-normalized). The widest sheet is used as the canonical column set.
+- **Join columns** — concatenates sheets side by side. A warning appears if sheets have different row counts, since alignment is positional.
+
+**Column mapping** (shown automatically when appending sheets with mismatched columns): each unmatched column is listed with its source sheet and a dropdown offering three actions:
+
+- **Keep as new column** — includes the column; sheets that don't have it get empty values
+- **Exclude** — drops the column entirely
+- **Merge with another column** — maps the column's data into an existing column. Targets are grouped into "matched" (columns present in the canonical sheet) and "unmatched" (orphan columns from other sheets).
+
+**Grouping variable:** when appending, a checkbox adds a categorical column whose values identify which sheet each row came from. The column name (default: "Sheet") and per-sheet labels are configurable.
+
+### Header detection
+
+The app detects how many rows are headers by counting consecutive string values from the top of each column (skipping nulls), discarding entirely categorical columns, and taking the max. Multi-row headers are concatenated with " > ". You can override the detected value via a spinner in the import modal.
+
+**Merged cells:** Excel/ODS merged cells are filled automatically — the top-left value is propagated across the merge range. This preserves multi-row grouped headers (e.g. a questionnaire name spanning several subscale columns) without bleeding into adjacent columns.
+
+**Duplicate column names:** when multiple columns share the same header after collapsing, each group is disambiguated with a counter — e.g. "Score (1)", "Score (2)". Columns with unique names are left untouched.
+
+> **Empty row/column cleanup:** leading and trailing empty rows and fully empty columns are removed from imported spreadsheet data automatically. This handles offset tables, stray spacer rows, and dirty trailing columns.
+
 ## Previewing your data
 
 Once loaded, your data appears in a paginated table. You can choose to display 10, 25, 50, or 100 rows per page. Missing values are shown as "(missing)" in muted text.
@@ -76,7 +105,16 @@ Each module has its own set of options. The general pattern is: select your vari
 
 Results stack in the **output section** at the bottom of the page. A floating **table of contents** sidebar appears in the bottom left corner of the screen, letting you jump between results.
 
-Each result card has a small **×** button (visible on hover) to remove it.
+Each result card has a small **×** button (visible on hover) to remove it. To remove everything at once, click **Clear all results** (appears only when results exist). This resets the output section, citations, and table of contents back to their initial state. A confirmation prompt appears before clearing.
+
+### Citations
+
+A citations box appears below the results once any analysis uses an R package. It has a colored header reading "Please consider citing the works used in your analysis" and two lists:
+
+- **Key references** — one primary citation per package
+- **Additional references** — supplementary methodological papers (shown only when present)
+
+Citations accumulate across the session and are not removed when individual result cards are deleted — they reflect all packages actually used. The citation box also appears in the table of contents for quick navigation.
 
 ### Exporting results
 

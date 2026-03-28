@@ -86,9 +86,9 @@ When you select **Mixed/Auto**, the method for each pair is chosen based on vari
 
 Enabled by default. When the matrix is symmetric (same variables on both axes), only the lower triangle is shown. Uncheck to see the full matrix.
 
-### Edge bundling visualization
+### Include visualizations
 
-Check **Include edge bundling visualization** to generate a network graph alongside the table output. See [visualization](#edge-bundling-visualization) below.
+Four visualization types are available as checkboxes: [edge bundling](#edge-bundling), [force-directed graph](#force-directed-graph), [correlogram](#correlogram), and [scatterplots](#scatterplots). Each produces a separate output card. All filter to statistically significant correlations where applicable.
 
 ## Reading results
 
@@ -143,33 +143,49 @@ Missing values are handled by the global [missing data setting](./settings.md#mi
 
 > **A note on imputation:** replacing missing values can artificially reduce variability, which tends to pull correlations toward zero. Mean and median imputation are the most prone to this. If you have a lot of missing data, consider whether pairwise deletion might be more appropriate for correlation analysis.
 
-## Edge bundling visualization
+## Visualizations
 
-When the visualization checkbox is enabled, a separate output card titled "Correlation Network" appears with a circular network diagram.
+All visualizations can be resized by dragging the handle in the bottom-right corner, and exported as SVG, PNG, or JPG via buttons below the chart. You can also export all plots at once — see [reading results](./getting-started.md#reading-results) for bulk export.
 
-### What the visualization shows
+### Edge bundling
 
-- Variables are arranged in a circle as labeled nodes
-- Curved lines (edges) connect pairs with statistically significant correlations
-- Edge color indicates direction and strength — blue for positive, red for negative, gray for near-zero. A color legend from −1 to +1 appears above the chart.
-- Edge thickness reflects the absolute strength of the correlation
-- Strongly correlated variables are positioned closer together on the circle
+A circular network diagram. Variables are arranged as labeled nodes around a circle, ordered by correlation similarity so strongly correlated variables sit closer together. Curved edges connect pairs with statistically significant correlations.
 
-### Interacting with the visualization
-
+- **Edge color** encodes direction and strength — blue for positive, red for negative, gray for near-zero. A color legend from −1 to +1 appears above the chart.
+- **Edge thickness** reflects the absolute strength of the correlation
 - **Hover** over an edge to highlight it
 - **Zoom** with the mouse wheel or the +/−/reset buttons in the top-right corner
-- **Resize** by dragging the handle in the bottom-right corner (minimum 400×400 px)
 
-### Exporting
+### Force-directed graph
 
-Three export buttons appear below the chart:
+An interactive network where positively correlated variables attract each other and negatively correlated ones repel. Nodes are pill-shaped with variable labels inside. Edges are colored and sized by correlation strength and sign.
 
-- **SVG** — vector format, ideal for publications and editing
-- **PNG** — raster with transparent background
-- **JPG** — raster with white background
+- **Drag** a node to reposition it — it stays fixed in place (shown with a blue dashed border)
+- **Click** a fixed node to release it back into the simulation
+- **Zoom** and **resize** work the same as edge bundling
 
-You can also export all plots at once — see [reading results](./getting-started.md#reading-results) for bulk export.
+> **Edge bundling vs. force-directed:** the edge bundling layout is better for getting an overview of correlation structure — you can quickly see clusters of related variables. The force-directed graph is better for exploring specific relationships interactively, since you can pull nodes apart and rearrange the layout.
+
+### Correlogram
+
+A matrix of oriented ellipses — one per variable pair. The ellipse shape and orientation encode the correlation:
+
+- **Positive correlations** tilt right (/) — **negative** tilt left (\)
+- **Eccentricity** encodes absolute strength — a circle at r = 0, a thin line at r = ±1
+- **Fill color** matches the correlation color scale (blue to red)
+- **Insignificant correlations** are dimmed with dashed borders
+- The full matrix is shown (no diagonal)
+
+If scatterplots are also enabled, clicking a cell scrolls to the corresponding scatterplot.
+
+### Scatterplots
+
+One scatter plot per variable pair, each in its own subsection. Each plot shows:
+
+- Scatter points for the raw data
+- An OLS regression line with a 95% confidence band
+- The correlation coefficient (r) and p-value displayed in the corner
+- Plot range is padded by one tick interval so edge points aren't clipped
 
 ## Reporting checklist
 

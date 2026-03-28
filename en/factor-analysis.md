@@ -1,6 +1,6 @@
 ---
 title: EFA and PCA
-description: Exploratory factor analysis, principal component analysis, extraction methods, rotation, scree plots, Schmid-Leiman transformation, and factor scores in DataSuite 2.
+description: Exploratory factor analysis & PCA — extraction methods, rotation, scree plots, Schmid-Leiman transformation, and factor scores in DataSuite 2.
 ---
 
 # Exploratory factor analysis & principal component analysis
@@ -171,7 +171,7 @@ Values that meet "good fit" thresholds are shown in bold. Rows where the eigenva
 
 Once you've decided on the number of factors, enter it and click **Run full analysis**.
 
-### Configuration
+### Analysis configuration
 
 - **Number of factors/components** — default 3; must be at least 1 and less than the number of variables
 - **Compare extraction methods** button (EFA only) — [compare multiple methods](#extraction-method-comparison) side by side

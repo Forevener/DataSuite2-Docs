@@ -176,7 +176,7 @@ Three optional slower diagnostics (off by default):
 - **F-statistic diagnostics** — tests whether row and column effects within each bicluster are statistically significant. An 80% reference line helps gauge quality.
 - **Consensus scoring** — runs the algorithm multiple times with different seeds and measures agreement between runs
 
-#### Comparison table
+#### Bicluster comparison table
 
 | Metric | What it measures |
 |---|---|

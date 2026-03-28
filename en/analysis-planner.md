@@ -87,7 +87,7 @@ Before any calculation, a reference card shows Cohen's conventions:
 
 Converts a single effect size value into all other supported metrics. Useful when a paper reports one metric (e.g. odds ratio) and you need another (e.g. Cohen's d) for power analysis or comparison.
 
-### Input
+### Effect size input
 
 Select the input type from 15 options: Cohen's d, Hedges' g, Correlation r, R², Eta-squared, Partial eta-squared, Omega-squared, Cohen's f, Cohen's f², Cohen's w, Cohen's h, Cramer's V, Odds Ratio, CLES (Common Language Effect Size), NNT (Number Needed to Treat).
 
@@ -101,7 +101,7 @@ Additional fields appear when needed:
 
 > **How the converter works:** all input types are first converted to Cohen's d as a common pivot, then from d to every other metric. This means conversions between two non-d metrics go through an intermediate step, which can introduce small rounding artifacts.
 
-### Output
+### Effect size output
 
 After clicking **Convert**, a table shows every metric with its value and a verbal interpretation (negligible, small, medium, or large) based on Cohen's conventions. Metrics that require additional inputs not provided show a dash.
 
@@ -111,12 +111,12 @@ Shows adjusted significance thresholds for multiple comparisons, so you can plan
 
 > **Why correct for multiple comparisons?** If you test 20 hypotheses at alpha = 0.05, you expect one false positive by chance alone — even if none of the effects are real. Alpha correction adjusts the threshold to control this inflation. The question is *how* to correct. This tool shows you what each method does to your per-test threshold, so you can make an informed choice. See also the [p-value adjustment setting](./settings.md#multiple-comparison-adjustment) for applying corrections to actual results.
 
-### Input
+### Alpha correction input
 
 - **Number of comparisons** — default 10
 - **Family-wise alpha level** — default 0.05
 
-### Output
+### Alpha correction output
 
 After clicking **Calculate thresholds**, a table shows the adjusted p-value threshold at three ranks: the most significant p-value (p₍₁₎), the middle-ranked, and the least significant (p₍ₘ₎).
 
@@ -168,7 +168,7 @@ Determines sample size based on how *precise* an estimate needs to be, rather th
 
 > **Power vs. precision:** power analysis asks "can I detect an effect?" Precision planning asks "can I estimate a value accurately?" They answer different questions and can give different sample sizes. If your study is descriptive (prevalence, mean scores, correlation strength), precision planning is the more relevant tool.
 
-### Input
+### Precision input
 
 - **Estimate type** — Mean (default), Proportion, or Correlation
   - Mean: enter expected SD (default 1.0, from pilot data or literature)
@@ -177,7 +177,7 @@ Determines sample size based on how *precise* an estimate needs to be, rather th
 - **Confidence level** — 90%, 95% (default), or 99%
 - **Desired margin of error** — half-width of the confidence interval (default 0.50)
 
-### Output
+### Precision output
 
 After clicking **Calculate sample size**:
 
@@ -191,13 +191,13 @@ After clicking **Calculate sample size**:
 
 Explores how unequal group sizes affect power for a two-group comparison.
 
-### Input
+### Allocation input
 
 - **Group sizes (n1, n2)** — both default to 50
 - **Effect size (Cohen's d)** — default 0.50
 - **Significance level (alpha)** — default 0.05
 
-### Output
+### Allocation output
 
 After clicking **Calculate power**:
 

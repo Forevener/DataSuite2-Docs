@@ -25,7 +25,7 @@ You don't need to know R to use DataSuite — but if you're curious, the console
 Type R code in the input field and press **Enter** to execute (or click the **Run** button). Results appear in the console output area above.
 
 - **Shift+Enter** — insert a newline for multi-line input
-- **Up/Down arrows** — navigate through command history (up to 50 commands are remembered within the session)
+- **Up/Down arrows** — navigate through command history (up to 50 commands, persistent across sessions)
 
 ```r
 mean(c(1, 2, 3, 4, 5))
@@ -93,6 +93,14 @@ Clears the console output area. Does not affect your R session or variables.
 
 Reinitializes the R engine from scratch. All variables, loaded packages, and session state are lost. Use this if something goes wrong or you want a clean slate.
 
+### `/clearplots` — clear the plot gallery
+
+Removes all plots from the **Plots** tab (see [plotting](#plotting) below).
+
+### `/outputplot [n]` — send a plot to results
+
+Sends a plot to the output section as a result card. Without an argument, sends the latest plot. With a number (e.g. `/outputplot 3`), sends that specific plot. With `all`, sends every plot in the gallery.
+
 ### `/help` — show available commands
 
 Displays all slash commands and links to R documentation resources:
@@ -102,6 +110,78 @@ Displays all slash commands and links to R documentation resources:
 - [rdrr.io](https://rdrr.io/)
 - [rdocumentation.org](https://www.rdocumentation.org/)
 - [devdocs.io/r](https://devdocs.io/r/)
+
+## Plotting
+
+The console modal has two tabs: **Console** and **Plots**. Running an R plot command (e.g. `plot(1:10)`, `hist(df$Score)`) renders the result in the **Plots** tab gallery. Each plot is numbered (#1, #2, …). A notification dot appears on the **Plots** tab when a new plot arrives while you're viewing the console.
+
+Use [`/outputplot`](#outputplot-n--send-a-plot-to-results) to send plots to the main output section, or [`/clearplots`](#clearplots--clear-the-plot-gallery) to clear the gallery.
+
+## R formula notation
+
+Many R functions — including `lm()`, `glm()`, `t.test()`, `aov()`, and plot functions — use a formula to describe relationships between variables. The general form is `response ~ terms`, read as "response is modeled by terms." DataSuite's [regression module](./regression-analysis.md) and [path analysis](./regression-analysis.md#path-analysis-advanced-mode) use the same notation.
+
+### Operators
+
+| Operator | Meaning | Example | Expands to |
+|---|---|---|---|
+| `~` | "is modeled by" — separates left (response) and right (predictors) sides | `Y ~ X` | Y predicted by X |
+| `+` | include a term | `Y ~ A + B` | main effects of A and B |
+| `-` | exclude a term | `Y ~ A*B - A:B` | A and B without their interaction |
+| `*` | crossing — main effects plus interaction | `Y ~ A * B` | A + B + A:B |
+| `:` | interaction only (no main effects) | `Y ~ A + B + A:B` | same as `A * B` |
+| `^` | crossing up to a degree | `Y ~ (A + B + C)^2` | all main effects + all two-way interactions |
+| `I()` | "as-is" — use arithmetic literally | `Y ~ X + I(X^2)` | linear and quadratic terms |
+| `1` | intercept (included by default) | `Y ~ X - 1` | remove the intercept |
+| `.` | all other variables in the data frame | `Y ~ .` | Y predicted by every other column |
+
+### Common patterns
+
+**Simple regression** — one predictor:
+
+```r
+Y ~ X
+```
+
+**Multiple regression** — several predictors:
+
+```r
+Y ~ A + B + C
+```
+
+**Interaction** — does the effect of A depend on B?
+
+```r
+Y ~ A * B          # same as A + B + A:B
+```
+
+**Polynomial** — quadratic or cubic terms:
+
+```r
+Y ~ X + I(X^2)              # quadratic
+Y ~ X + I(X^2) + I(X^3)     # cubic
+```
+
+**Full factorial** — all interactions up to a given order:
+
+```r
+Y ~ (A + B + C)^2     # all main effects + all two-way interactions
+Y ~ A * B * C          # all main effects + all two-way + three-way interaction
+```
+
+**No intercept** — force the line through the origin:
+
+```r
+Y ~ X - 1
+```
+
+**Everything** — predict from all other columns:
+
+```r
+Y ~ .
+```
+
+> **When to use `I()`:** R formula operators (`+`, `*`, `^`) have special meanings inside formulas. If you need the arithmetic version — for example, X squared — wrap it in `I()` so R treats it as a calculation rather than a formula operator. `Y ~ X^2` means "crossing X with itself" (which is just X), while `Y ~ I(X^2)` means "X squared as a predictor."
 
 ## Examples
 
@@ -147,6 +227,8 @@ t.test(Score ~ Group, data = df, var.equal = FALSE, alternative = "greater")
 hist(df$Score, main = "Score distribution", col = "steelblue")
 ```
 
+The plot appears in the **Plots** tab. Use `/outputplot` to send it to the output section alongside your other results.
+
 > **Note:** plot rendering in WebR has some limitations compared to desktop R. Basic plots (`hist`, `plot`, `boxplot`, `barplot`) work well.
 
 ### Install and use a package
@@ -163,5 +245,5 @@ Use `ds_library()` instead of `library()` to load packages. It installs the pack
 
 - **This is WebR, not desktop R.** Most base R and many CRAN packages work, but some packages that rely on system libraries or compiled code may not be available. If a package fails to load, it likely hasn't been compiled for WebR yet.
 - **`help()` and `?` are not available.** Use `example(functionName)` to see usage examples, or consult the documentation links above.
-- **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep.
+- **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep. (Command history *does* persist — see [running commands](#running-commands).)
 - **The console shares the R engine with analyses.** If you run a heavy computation in the console, built-in analyses will wait until it finishes (and vice versa).

@@ -9,10 +9,11 @@ The **Regression analysis** module builds models that predict an outcome from on
 
 > **What is regression?** Correlation tells you two variables are related; regression tells you *how* — it estimates a formula that predicts one variable from others. For example, a linear regression might find that each additional year of education predicts $5,000 more in income, after controlling for age and experience. The model quantifies each predictor's unique contribution.
 
-1. Select a [dependent variable](#variable-selection), [predictors](#variable-selection), and optional [covariates](#variable-selection)
+1. Select a [dependent variable](#variable-selection), [predictors](#variable-selection), and optional [mediators, moderators, or covariates](#mediators-moderators-and-covariates)
 2. Choose a [regression type](#regression-type) and [estimation method](#estimation-method)
 3. Toggle [additional statistics and diagnostics](#additional-statistics)
 4. Click **Run regression** — or use [model comparison](#model-comparison) to find the best predictor combination
+5. For multi-equation models, use the [Advanced tab](#path-analysis-advanced-mode) to build a path diagram
 
 ## Variable selection
 
@@ -25,6 +26,41 @@ Three variable lists appear on the left:
 A variable selected in one list is hidden from the other two, preventing it from appearing on both sides of the equation.
 
 > **Predictors vs. covariates:** both are independent variables in the model, and mathematically they're treated the same way. The distinction matters in model comparison — predictors are the variables you're testing (which combination works best?), while covariates are variables you always want to control for regardless.
+
+### Mediators, moderators, and covariates
+
+Three optional variable buckets appear as collapsed accordions below the predictors list: **Mediators**, **Moderators**, and **Covariates**. All five buckets (DV, predictors, mediators, moderators, covariates) are mutually exclusive — a variable can only appear in one. Mediator and moderator buckets are hidden when a regularized estimation method is selected.
+
+> **What are mediators and moderators?** A *mediator* explains *how* an effect works — it's the mechanism. If exercise reduces depression, sleep quality might mediate that effect (exercise → better sleep → less depression). A *moderator* explains *when* or *for whom* an effect is stronger — it changes the strength or direction. Gender might moderate the exercise–depression link if the effect is stronger for one group.
+
+**Mediation** — selecting mediators automatically runs Baron & Kenny causal steps for every predictor × mediator pair. Results include:
+
+- **Path a** (X → M) — the predictor's effect on the mediator
+- **Path b** (M → Y) — the mediator's effect on the outcome, controlling for the predictor
+- **Total effect c** — the predictor's overall effect on the outcome
+- **Direct effect c'** — the predictor's effect controlling for the mediator
+- **Indirect effect a × b** — with bootstrap confidence interval. Significance is assessed by whether the CI excludes zero (no p-value).
+- **Proportion mediated** — what share of the total effect goes through the mediator
+
+Bootstrap replications use the count from the global [settings](./settings.md).
+
+> **Reading mediation results:** the key question is whether the indirect effect (a × b) is significantly different from zero. If the bootstrap CI excludes zero, the mediator carries a significant portion of the effect. A large proportion mediated (e.g. 60%) means most of the effect works through the mediator. A significant direct effect (c') alongside a significant indirect effect means partial mediation — the predictor affects the outcome both through the mediator and directly.
+
+**Moderation** — selecting moderators adds interaction terms (predictor × moderator) to the main model and runs simple slopes analysis. Results appear alongside the main coefficients table.
+
+- **Numeric moderators** — slopes at −1 SD, mean, and +1 SD
+- **Categorical moderators** — slopes at each level
+
+> **Reading moderation results:** a significant interaction term means the predictor's effect depends on the moderator. Simple slopes tell you what the effect looks like at different moderator values. For example, if the age × gender interaction is significant, simple slopes might show that age has a strong effect for women but a weak one for men.
+
+**Conditional indirect effects** — an opt-in checkbox, visible only when both mediators and moderators are selected. Tests whether the indirect effect (X → M → Y) varies across moderator levels (moderated mediation). Results include:
+
+- Indirect effects at each moderator probe value with bootstrap CIs
+- An index of moderated mediation — if its CI excludes zero, the mediation is significantly moderated
+
+All bootstrap work uses a shared resampling loop: data is resampled once per iteration and all mediator/moderator models are fit from the same resample, keeping computation tractable with multiple predictors, mediators, and moderators.
+
+A sample size check blocks the analysis when the number of complete cases is equal to or fewer than the number of main model parameters.
 
 ## Model setup
 
@@ -210,11 +246,11 @@ The output card title includes both the method (Ridge, LASSO, or Elastic Net) an
 
 A table showing alpha, selected lambda, lambda.min, lambda.1se, and cross-validation error with SE.
 
-### Model fit
+### Regularized model fit
 
 Deviance ratio (pseudo-R²) or R² for linear, McFadden's R² for logistic, and null deviance where available.
 
-### Coefficients
+### Regularized coefficients
 
 Regularized coefficients do not have standard errors or p-values — the regularization penalty makes traditional inference invalid.
 
@@ -282,9 +318,62 @@ When enabled, a table showing:
 
 A table ranking each predictor by importance (sum of Akaike weights), with the number of models containing it and how many had positive vs. negative coefficients.
 
+### Model comparison with moderators
+
+When moderators are selected, their main effects are fixed in every model (like covariates). Predictor × moderator interaction terms are "dredged" — each predictor's state is not just in/out, but includes any subset of moderator interactions (giving 1 + 2^n_moderators states per predictor). The model rankings table shows an **Interactions** column when any model includes interaction terms. Interaction importance (sum of Akaike weights) is reported separately from main-effect importance.
+
+### Model comparison with mediators
+
+Mediators are not part of the main model formula. For each candidate model that includes at least one predictor, Baron & Kenny path estimates are computed via separate sub-models (path a: M ~ predictors + covariates + moderators; path b/c': Y ~ predictors + M + covariates + moderators). Indirect effects use the Sobel test rather than bootstrap, since bootstrapping per candidate model would be prohibitive. Mediation importance (model-weighted average indirect effect) is reported.
+
+> **Model comparison mediation vs. targeted mediation:** model comparison uses the Sobel test for speed, which can be less accurate for small samples or skewed indirect effects. For confirmatory analysis, run a targeted regression with the best model's predictor set and use bootstrap-based mediation instead.
+
 ### Failed models
 
-If some predictor combinations failed to converge, they appear in a collapsible section with the predictor set and error reason.
+If some predictor combinations failed to converge, they appear in a collapsible section with the predictor set and error reason. Models where AIC is non-finite (typically when n ≤ k, producing a perfect fit with zero residual variance) are excluded from rankings and reported here as "Non-finite AIC (saturated model)." Each entry shows predictors and interaction terms as a flat list (e.g. "x1 × mod1, x2 × mod1, x3") with the failure reason.
+
+## Path analysis (advanced mode)
+
+The **Advanced** tab in the regression module switches from the standard variable-bucket UI to a visual path builder for specifying multi-equation regression models.
+
+### Formula editor
+
+A code editor using [R formula notation](./r-console.md#r-formula-notation). Each line defines one equation:
+
+```r
+Y ~ A + B*C
+M ~ A
+```
+
+Supports all R formula operators (`+`, `-`, `*`, `:`, `^`, parenthesized groups). Standalone variable names (no `~`) create isolated nodes in the diagram. Autocomplete suggests dataset variables as you type — press **Tab** to accept the highlighted completion. Typing `=` is auto-corrected to `~`.
+
+### Path diagram
+
+An SVG diagram rendered live from the formula text, using a Sugiyama layered layout. Nodes are colored by role:
+
+- **Predictor** — variables that only appear on the right side of equations
+- **Mediator** — variables that appear on both sides (predicted in one equation, predictor in another)
+- **Outcome** — variables on the left side
+- **Isolated** — standalone variables with no connections
+
+Interaction terms render as diamond-shaped product nodes. Edges use directional chevrons.
+
+### Visual editing
+
+All diagram interactions round-trip through the formula text — clicking in the diagram edits the formula, which re-renders the diagram:
+
+- **Click a node label** to swap the variable via a dropdown
+- **Hover a node** to reveal delete (×) and add-connection (+) buttons on each side
+- **Click an edge** to get a popover with options: insert mediator, add interaction, or remove edge
+- **Click a product node's ×** to delete the interaction term (main effects are preserved)
+
+Deleting a node or removing an edge preserves orphaned variables as isolated nodes rather than removing them — you can reconnect or clean them up manually. Variable dropdowns exclude choices that would create cycles or duplicate existing connections.
+
+> **Incomplete formulas:** `Y ~` (empty right-hand side) is valid — the variable renders as an isolated node with a warning underline. Empty equations are cleaned up automatically when the variable gets reconnected elsewhere.
+
+### Running path analysis
+
+Clicking **Run regression** in advanced mode decomposes the path model into per-outcome equation systems, fits each via OLS/GLM, computes indirect effects with bootstrap CIs, and reports effect decomposition (direct, indirect, total). All standard output options ([additional statistics](#additional-statistics), ANOVA, correlations, collinearity, residual diagnostics, influence, goodness of fit) are available. Model comparison is hidden in advanced mode.
 
 ## Missing data
 

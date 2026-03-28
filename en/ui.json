@@ -10,5 +10,10 @@
 	"aria_back_to_top": "Back to top",
 	"nav_getting_started": "Getting started",
 	"nav_reference": "Reference",
-	"nav_analysis": "Analysis"
+	"nav_analysis": "Analysis",
+	"page_not_found": "Page not found",
+	"page_not_found_message": "This page does not exist.",
+	"page_not_found_link": "Back to documentation",
+	"redirecting": "Redirecting...",
+	"redirecting_to_docs": "Redirecting to documentation"
 }

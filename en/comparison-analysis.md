@@ -174,9 +174,9 @@ Toggle which descriptive statistics appear alongside the test results:
 - **Sample sizes**
 - **Frequency tables** (for categorical tests)
 
-### Visualization
+### Include visualization
 
-Check **Include visualization** to generate grouped box plots showing the distribution across groups or conditions. Only available for numeric dependent variables.
+Check **Include visualization** to reveal a plot type selector with per-plot options. Seven plot types are available, some conditionally — see [visualization](#visualization) below. Only available for numeric dependent variables.
 
 ## Checking assumptions
 
@@ -333,9 +333,51 @@ For comparison analysis, listwise deletion within each test is the most common a
 
 ## Visualization
 
-When enabled, a separate "Distribution comparison" output card shows grouped box plots for each numeric dependent variable, displaying the distribution across groups or conditions. For factorial designs, the x-axis label shows the combined variable names.
+When enabled, a separate "Distribution comparison" output card shows the selected plot types for each numeric dependent variable, displaying the distribution across groups or conditions. For factorial designs, the x-axis label shows the combined variable names. All plots can be resized and exported as SVG, PNG, or JPG.
 
-Box plots follow the same format as in [distribution analysis](./distribution-analysis.md#box-plot), with the same resize and export options (SVG, PNG, JPG).
+### Box plot
+
+Grouped box plots — one per dependent variable. Options: show outliers, show mean, show notch (median CI), show data points. Checked by default.
+
+Box plots follow the same format as in [distribution analysis](./distribution-analysis.md#box-plot).
+
+### Violin plot
+
+Grouped kernel density plots with an inner box plot. Option: show inner box plot.
+
+> **Box plot vs. violin:** box plots are better for comparing medians and spotting outliers. Violin plots show the full distribution shape — useful when distributions are bimodal or skewed, since box plots hide that.
+
+### ECDF plot
+
+Grouped empirical cumulative distribution functions — each group's curve shows the proportion of observations at or below each value. Option: show median reference line.
+
+> **When ECDF is useful:** ECDF plots let you compare distributions at every value, not just at summary statistics. Two groups can have the same mean and SD but look quite different in their ECDF curves. They're also useful for spotting floor/ceiling effects or clusters of values.
+
+### Mean and error bar plot
+
+Group means with confidence interval whiskers. Hover over a point to see the mean, standard error, CI, and sample size.
+
+### Paired lines plot
+
+A spaghetti plot connecting each subject's values across conditions, with a bold mean line overlay. Aligns by subject ID when available, falls back to row correspondence. Option: show mean line.
+
+Only available for dependent or mixed samples designs.
+
+> **Reading paired lines:** individual lines show the pattern for each participant — if most lines slope in the same direction, the effect is consistent. Crossing lines suggest the effect varies across individuals. The bold mean line shows the average trend.
+
+### Interaction plot
+
+Group means connected by lines across levels of one factor, with separate traces for each level of a second factor. Includes a legend. Option: show error bars.
+
+Only available when two or more factor variables are selected (factorial independent, or mixed between × within designs).
+
+> **Reading interaction plots:** parallel lines mean no interaction — both factors operate independently. Crossing or converging lines suggest an interaction, meaning the effect of one factor depends on the level of the other. The statistical test tells you whether the visual pattern is significant.
+
+### Forest plot
+
+Horizontal layout showing effect size point estimates (diamonds) with confidence intervals for each dependent variable. Includes a dashed reference line at zero and numeric annotations.
+
+Only available when **Include effect sizes** is checked and results contain valid effect size CIs.
 
 ## Reporting checklist
 
