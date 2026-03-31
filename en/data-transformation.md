@@ -59,6 +59,8 @@ Three special variables are available:
 
 Each line creates (or overwrites) a variable. Later lines can reference earlier ones. The editor shows whether each output will be new or will replace an existing variable.
 
+The formula editor provides syntax highlighting, bracket matching, and **autocomplete** — start typing a variable name or function and a suggestion list appears (press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open it manually). Syntax errors are underlined as you type.
+
 For the full list of operators and functions, see the [formula reference](./formula-reference.md).
 
 ### Regex replace

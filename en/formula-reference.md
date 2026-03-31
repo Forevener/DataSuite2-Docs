@@ -296,6 +296,29 @@ Use `@Name = expression` to create multiple output variables in a single rule:
 
 Each `@Name` creates a new variable (or overwrites an existing one with the same name). Later declarations can reference earlier ones with the `@` prefix. The [output options](./data-transformation.md#output-options) panel is disabled for multi-variable formulas since output targets are explicit.
 
+## Intermediate variables
+
+Formulas can span multiple lines. Use assignments to break complex calculations into readable steps:
+
+```
+total = v1 + v2 + v3
+total / 3
+```
+
+The last line is the result that gets stored. Earlier lines define intermediate variables for use in subsequent expressions. This is equivalent to writing `(v1 + v2 + v3) / 3` but easier to read for complex formulas.
+
+> **Note:** intermediate assignments (with `=`) are different from [multi-variable formulas](#multi-variable-formulas) (with `@Name =`). Intermediate variables exist only within the formula and are not saved to the dataset.
+
+## The formula editor
+
+The formula editor provides several features to help you write formulas:
+
+- **Syntax highlighting** — numbers, strings, operators, and function calls are color-coded
+- **Bracket matching** — matching parentheses are highlighted when the cursor is next to one
+- **Autocomplete** — start typing (2+ characters) and a suggestion list appears with variable references, functions, and constants. Press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open the list manually. Variable suggestions show the display name alongside the reference (e.g. `v1 Age`)
+- **Error checking** — syntax errors are underlined in the editor with a description in the gutter. Errors are detected as you type
+- **Search** — press <kbd>Ctrl</kbd>+<kbd>F</kbd> to find text, <kbd>Ctrl</kbd>+<kbd>H</kbd> to find and replace
+
 ## Tips
 
 - **Missing values become `0`** in formulas. If you need different behavior, use `coalesce(v1, someDefault)` to substitute a specific fallback, or a conditional like `v1 == 0 ? NaN : v1` to flag them.
