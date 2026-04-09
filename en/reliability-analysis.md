@@ -1,11 +1,13 @@
 ---
 title: Reliability analysis
-description: Cronbach's alpha, McDonald's omega, split-half reliability, item analysis, and other internal consistency metrics in DataSuite 2.
+description: Internal consistency, ICC, inter-rater agreement, test-retest reliability, and reproducibility metrics in DataSuite 2.
 ---
 
 # Reliability analysis
 
-The **Reliability analysis** module evaluates the internal consistency of a set of scale items — how well they measure the same underlying construct. Select your items, optionally mark reverse-scored ones, choose which metrics to compute, and click **Calculate reliability**.
+The **Reliability analysis** module has three tabs: **Internal consistency** evaluates how well scale items measure the same construct, **Reproducibility** assesses agreement across raters, time points, or measurement occasions, and **[Item response theory](./irt-analysis.md)** fits IRT models to individual items for deeper analysis of item and person characteristics.
+
+## Internal consistency
 
 > **What is internal consistency?** If you have a questionnaire with 10 items all meant to measure "anxiety," internal consistency tells you whether they actually hang together. High consistency (e.g. alpha = 0.85) means people who score high on one item tend to score high on the others. Low consistency means some items might be measuring something else — or might be scored in the wrong direction.
 
@@ -153,6 +155,97 @@ A symmetric matrix showing pairwise correlations among all items. Useful for spo
 
 > **What to look for:** most correlations should fall between 0.20 and 0.80. Below 0.20 suggests the items aren't measuring the same thing. Above 0.80 suggests redundancy. A block of high correlations among a subset of items might indicate a sub-factor — consider whether [factor analysis](./factor-analysis.md) could reveal a cleaner structure.
 
+## Reproducibility
+
+The **Reproducibility** tab assesses whether measurements can be reproduced across raters, time points, or methods. It works with long-format data: each row is one observation of one subject under one condition.
+
+> **Internal consistency vs. reproducibility:** internal consistency asks "do the items hang together?" — it looks at one measurement occasion. Reproducibility asks "do we get the same answer when we measure again?" — it compares across raters or time points. A scale can have excellent internal consistency but poor inter-rater agreement if raters interpret items differently.
+
+### Data layout
+
+Two dropdowns configure how DataSuite reads your data:
+
+- **Subject ID** — the column identifying each subject. If your data was converted from wide to long format using the [column stacker](./data-transformation.md), this is auto-selected.
+- **Condition variable** — the column identifying each rater, time point, or measurement occasion.
+
+All remaining selected variables are treated as score variables and analyzed in bulk.
+
+### Reproducibility metrics
+
+Enable any combination of metrics. Each score variable gets whichever metrics apply to its data type:
+
+| Metric | Continuous | Ordinal | Categorical | Notes |
+|---|---|---|---|---|
+| **ICC** | Yes | | | Model and form selectable |
+| **Pearson r** | Yes | | | 2 conditions only |
+| **Spearman ρ** | Yes | Yes | | 2 conditions only |
+| **SEM & SDC** | Yes | | | Derived from ICC |
+| **Kendall's W** | Yes | Yes | | |
+| **Cohen's / Fleiss' κ** | | Yes | Yes | Auto-selects Cohen (2 raters) or Fleiss (3+) |
+| **Krippendorff's α** | Yes | Yes | Yes | Bootstrap CI — may be slow |
+
+Results are grouped by variable type, so you don't need to run the analysis separately for continuous and categorical variables.
+
+> **What is ICC?** The intraclass correlation coefficient quantifies how much of the total variance in scores is due to true differences between subjects, rather than differences between raters or random error. An ICC of 0.90 means 90% of the variance reflects actual subject differences — the measurement is highly reproducible.
+
+> **What is kappa?** Cohen's kappa measures agreement between two raters on categorical ratings, corrected for chance agreement. Two raters might agree 80% of the time — but if they're rating a binary outcome that's 90% "yes," chance alone would produce 82% agreement. Kappa strips that out. Fleiss' kappa extends this to three or more raters.
+
+> **SEM and SDC:** the standard error of measurement (SEM) quantifies the precision of individual scores — a smaller SEM means more precise measurement. The smallest detectable change (SDC) tells you the minimum change in a score that exceeds measurement error. If a patient's score changes by less than the SDC, you can't be confident the change is real.
+
+### ICC options
+
+When ICC is selected, two radio groups appear:
+
+**Model:**
+- **One-way random** — each subject is rated by a different random set of raters
+- **Two-way random** — the same raters rate all subjects, and raters are a random sample from a larger population (most common)
+- **Two-way mixed** — the same raters rate all subjects, and these specific raters are the only ones of interest
+
+**Form:**
+- **Single measures** — reliability of a single rater's score
+- **Average measures** — reliability of the mean across all raters
+
+> **Which ICC to choose?** In most research scenarios, **two-way random, single measures** (ICC2,1) is appropriate: the same raters score all subjects, raters represent a larger population, and you want to know how reliable one rater is. Use **average measures** when you'll always average across the same number of raters in practice.
+
+### Reading reproducibility results
+
+Results are grouped by variable type under separate headings:
+
+- **Continuous variables** — ICC, Pearson r, Spearman ρ, SEM, SDC, Kendall's W, Krippendorff's α
+- **Ordinal variables** — Spearman ρ, Kendall's W, κ, Krippendorff's α
+- **Categorical variables** — κ, Krippendorff's α
+
+Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation.
+
+Interpretation thresholds for ICC and agreement coefficients (Koo & Li, 2016):
+
+| Value | Label |
+|---|---|
+| Below 0.50 | Poor |
+| 0.50–0.75 | Moderate |
+| 0.75–0.90 | Good |
+| Above 0.90 | Excellent |
+
+Kappa uses the Landis & Koch scale:
+
+| Value | Label |
+|---|---|
+| Below 0 | Poor |
+| 0–0.20 | Slight |
+| 0.20–0.40 | Fair |
+| 0.40–0.60 | Moderate |
+| 0.60–0.80 | Substantial |
+| Above 0.80 | Almost perfect |
+
+> **Krippendorff's α and bootstrap:** the confidence interval for Krippendorff's alpha is computed using bootstrap resampling, which can take noticeable time with many variables or large samples. The number of bootstrap replications is controlled by the [bootstrap replications setting](./settings.md). Other metrics use analytical confidence intervals and compute instantly.
+
+### Assumptions
+
+- **Subjects are independent.** Each subject should be a different person (or unit). Repeated measurements from the same subject under different conditions are fine — that's what the condition variable captures.
+- **Same set of conditions for all subjects.** Every subject should ideally have a score under every condition (rater, time point). Missing combinations are handled but can reduce precision.
+- **ICC assumes continuous, normally distributed data.** For ordinal or categorical data, use kappa or Krippendorff's alpha instead.
+- **Kappa assumes categorical data.** For ordinal data, weighted kappa (used automatically) accounts for the distance between categories. For continuous data, use ICC.
+
 ## Missing data
 
 Missing values are handled by the global [missing data setting](./settings.md#missing-data). With listwise deletion, any case missing a value on any item is excluded entirely. With imputation, missing values are replaced before analysis.
@@ -176,9 +269,15 @@ Key things to include when writing up reliability results:
 - Whether any items were removed and why
 - For multi-dimensional scales: reliability per subscale, not just overall
 
-## Reproducibility
+**For reproducibility analyses:**
+- ICC model and form used (e.g. "ICC(2,1), two-way random, single measures")
+- Number of raters/time points and number of subjects
+- ICC or kappa values with confidence intervals
+- SEM and SDC values when reporting measurement precision
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Reliability analysis uses the `psych` R package. Citations for R packages used in your analysis appear automatically at the top of the output section.
+## R reproducibility
+
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa, Krippendorff's alpha, Kendall's W), `lme4` (ICC dependency), and `tidyr` (data reshaping). Citations for R packages used in your analysis appear automatically at the top of the output section.
 
 ## Common pitfalls
 

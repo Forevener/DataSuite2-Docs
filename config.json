@@ -2,7 +2,10 @@
 	"nav_groups": [
 		{
 			"key": "nav_getting_started",
-			"pages": ["getting-started", "settings"]
+			"pages": [
+				"getting-started",
+				"settings"
+			]
 		},
 		{
 			"key": "nav_reference",
@@ -22,6 +25,7 @@
 				"correlation-analysis",
 				"comparison-analysis",
 				"reliability-analysis",
+				"irt-analysis",
 				"regression-analysis",
 				"factor-analysis",
 				"confirmatory-factor-analysis",

@@ -122,15 +122,35 @@ The test dropdown automatically shows only tests appropriate for your design and
 
 ### Test direction
 
-For two-sample tests (t-tests, Mann-Whitney, Wilcoxon):
+For two-sample tests (t-tests, Mann-Whitney, Wilcoxon), the **Test direction** dropdown offers two groups of options. Hidden for multi-group tests.
+
+**Standard:**
 
 - **Two-tailed** (default) — tests whether the groups differ in either direction
 - **One-tailed: Group 1 > Group 2** — tests a specific directional hypothesis
 - **One-tailed: Group 1 < Group 2**
 
-Hidden for multi-group tests.
-
 > **When to use one-tailed tests:** only when you have a strong prior reason to expect a specific direction *before* looking at the data. One-tailed tests are more powerful for detecting the predicted direction but completely miss effects in the opposite direction. When in doubt, use two-tailed.
+
+**Equivalence:**
+
+- **Equivalence (TOST)** — tests whether the difference falls *within* ±Δ (i.e. the groups are practically equivalent)
+- **Non-inferiority** — tests whether Group 1 is not worse than Group 2 by more than Δ
+- **Superiority** — tests whether Group 1 exceeds Group 2 by at least Δ
+- **Minimal effect (MET)** — tests whether the difference is at least Δ (confirms a meaningful effect exists)
+
+When you select any equivalence option, an **Equivalence bound (Δ)** input appears. You specify the bound as either:
+
+- **Raw** — in the same units as your dependent variable
+- **Standardized (Cohen's d)** — automatically converted to raw units using the pooled standard deviation (independent tests) or the standard deviation of differences (paired tests)
+
+> **What is equivalence testing?** A standard test asks "are these groups different?" A non-significant result does *not* mean they're the same — you simply failed to detect a difference. Equivalence testing flips the question: "are these groups similar *enough*?" It uses Two One-Sided Tests (TOST) to demonstrate that the difference falls within a pre-specified bound Δ. A significant TOST result is positive evidence of equivalence, not just absence of evidence.
+
+> **Choosing Δ:** the equivalence bound should reflect the smallest difference that would be practically meaningful in your domain. For example, if a 3-point difference on a 100-point scale is negligible in your field, set Δ = 3 (raw) or estimate the standardized equivalent. A bound that's too wide makes equivalence easy to establish but unimpressive; a bound that's too narrow requires very large samples.
+
+> **Non-inferiority and superiority** are one-sided variants of equivalence testing commonly used in clinical trials. Non-inferiority asks "is the new treatment not meaningfully *worse* than the standard?" — useful when a cheaper or safer alternative is acceptable if it isn't worse by more than Δ. Superiority asks "is the new treatment meaningfully *better* by at least Δ?" — a stronger claim than ordinary significance.
+
+> **Minimal effect testing (MET)** is the opposite of equivalence testing. Where TOST tries to show the difference is *small enough*, MET tries to show the difference is *big enough* — that it exceeds a meaningful threshold Δ. This is useful when you want to confirm not just that an effect exists (p < .05) but that it's large enough to matter practically.
 
 ### Post-hoc tests
 
@@ -232,10 +252,29 @@ An "Overall test results" table with one row per dependent variable:
 > **Degrees of freedom (df):** a number that reflects how much independent information went into the calculation — roughly, sample size minus the number of things being estimated. You don't need to interpret df directly; it's reported because it's needed to look up critical values and verify the test was run correctly. A t-test with 58 df means about 60 total observations were used.
 - p-value (formatted per your [p-value settings](./settings.md#p-value-settings))
 - Adjusted p-value (if [adjustment](./settings.md#multiple-comparison-adjustment) is active in addition mode)
+- Equivalence p-values (when an [equivalence test direction](#test-direction) is selected) — see below
 - Effect size with CI and SE (if enabled)
 - Interpretation (if enabled in [settings](./settings.md#significance-formatting))
 
 If any variables fail, an error summary groups failures by error message.
+
+#### Equivalence test results
+
+When an equivalence direction is selected, a note above the table shows the test type and the Δ bound (converted to raw units if you specified it as Cohen's d). Additional columns appear after the standard p-value:
+
+- **p (lower)** and **p (upper)** — the two one-sided p-values (for TOST and MET, which test both bounds)
+- **p (equiv)** or **p (MET)** — the combined equivalence p-value
+
+For TOST, the combined p-value is the *maximum* of the two one-sided tests (both bounds must be satisfied). For MET, it's the *minimum* (either bound being exceeded is sufficient). Non-inferiority and superiority show only one p-value since they test a single bound.
+
+The interpretation column reflects equivalence outcomes:
+
+- TOST significant → "Equivalent (within Δ = X)"
+- Non-inferiority significant → "Non-inferior (Δ = X)"
+- Superiority significant → "Superior (Δ = X)"
+- MET significant → "Meaningful effect (|d| > Δ = X)"
+
+Pairwise comparison tables (both matrix and long format) also include equivalence p-values when applicable.
 
 ### Categorical tests (chi-square, Fisher's exact, etc.)
 
@@ -391,12 +430,14 @@ Key things to include when writing up comparison results:
 - P-value adjustment method, if any
 - For post-hoc tests: which method and correction
 - Directionality (one-tailed or two-tailed)
+- For equivalence testing: the type (TOST, non-inferiority, superiority, or MET), the equivalence bound Δ, and whether Δ was specified in raw or standardized units
 
 **Results:**
 - Descriptive statistics per group (means, SDs, sample sizes at minimum)
 - Test statistic with degrees of freedom (e.g. t(58) = 2.34, F(2, 87) = 5.12)
 - Exact p-value (or p < .001 for very small values)
 - Effect size with confidence interval (e.g. Cohen's d = 0.65, 95% CI [0.12, 1.18])
+- For equivalence testing: the TOST p-value and the two one-sided p-values, plus the raw Δ bound used
 - For multi-group tests: omnibus result first, then post-hoc comparisons
 - For factorial/mixed designs: main effects, interactions, and simple effects where relevant
 
@@ -413,3 +454,7 @@ Every analysis prints the underlying R code to the [R console](./r-console.md) �
 **Multiple grouping variables as separate batch analyses when you need interactions.** If you're interested in whether the effect of treatment differs by gender, running two separate batch analyses (one for treatment, one for gender) won't answer that question — you need factorial ANOVA or a mixed model to test the interaction.
 
 **Using dependent-samples tests on independent data (or vice versa).** A common mistake: comparing pre-test and post-test scores with an independent t-test instead of a paired t-test. Independent tests treat the two sets of scores as coming from different people, wasting the statistical power that comes from knowing each person's change.
+
+**Claiming equivalence from a non-significant result.** A standard test that fails to reach significance (p > .05) does *not* mean the groups are equal — it means you couldn't prove they're different. To make a positive claim of equivalence, you need an equivalence test (TOST). This distinction matters especially in clinical research, where "no difference detected" and "proven equivalent" have very different regulatory implications.
+
+**Setting the equivalence bound after seeing the data.** The bound Δ should be chosen *before* analysis, based on domain knowledge about what constitutes a practically meaningful difference. Choosing Δ after seeing the results — picking a bound just wide enough to achieve significance — invalidates the test. Pre-register your bound when possible.
