@@ -75,10 +75,14 @@ The test dropdown automatically shows only tests appropriate for your design and
 | **Mann-Whitney U test** | Two groups, non-parametric alternative |
 | **One-way ANOVA** | Three or more groups, parametric |
 | **Kruskal-Wallis test** | Three or more groups, non-parametric |
+| **Mutual information test** | Non-parametric omnibus; detects any distributional difference (location, scale, shape). Two or more groups. |
+| **Jensen-Shannon divergence test** | Non-parametric distance between group distributions. Two groups; auto-expands to a pairwise matrix for three or more. |
 | **Factorial ANOVA** | Two or more grouping variables analyzed together |
 | **ANCOVA** | Groups with continuous covariates to control for |
 | **MANOVA** | Multiple dependent variables simultaneously |
 | **MANCOVA** | Multiple dependent variables with covariates |
+
+> **Information-theoretic tests.** Mutual information and Jensen-Shannon divergence measure how much knowing the group label tells you about the outcome — in **bits** (log₂). Unlike t-tests and rank tests, they react to *any* change in the distribution, not just a shift in the mean or median. P-values are computed by shuffling group labels (permutation), so they respond to the **Bootstrap replications** setting: more replications = tighter p-values, longer runtime. These tests have no matching effect size column — the statistic itself is a bounded magnitude. Not offered for paired or mixed designs, where "did Y shift within subject?" has no clean information-theoretic answer.
 
 > **Why MANOVA instead of separate ANOVAs?** Running a separate ANOVA for each dependent variable inflates false positives (more tests = more chances for a fluke). MANOVA tests all DVs together in one shot, keeping the false positive rate under control. It can also detect group differences that only show up in the *combination* of variables — for example, groups might not differ on anxiety or depression alone, but the joint pattern of both could be significantly different.
 
