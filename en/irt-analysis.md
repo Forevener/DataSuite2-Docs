@@ -1,5 +1,5 @@
 ---
-title: IRT analysis in DataSuite 2
+title: IRT analysis
 description: Item response theory including multidimensional MIRT — Rasch, 2PL, 3PL, GRM, GPCM, Mokken, DIF, factor loadings, and Wright maps in DataSuite 2.
 ---
 

@@ -30,6 +30,8 @@
 				"factor-analysis",
 				"confirmatory-factor-analysis",
 				"cluster-analysis",
+				"time-to-event-analysis",
+				"time-series-analysis",
 				"analysis-planner"
 			]
 		}

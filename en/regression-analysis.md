@@ -75,6 +75,10 @@ A sample size check blocks the analysis when the number of complete cases is equ
 | **Poisson** | Count outcomes (0, 1, 2, ...) | Numeric |
 | **Negative binomial** | Count outcomes with overdispersion | Numeric |
 
+> **For time-to-event outcomes** (durations with possible censoring — survival, time-to-failure, time-to-relapse), use the [Time to event analysis](./time-to-event-analysis.md) module instead. Treating censored time-to-event data as a numeric outcome in linear or Poisson regression biases the results.
+
+> **For time-ordered numeric outcomes** (sales, sensor readings, traffic — anything where successive observations are autocorrelated), use the [Time series analysis](./time-series-analysis.md) module instead. Linear regression on autocorrelated data produces biased standard errors and over-confident coefficients; ARIMA, ETS, and the forecasting horse-race in the time series module are designed to handle the dependence directly.
+
 > **Linear vs. logistic:** linear regression predicts a continuous number (income, temperature, score). Logistic regression predicts the *probability* of belonging to a category (will the patient recover? which product will the customer buy?). Using linear regression on a binary outcome can produce impossible predictions (probabilities below 0 or above 1) — logistic regression avoids this.
 
 > **Poisson vs. negative binomial:** both model count data, but Poisson assumes the mean equals the variance. Real count data often has more variability than that (overdispersion) — number of doctor visits, accident counts, etc. If your Poisson model shows a dispersion parameter well above 1, switch to negative binomial.

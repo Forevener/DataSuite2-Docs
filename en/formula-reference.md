@@ -284,6 +284,63 @@ Replaces `{0}`, `{1}`, etc. with the corresponding arguments:
 format("Subject {0}, Group {1}", v1, v2)
 ```
 
+## Date functions
+
+Dates in DataSuite 2 are stored as text in ISO 8601 format (`YYYY-MM-DD`, e.g. `"2024-01-15"`). The functions below parse those strings and let you compute calendar-aware differences. Invalid date strings produce `NaN`, which propagates through arithmetic so bad rows surface downstream rather than silently miscompute.
+
+| Function | Description | Returns |
+|---|---|---|
+| `today()` | current date as an ISO string | string (e.g. `"2026-04-24"`) |
+| `dateDiff(d1, d2, unit)` | calendar-aware difference between two dates | number |
+| `dateAdd(d, n, unit)` | shift a date by `n` units; negative `n` subtracts | string (ISO date) or `""` on bad input |
+
+Supported `unit` values for `dateDiff` and `dateAdd`:
+
+- **`"day"`** — exact integer days.
+- **`"week"`** — exact `days / 7` for `dateDiff`; `n × 7` days for `dateAdd`.
+- **`"month"`** — for `dateDiff`, completed calendar months plus a fractional remainder of the current month, where the fraction respects the actual length of that month (28/29/30/31). For `dateAdd`, `n` is rounded to whole months; the day-of-month is clamped to the destination month's length (so `Jan 31 + 1 month → Feb 28/29`).
+- **`"year"`** — for `dateDiff`, completed years plus a fractional remainder against the actual year length (365 or 366). For `dateAdd`, `n` is rounded to whole years; February 29 of a leap year shifts to February 28 in non-leap target years.
+
+> **Calendar-aware vs average-length:** `dateDiff(d1, d2, "month")` does not divide by an average month length (such as 30.4375 days). Instead, it counts whole calendar months and treats the leftover days as a fraction of the month they fall in, so anniversary dates always come out exact: `dateDiff("2024-01-15", "2025-01-15", "year")` is exactly `1.0`. The same logic anchors February 29 to February 28 in non-leap years.
+
+Examples:
+
+```
+dateDiff("2024-01-15", "2024-02-15", "month")    // 1.0 — exactly one calendar month
+dateDiff("2024-01-15", "2024-03-01", "month")    // ~1.517 — 1 month + 15 days into 29-day Feb
+dateDiff("2020-02-29", "2021-02-28", "year")     // 1.0 — Feb 29 anchors to Feb 28
+dateDiff("2024-01-15", today(), "day")           // days since enrollment, until now
+
+dateAdd("2024-01-15", 60, "month")               // "2029-01-15" — synthetic 5-year cutoff
+dateAdd("2024-01-31", 1, "month")                // "2024-02-29" — clamped to month end
+dateAdd("2024-03-01", -30, "day")                // "2024-01-31" — negative n subtracts
+```
+
+### Practical example: time-to-event for survival analysis
+
+A survival dataset typically has an enrollment date and an event date that may be blank when the participant is censored (still under observation). Three transformation rules turn that into the columns the time-to-event analysis module needs:
+
+```
+cutoff = isBlank(event_date) ? today() : event_date
+follow_up = dateDiff(consent_date, cutoff, "month")
+event_occurred = isNotBlank(event_date)
+```
+
+The first rule picks the event date when present, otherwise treats the participant as still under observation today. The second computes follow-up time in months from enrollment to that cutoff. The third produces the binary event indicator — the role-picker in the analysis module reads `false`/`true` as censored/event automatically.
+
+For days or years instead of months, swap the third argument: `dateDiff(consent_date, cutoff, "day")` or `... "year"`. If your dataset has a separate last-contact date for participants still alive at the end of follow-up, use that instead of `today()`:
+
+```
+cutoff = isBlank(event_date) ? last_contact_date : event_date
+```
+
+For studies with a fixed administrative cutoff (e.g. 5-year follow-up window), synthesize the cutoff with `dateAdd`:
+
+```
+admin_cutoff = dateAdd(consent_date, 60, "month")
+cutoff = isBlank(event_date) ? admin_cutoff : event_date
+```
+
 ## Multi-variable formulas
 
 Use `@Name = expression` to create multiple output variables in a single rule:

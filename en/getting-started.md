@@ -97,6 +97,8 @@ Open the **Menu** dropdown in the top bar and choose an analysis module:
 - [Confirmatory factor analysis](./confirmatory-factor-analysis.md) — CFA model specification and fit
 - [Cluster analysis](./cluster-analysis.md) — k-means, hierarchical, biclustering
 - [Regression analysis](./regression-analysis.md) — linear, logistic, ordinal, multinomial, regularized
+- [Time to event analysis](./time-to-event-analysis.md) — Kaplan-Meier, Cox, parametric, and competing-risks survival models
+- [Time series analysis](./time-series-analysis.md) — exploration, ARIMA / SARIMA, forecasting horse-race, periodograms, and change-points
 - [Analysis planner](./analysis-planner.md) — sample size and power calculations
 
 Each module has its own set of options. The general pattern is: select your variables, adjust any settings, and click the calculate button. Results appear in the output section below.

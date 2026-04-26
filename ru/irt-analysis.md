@@ -1,5 +1,5 @@
 ---
-title: IRT-анализ в DataSuite 2
+title: IRT-анализ
 description: Теория тестовых заданий, включая многомерную MIRT — Раш, 2PL, 3PL, GRM, GPCM, Моккен, DIF, факторные нагрузки и карты Райта в DataSuite 2.
 ---
 
