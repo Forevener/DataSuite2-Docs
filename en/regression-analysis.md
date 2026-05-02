@@ -235,12 +235,97 @@ VIF and tolerance for each predictor:
 Type-specific tests:
 
 - **Linear** — RESET test (Ramsey's specification error). A significant result suggests non-linear terms may be needed.
-- **Binomial** — Hosmer-Lemeshow test; classification table with accuracy, sensitivity, specificity, PPV, NPV, and confusion matrix
-
-> **Classification metrics explained:** *Accuracy* is the overall percentage of correct predictions. *Sensitivity* (true positive rate) is how well the model catches positive cases — "of all patients who actually have the disease, how many did we identify?" *Specificity* (true negative rate) is how well it identifies negatives — "of all healthy patients, how many did we correctly rule out?" *PPV* (positive predictive value) asks "if the model says positive, how often is it right?" *NPV* (negative predictive value) asks the reverse. The confusion matrix shows the raw counts behind all these metrics.
-- **Ordinal** — classification accuracy and proportional odds assumption check
-- **Multinomial** — classification accuracy, per-class accuracy, likelihood ratio test, adjusted McFadden's R²
+- **Binomial** — Hosmer-Lemeshow test (calibration check across deciles of fitted probability). Discrimination metrics (AUC, sensitivity, specificity, etc.) live in the dedicated [Classification (ROC) analysis](#classification-roc-analysis) section.
+- **Ordinal** — classification accuracy and proportional odds assumption check. Per-cutpoint discrimination metrics (AUC, Somers' D, Kendall's tau-c) live in [Classification (ROC) analysis](#classification-roc-analysis).
+- **Multinomial** — classification accuracy, per-class accuracy, likelihood ratio test, adjusted McFadden's R². Per-class and aggregate discrimination metrics (AUC, Hand-Till M, Brier) live in [Classification (ROC) analysis](#classification-roc-analysis).
 - **Poisson / Negative binomial** — deviance and Pearson chi-square tests; dispersion parameter (near 1 is acceptable; below 0.8 = underdispersion; above 1.2 = overdispersion)
+
+### Classification (ROC) analysis
+
+Available for **binomial**, **multinomial**, and **ordinal** logistic regression. Each model variant produces *predicted probabilities* for each observation; ROC analysis evaluates how well those probabilities discriminate between the actual outcomes, across all possible cutoffs at once. The output structure adapts per mode (one curve for binomial, K one-vs-rest curves for multinomial, K−1 per-cutpoint curves for ordinal), but the core question is the same: *how well does this model separate cases that differ in outcome?*
+
+> **Why no fixed 0.5 cutoff?** A 0.5 cutoff is only sensible when the two outcomes are equally common and equally costly to miss — which is rarely true in real data. If 5% of patients have the disease, almost every patient looks "low probability" and a 0.5 rule would call them all healthy. The optimal threshold depends on prevalence and on which mistake you'd rather avoid; ROC analysis chooses it from the data.
+
+#### Configuration
+
+Available in the **Diagnostics** group when the regression type is binomial, multinomial, or ordinal:
+
+- **Classification (ROC) analysis** — master toggle for the section
+- **Optimal threshold rule** — how to pick the cutoff:
+	- **Youden's J** — maximizes `sensitivity + specificity − 1` (the default; treats both error types as equally costly)
+	- **Closest to (0, 1)** — picks the point on the ROC curve closest to the perfect-classifier corner
+	- **Cost-weighted** — accepts a cost-asymmetry ratio (e.g. 3 = false negatives are 3× as costly as false positives) and reports both directions of the asymmetry so you can compare. *Binomial only* — cost asymmetry doesn't generalize cleanly to per-class or per-cutpoint thresholds.
+- **Classification metrics at optimal threshold** — toggles the metrics table on/off
+- **AUC confidence interval** — **DeLong** (analytic, fast) or **bootstrap** (no distributional assumptions). DeLong is hidden for multinomial because the multiclass aggregate AUC (Hand-Till M) requires bootstrap resampling; for ordinal each cutpoint is binary, so DeLong stays available.
+- **ROC curve** — toggles the curve plot
+- **Cross-validated AUC (out-of-sample)** — adds CV columns to the summary; reveals a **Number of folds (k)** input (default 10, stratified by outcome class) and a **Repetitions** input (default 10). Each repetition runs a full stratified k-fold with a different random seed; the CV CI is computed across repetitions and so reflects sampling of the modelling procedure rather than just sampling of a single fixed prediction set.
+
+#### Binomial output
+
+**Summary row** — AUC, AUC confidence interval, and Brier score. When CV is enabled, three more cells appear: CV AUC, CV CI, CV Brier, with a footer note recording the k value and the number of completed repetitions.
+
+> **AUC, plain English:** the area under the ROC curve. 0.5 = the model is no better than coin flips; 1.0 = perfect separation. Read it as: pick a random positive case and a random negative case — AUC is the probability the model assigns the positive case a higher probability than the negative one. Conventional reading: 0.7–0.8 is acceptable, 0.8–0.9 is good, ≥ 0.9 is excellent.
+
+> **Brier score:** mean squared error of the predicted probability against the true 0/1 outcome. Lower is better; a perfectly calibrated model has Brier = 0. AUC measures *discrimination* (can the model rank cases correctly?); Brier measures *calibration* (are the probabilities themselves trustworthy?). A model can rank well but be miscalibrated, and vice versa — both matter.
+
+> **In-sample vs cross-validated AUC:** in-sample AUC uses the same data the model was fit on, so it tends to be optimistic — especially with many predictors. CV AUC refits the model on `k − 1` folds and predicts the held-out fold, repeating until every observation has an out-of-fold prediction; the AUC is then computed once on the pooled predictions. The whole procedure is repeated with several different random seeds, and the reported point estimate and confidence interval are the mean and t-based CI across repetitions — so the CI captures uncertainty in the modelling procedure itself, not just in a fixed prediction set. Treat CV AUC as the honest estimate; the gap between in-sample and CV AUC tells you how much the model is overfitting.
+
+**Classification metrics at the optimal threshold** — when enabled, a small table with:
+
+- **Threshold** — the cutoff value chosen by the selected rule
+- **Sensitivity** (true positive rate) — of actual positives, how many the model catches
+- **Specificity** (true negative rate) — of actual negatives, how many the model correctly rules out
+- **PPV** (positive predictive value) — when the model predicts positive, how often it's right
+- **NPV** (negative predictive value) — when the model predicts negative, how often it's right
+- **Accuracy** — overall fraction correct
+
+For the cost-weighted rule, two rows appear (one for each direction of the asymmetric cost), with a **Worse to misclassify** column flagging which error type the threshold was chosen to minimize.
+
+**ROC curve** — false-positive rate on the x-axis, true-positive rate on the y-axis. The diagonal is the chance line; curves bowing toward the top-left corner indicate better discrimination. The optimal threshold(s) are marked as small dots on the curve — hover for the exact threshold value, sensitivity, specificity, PPV, and NPV.
+
+#### Multinomial output
+
+A multinomial model produces a *vector* of class probabilities for each observation (one per outcome class). ROC analysis treats each class in turn as the "positive" outcome ("class k vs all others") to get a per-class discrimination measure, then reports several aggregate statistics that summarize the model as a whole.
+
+**Summary table** — one row per outcome class plus three aggregate rows. Columns: AUC, bootstrap CI, and (when CV is enabled) CV AUC + CV CI.
+
+- **Per-class rows** — AUC of the one-vs-rest classifier for each outcome class. Useful for spotting which classes the model discriminates well and which it confuses.
+- **Macro-average** — unweighted mean of the per-class AUCs. Treats every class equally regardless of prevalence — handy when rare classes matter as much as common ones. If a class is empty or all-positive in the sample, its AUC is undefined and the row label reads `Macro-average (used X/K classes)` so you can see how many entered the average.
+- **Micro-average** — pools all per-class predictions and labels into one big binary ROC. Weighted by class prevalence, so dominated by the largest classes.
+- **Hand-Till M (multiclass AUC)** — the principled multiclass generalization of AUC, computed as the average pairwise AUC. Insensitive to class imbalance. Treat this as the "headline" multiclass AUC for reporting.
+
+> **Macro vs micro vs Hand-Till — which to report?** For balanced classes they tend to agree. For imbalanced data they can diverge: micro reflects bulk performance (good for production deployment), macro asks "how well do you do on the hardest class?", and Hand-Till M is the closest analogue to the binomial AUC concept. Reporting Hand-Till M is the safest single number; including macro alongside it adds the imbalance perspective for free.
+
+**Multiclass Brier score** — `mean(rowSums((P − one_hot_Y)²))`. Calibration measure across all classes. Lower is better; a perfectly calibrated model has Brier = 0. Same calibration-vs-discrimination contrast as in the binomial case.
+
+> **Argmax vs ROC — important caveat.** Per-class AUC measures *discrimination quality* — how well-ranked are class-k members against the rest? Actual classification at predict time uses **argmax** across class probabilities (the class with the highest probability wins), not per-class thresholding. So the [Goodness of fit](#goodness-of-fit) confusion matrix shows real classifier behavior; this section shows how separable each class is from the others, which is a related but distinct question.
+
+**Per-class threshold metrics** — when enabled, one row per class with the optimal threshold and the same sens/spec/PPV/NPV/accuracy columns as the binomial table, plus a leading **Class** column. The threshold rule applies per class.
+
+**ROC curve plot** — K colored curves overlaid on a single chart, one per class. Each curve gets its own AUC in the legend; threshold markers are colored to match.
+
+#### Ordinal output
+
+An ordinal model gives cumulative probabilities `P(Y ≤ k | x)` for each cutpoint between adjacent ordered categories. ROC analysis evaluates the model at each of the K−1 cutpoints in turn, treating "Y > level_k vs Y ≤ level_k" as a binary problem. This respects the ordering — unlike multinomial OvR, which would discard it.
+
+**Summary table** — one row per cutpoint (labeled `{outcome} > {level}`) plus three rank-concordance summary rows. Columns: AUC / value, CI, and (when CV is enabled) CV AUC + CV CI.
+
+- **Per-cutpoint rows** — binary AUC at each cumulative threshold. Each is a proper binary ROC, so DeLong CIs apply per cutpoint.
+- **Mean cutpoint AUC** — unweighted mean of the per-cutpoint AUCs, with a row-bootstrap CI that resamples observations and recomputes the K−1 cutpoint AUCs together each replicate, so the CI properly reflects the correlation between cutpoints (they share rows).
+- **Somers' D** — rank-based concordance between the model's latent linear predictor and the ordered outcome. Range [−1, 1]; magnitude analogous to AUC (Somers' D ≈ 2·AUC − 1 for binary outcomes).
+- **Kendall's tau-c** — rank correlation that accounts for ties on the ordinal outcome. Range [−1, 1]; less sensitive to scale differences between predicted score and category count than tau-b.
+
+> **Why both Somers' D and tau-c?** They answer slightly different questions about the same predictor-outcome ordering. Somers' D treats the predicted score as a continuous classifier of the ordinal outcome — closest in spirit to AUC. Kendall's tau-c is symmetric and adjusted for the discrete nature of the outcome categories. For most ordinal regression reports, either is acceptable; reporting both adds robustness with little extra space.
+
+**Multiclass Brier score** — same formula as multinomial: `mean(rowSums((P − one_hot_Y)²))`. Calibration across the full K-class probability matrix.
+
+> **Argmax vs cumulative cutpoints — important caveat.** Per-cutpoint AUC measures discrimination at each ordering threshold. Actual classification at predict time uses argmax across class probabilities, not per-cutpoint thresholding — so the [Goodness of fit](#goodness-of-fit) confusion matrix shows real classifier behavior; this section shows how cleanly the model separates outcomes at each ordering boundary.
+
+> **Diagnostic value of per-cutpoint divergence.** When the proportional-odds assumption holds, the per-cutpoint AUCs and threshold metrics tend to look similar. When it's violated, they diverge — that divergence is itself useful diagnostic information. If the AUC at "Y > Disagree" is 0.85 but at "Y > Agree" is 0.62, the model isn't discriminating equally well across cutpoints, which can signal misspecification. Cross-reference with the proportional-odds test in [Goodness of fit](#goodness-of-fit).
+
+**Per-cutpoint threshold metrics** — when enabled, one row per cutpoint with the optimal threshold and sens/spec/PPV/NPV/accuracy columns, plus a leading **Cutpoint** column.
+
+**ROC curve plot** — K−1 colored curves overlaid on a single chart, one per cutpoint. Each curve gets its own AUC in the legend.
 
 ## Reading results — regularized regression
 
@@ -298,6 +383,7 @@ A sortable table with one row per candidate model:
 - **Predictors** — variables in the model, with a **Use** button to apply that model's predictor set to the selection list
 - **K** — number of parameters
 - **R² / Adjusted R²** (linear) or **McFadden R² / Nagelkerke R²** (other types)
+- **AUC**, **AUC CI**, **p (vs best)** — *binomial only.* AUC measures each model's discrimination; the p-value tests, via DeLong's paired test, whether each model's AUC differs significantly from the top-ranked model's. The top model itself shows "—" for the p-value. The raw p-values are corrected for multiplicity across the M−1 vs-best comparisons using the global [p-value adjustment method](./settings.md#multiple-comparison-adjustment); depending on the **Adjusted p-values display** setting, an **Adjusted p (vs best)** column appears alongside the raw column or replaces it. AIC and AUC don't always agree — AIC penalizes complexity, AUC doesn't, so a slightly worse-AIC model can have a comparable AUC. Use both lenses.
 - **AIC**, **AICc**, **delta-AIC**
 - **Weight** — Akaike weight (probability this is the best model given the data)
 - **Cumulative weight**
@@ -415,14 +501,17 @@ Key things to include when writing up regression results:
 - Coefficient table with B, SE, test statistic, p-value, and confidence intervals
 - Beta (standardized) coefficients for linear regression
 - Odds ratios for logistic regression
+- For binomial logistic: AUC with confidence interval, threshold rule used, and metrics at the optimal threshold (sensitivity, specificity, PPV, NPV); cross-validated AUC if reported, with k
+- For multinomial logistic: per-class AUCs, Hand-Till M (multiclass AUC) with bootstrap CI, multiclass Brier; note that classification at predict time uses argmax across class probabilities
+- For ordinal logistic: per-cutpoint AUCs, Somers' D, Kendall's tau-c, multiclass Brier; cross-reference per-cutpoint divergence with the proportional-odds assumption check
 - Effect size for the overall model
 - Diagnostics: collinearity (VIF), residual normality, influential observations — at minimum note whether assumptions were checked
-- For model comparison: top model(s), Akaike weights, variable importance
+- For model comparison: top model(s), Akaike weights, variable importance; AUC and DeLong p-values for binomial outcomes
 - For regularization: selected lambda, number of non-zero coefficients (LASSO), cross-validation error
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Regression analysis uses base R (`lm`, `glm`) for classic linear and binomial models, `MASS` for ordinal logistic and negative binomial, `nnet` for multinomial logistic, `car` for collinearity diagnostics, `lmtest` for residual diagnostics, `ResourceSelection` for Hosmer-Lemeshow tests, and `glmnet`, `ordinalNet`, or `mpath` for regularized estimation. Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Regression analysis uses base R (`lm`, `glm`) for classic linear and binomial models, `MASS` for ordinal logistic and negative binomial, `nnet` for multinomial logistic, `car` for collinearity diagnostics, `lmtest` for residual diagnostics, `ResourceSelection` for Hosmer-Lemeshow tests, `pROC` for ROC / AUC analysis (per-curve AUC + CI, DeLong's test for binomial AUC comparisons, and `multiclass.roc` for Hand-Till M), and `glmnet`, `ordinalNet`, or `mpath` for regularized estimation. Somers' D and Kendall's tau-c for ordinal models are derived from `cor(method = "kendall")` plus tied-pair counts — no extra packages required. Citations for R packages used in your analysis appear automatically at the top of the output section.
 
 ## Common pitfalls
 

@@ -184,6 +184,33 @@ Additional options:
 
 > **What is an effect size?** A p-value tells you whether an effect exists; an effect size tells you how *big* it is. A tiny difference can be statistically significant with a large enough sample, while a meaningful difference can be non-significant with too few participants. Common benchmarks: Cohen's d of 0.2 = small, 0.5 = medium, 0.8 = large — but what counts as "meaningful" depends on your field.
 
+### Classification (ROC) analysis
+
+For two-group **independent** numeric tests (independent t-test, Welch's t-test, Mann-Whitney U, Jensen-Shannon divergence), check **Include classification (ROC) analysis** to compute the area under the ROC curve and related classification metrics alongside the inferential test. The option appears once you've selected an eligible test.
+
+> **What ROC analysis adds.** A t-test or Mann-Whitney asks *"do the groups differ?"* — ROC asks the dual question: *"how well does this score discriminate between the groups?"* The two are mathematically linked (the AUC equals the Mann-Whitney U statistic normalized to [0, 1]), but ROC adds a practical layer: an optimal cutoff above which you'd classify someone as belonging to the higher-scoring group, plus sensitivity, specificity, and predictive values at that cutoff.
+
+For three or more groups, ROC is computed for each pairwise contrast, matching how the inferential test handles multi-group data.
+
+**Optimal threshold rule** — how the cutoff is chosen:
+
+- **Youden's J** (default) — maximizes sensitivity + specificity − 1; equal weight on both error types.
+- **Closest to (0, 1)** — the point on the curve nearest the top-left corner (perfect classifier).
+- **Cost-weighted** — asymmetric costs. Set the **Cost asymmetry ratio** k > 1 if one error is k times worse than the other. Both directions (whichever group is worse to misclassify) are reported as separate rows so you can pick the relevant one.
+
+> **Pick the rule before looking at the data.** Same logic as the equivalence bound: choosing the rule that produces the threshold you wanted to see undermines the analysis.
+
+**AUC confidence interval:**
+
+- **DeLong** (default) — closed-form, fast, recommended for n ≥ 30 per group.
+- **Bootstrap** — resampling-based; more robust at small samples. Uses the global bootstrap replication count from [settings](./settings.md); slower.
+
+**Compare AUCs (pairwise DeLong's test)** — appears when 2+ AUCs are produced (multiple dependent variables, or pairwise group expansion across 3+ groups). Tests whether AUCs differ significantly using DeLong's correlated-AUC test, which accounts for the fact that AUCs computed on the same subjects are not independent. P-values are adjusted across the family using the global [adjustment method](./settings.md#multiple-comparison-adjustment).
+
+**Classification metrics at optimal threshold** — toggles the per-threshold columns (sensitivity, specificity, PPV, NPV, accuracy). Turn off if you only want the AUC summary.
+
+> **Why not for paired or repeated-measures tests?** The AUC's statistical machinery assumes independent observations. In a Pre/Post design the standard CI is wrong, and the question "can this score discriminate Pre from Post within the same subject?" rarely matches what users actually want. If you need discrimination on paired data, compute difference scores against an external label (e.g. responder vs. non-responder) and run an independent ROC.
+
 ### Summary statistics
 
 Toggle which descriptive statistics appear alongside the test results:
@@ -200,7 +227,7 @@ Toggle which descriptive statistics appear alongside the test results:
 
 ### Include visualization
 
-Check **Include visualization** to reveal a plot type selector with per-plot options. Seven plot types are available, some conditionally — see [visualization](#visualization) below. Only available for numeric dependent variables.
+Check **Include visualization** to reveal a plot type selector with per-plot options. Several plot types are available, some conditionally — see [visualization](#visualization) below. Only available for numeric dependent variables. The ROC curve is enabled separately as part of [classification analysis](#classification-roc-analysis).
 
 ## Checking assumptions
 
@@ -297,6 +324,39 @@ Produced by automatic pairwise expansion (two-sample test with 3+ groups) or pos
 **Long format** — flat table with columns for comparison pair, group statistics, difference CI, test statistic, df, p-value, adjusted p-value, effect size, and interpretation.
 
 A legend explains the notation used.
+
+### Classification (ROC) analysis
+
+When ROC is enabled, results include a "Classification (ROC) analysis" sub-section. The main table has one row per (dependent variable × pair × threshold):
+
+- **Variable** — the dependent variable being thresholded.
+- **Comparison** — the group pair (only shown when pairwise expansion is in effect for 3+ groups).
+- **Predicted group** — the group whose membership is signalled by *higher* scores. Orientation is auto-detected so the AUC is always ≥ 0.5.
+- **AUC** — area under the ROC curve. 0.5 = chance, 1.0 = perfect discrimination.
+- **{level}% CI** — confidence interval for the AUC (DeLong or bootstrap, per your selection).
+- **N** — total observations as `total (predicted/other)`.
+- **Worse to misclassify** — only present with cost-weighted thresholds; identifies which of the two reported thresholds corresponds to the asymmetric-cost direction.
+- **Threshold** — the cutoff. Scores ≥ threshold are classified as the predicted group.
+- **Sensitivity / Specificity** — sensitivity and specificity for the predicted group at the threshold.
+- **PPV / NPV** — positive and negative predictive values.
+- **Accuracy** — overall correct-classification rate.
+
+> **AUC interpretation.** Common rules of thumb: 0.5–0.6 = poor, 0.6–0.7 = fair, 0.7–0.8 = good, 0.8–0.9 = excellent, 0.9+ = outstanding. These are guidelines, not laws — practical value depends entirely on the cost of errors in your domain. A 0.65 AUC may be transformative for a problem that previously had no marker; a 0.85 AUC may be insufficient for a high-stakes diagnostic decision.
+
+> **Sensitivity vs. specificity** — sensitivity is the fraction of predicted-group cases correctly classified (true positive rate); specificity is the fraction of other-group cases correctly classified (true negative rate). They trade off as the threshold moves: lower threshold → higher sensitivity, lower specificity, and vice versa. The Youden / closest / cost-weighted rules pick a single point along this trade-off.
+
+> **PPV and NPV depend on prevalence.** Unlike sensitivity and specificity, predictive values change with the proportion of the predicted group in your sample. If your sample's group-size ratio doesn't reflect the real-world prevalence, treat PPV and NPV as illustrative — they won't generalize directly.
+
+#### AUC comparison (DeLong's test)
+
+When **Compare AUCs** is enabled and 2+ AUCs are produced, an additional table tests them pairwise:
+
+- **Variable 1** and **Variable 2** — the two AUCs being compared.
+- **Δ AUC** — AUC(Variable 1) − AUC(Variable 2).
+- **Z** — DeLong's test statistic for the difference between paired AUCs on the same subjects.
+- **p-value** (and adjusted p-value, if [p-value adjustment](./settings.md#multiple-comparison-adjustment) is set to addition mode).
+
+For pairwise group expansion across 3+ groups, the table is split into one section per group pair, with cross-DV comparisons within each pair.
 
 ### Factorial ANOVA
 
@@ -422,6 +482,14 @@ Horizontal layout showing effect size point estimates (diamonds) with confidence
 
 Only available when **Include effect sizes** is checked and results contain valid effect size CIs.
 
+### ROC curve
+
+A plot of true positive rate (sensitivity) against false positive rate (1 − specificity), with one curve per group pair when pairwise expansion is in effect. The diagonal is the chance line; curves further toward the top-left corner indicate better discrimination. The AUC and the predicted group are shown in the legend.
+
+Available when **Include classification (ROC) analysis** is enabled and the selected test is eligible. See [classification analysis](#classification-roc-analysis) for the underlying analysis.
+
+> **Reading the ROC curve.** Each point on the curve corresponds to a possible threshold. Moving along the curve trades sensitivity for specificity. The threshold the analysis reports (Youden's, closest, or cost-weighted) is one chosen point — but the whole curve is the actual summary of discriminative ability across all possible cutoffs.
+
 ## Reporting checklist
 
 Key things to include when writing up comparison results:
@@ -435,6 +503,7 @@ Key things to include when writing up comparison results:
 - For post-hoc tests: which method and correction
 - Directionality (one-tailed or two-tailed)
 - For equivalence testing: the type (TOST, non-inferiority, superiority, or MET), the equivalence bound Δ, and whether Δ was specified in raw or standardized units
+- For ROC analysis: the threshold rule (Youden / closest / cost-weighted, with the cost asymmetry ratio if applicable), the AUC CI method (DeLong or bootstrap), and that DeLong's test was used for any AUC comparisons
 
 **Results:**
 - Descriptive statistics per group (means, SDs, sample sizes at minimum)
@@ -444,10 +513,11 @@ Key things to include when writing up comparison results:
 - For equivalence testing: the TOST p-value and the two one-sided p-values, plus the raw Δ bound used
 - For multi-group tests: omnibus result first, then post-hoc comparisons
 - For factorial/mixed designs: main effects, interactions, and simple effects where relevant
+- For ROC analysis: AUC with CI per variable (and per pair, if applicable), plus sensitivity and specificity at the reported threshold; for AUC comparisons, Δ AUC, Z, and p-value(s)
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Comparison analysis uses base R for t-tests and chi-square, `car` for ANOVA-family tests, `emmeans` for post-hoc comparisons and estimated marginal means, `dunn.test` for Dunn's test, and `effectsize` for effect size calculations. Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Comparison analysis uses base R for t-tests and chi-square, `car` for ANOVA-family tests, `emmeans` for post-hoc comparisons and estimated marginal means, `dunn.test` for Dunn's test, `effectsize` for effect size calculations, and `pROC` for ROC / AUC analysis and DeLong's test. Citations for R packages used in your analysis appear automatically at the top of the output section.
 
 ## Common pitfalls
 
@@ -462,3 +532,9 @@ Every analysis prints the underlying R code to the [R console](./r-console.md) �
 **Claiming equivalence from a non-significant result.** A standard test that fails to reach significance (p > .05) does *not* mean the groups are equal — it means you couldn't prove they're different. To make a positive claim of equivalence, you need an equivalence test (TOST). This distinction matters especially in clinical research, where "no difference detected" and "proven equivalent" have very different regulatory implications.
 
 **Setting the equivalence bound after seeing the data.** The bound Δ should be chosen *before* analysis, based on domain knowledge about what constitutes a practically meaningful difference. Choosing Δ after seeing the results — picking a bound just wide enough to achieve significance — invalidates the test. Pre-register your bound when possible.
+
+**Reading too much into a high AUC on a small sample.** AUCs have wide confidence intervals at small sample sizes, and DeLong's CI relies on asymptotic theory. With fewer than ~30 observations per group, prefer the bootstrap CI and treat the point estimate as provisional. An AUC of 0.85 with a 95% CI of [0.55, 1.0] is not a strong signal — it's a wide range that happens to include "excellent".
+
+**Treating PPV and NPV as universal.** Predictive values depend on the prevalence of the predicted group in your sample. If your sample is balanced 50/50 but real-world prevalence is 5%, the PPV reported here will be far higher than what you'd see in deployment. Sensitivity and specificity are prevalence-independent — those generalize. PPV and NPV in this output describe your sample, not the population.
+
+**Choosing the cost direction after seeing the cost-weighted thresholds.** The cost-weighted rule reports two thresholds, one for each direction of asymmetric cost. Picking which row "feels right" after seeing the numbers — rather than committing to which error type is worse beforehand — is the same kind of post-hoc tuning as flipping a one-tailed test direction after the fact.

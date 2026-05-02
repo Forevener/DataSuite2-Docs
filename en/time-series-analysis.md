@@ -140,6 +140,15 @@ Descriptive view of one or more series. Outputs (per group × series):
   Conclusions are reported as **Stationary at α = 0.05**, **Non-stationary at α = 0.05**, or **Inconclusive** based on the p-value and the test's null. The α = 0.05 threshold is fixed; the [global p-value display setting](./settings.md#display-format) controls how the p-values are formatted but not the cut-off.
 - **Raw Ljung-Box** — single-line summary asking whether *any* serial dependence exists in the series. A significant result means it's worth modelling; a non-significant one suggests the series is essentially white noise.
 - **Decomposition strengths** — `Trend = max(0, 1 − Var(remainder) / Var(trend + remainder))`; same shape for **Seasonal**. Values close to 1 indicate a strong component.
+- **Detected seasonal periods** — independent of the configured frequency, the periodogram is searched for all significant cycles via a stepwise [Fisher's g-test](#fishers-g-test). The output is a small table per series, one row per significant period, with columns:
+  - **Period (obs)** — the cycle length in observation units, plus the Fourier-bin resolution as `P ± d` (or `≥ P` for the longest-period bin whose upper bound is unbounded)
+  - **Cycles per obs** — the corresponding spectral frequency
+  - **Fisher's g** — the test statistic; equivalently the share of total spectral variance concentrated at this peak
+  - **Share of variance** — the same quantity expressed as a percentage
+  - **p-value** — raw p, plus the [adjusted p-value](./settings.md#multiple-comparison-adjustment) if a correction method is set
+  - **Note** — `Harmonic of {P} (×n)` for rows whose period divides a stronger row's period by an integer ≥ 2, or `—` for fundamental cycles. Harmonic rows are visually muted.
+
+  When no period reaches significance, a single line confirms that — *No additional significant seasonal periods detected for {name} at α = 0.05 ({adjustment})* — so the empty case is distinguishable from a skipped section.
 - **Anomaly summary** — count of decomposition-residual outliers flagged in the plot.
 
 > **ACF and PACF, briefly.** The ACF at lag *k* is the correlation between the series and itself shifted by *k* steps. A slow decay points to a non-stationary series; a single big spike at lag 12 (with frequency 12) points to seasonality; a sharp cut-off at lag *q* with PACF tailing off → MA(q); the mirror — PACF cuts off at *p*, ACF tails off → AR(p). They're rough guides, not contracts.
@@ -147,6 +156,16 @@ Descriptive view of one or more series. Outputs (per group × series):
 > **ADF vs KPSS — why run both?** They have opposite nulls. ADF rejects when the series looks stationary; KPSS rejects when it looks non-stationary. Agreement (both signal stationary, or both signal non-stationary) is a strong verdict; disagreement is a signal that the answer depends on whether trend or unit-root is the right description, and you should look at the differenced series. The "inconclusive" label in the output flags the disagreement directly.
 
 > **Stationarity, in one paragraph.** A stationary series has a stable mean, stable variance, and an autocorrelation that depends only on the lag — not on absolute time. Most ARIMA / ARMA theory assumes stationarity. If a series isn't stationary, you difference it (subtract `y[t-1]` from `y[t]`) until it is. The suggested **d** in the pre-flight is exactly that recommendation.
+
+#### Fisher's g-test
+
+The **Detected seasonal periods** table is built by stepwise Fisher's g-test on the periodogram. At each step the procedure picks the largest remaining ordinate, computes `g = max(I_k) / sum(I_k)`, and gets a p-value from the closed-form null distribution under white noise. The peak's main lobe (±2 bins) is then dampened to the median and the procedure repeats, up to 10 iterations or until the next peak isn't worth testing. Collected raw p-values are corrected with your global [p-value adjustment method](./settings.md#multiple-comparison-adjustment) and filtered against the [significance level](./settings.md#significance-level); only survivors appear in the table.
+
+> **Why fractional periods like 22.5?** The periodogram is evaluated at Fourier frequencies `f_k = k / N`, so the period of a peak is `N / k` — fractional whenever *k* doesn't divide *N* evenly. The `± d` annotation on each period is the bin half-width: a period of `22.7 ± 1.3` means the true cycle could lie anywhere in roughly `[21.4, 24.0]`. Spectral resolution is finite; this surfaces it honestly rather than implying a precision the data doesn't have.
+
+> **Harmonics aren't independent seasons.** A non-sinusoidal cyclic signal of period *P* produces spectral peaks not just at *P* but at *P/2*, *P/3*, *P/4*, … (its harmonics). The test correctly flags them as significant — they are real spectral peaks — but they're derivatives of the same underlying cycle. The **Note** column marks each derivative row with its parent (e.g. *Harmonic of 45 (×3)* for a peak at period 15 when there's a stronger peak at 45). Use the fundamental rows to choose a frequency override; use the muted harmonic rows as confirmation that the fundamental is the right call.
+
+> **Spectral concentration ≠ Hyndman's seasonal strength.** The Fisher table is about *spectral concentration* — how peaked the periodogram is at a given frequency — and is computed independently of the configured frequency. The seasonal-strength number reported above (when STL ran) is a different quantity: `1 − Var(remainder) / Var(seasonal + remainder)`, computed on the configured frequency. A series can have a strong, narrow spectral peak yet a modest Hyndman *Fs* if the seasonal amplitude varies a lot, and vice versa.
 
 When ACF / PACF / stationarity ran on an interpolated series (because the series had missing values), a small note discloses it — those metrics are biased toward smoothness and stationarity vs. the raw series, so report the imputation count alongside.
 
@@ -287,6 +306,7 @@ The [global missing-data setting](./settings.md#missing-data) does **not** apply
 **Results:**
 - Stationarity verdict per test (statistic, p-value, conclusion)
 - Decomposition trend / seasonal strengths where reported
+- Detected seasonal periods (period ± resolution, Fisher's g, adjusted p) — flagging the configured frequency, the strongest fundamental, and any harmonic structure
 - For ARIMA: full specification, AIC / AICc / BIC, residual Ljung-Box result, and an explicit note on residual whiteness
 - For forecasting: the winning method and its CV / holdout RMSE / MAE; report at least one baseline (naive or seasonal naïve) for context
 - For periodogram: the dominant period(s) and their power
@@ -306,6 +326,6 @@ Every analysis prints the underlying R code to the [R console](./r-console.md) �
 
 **Forecasting without a baseline.** A model that doesn't beat naive (or seasonal naïve when frequency > 1) isn't earning its complexity. The horse-race always includes both — keep them in your reporting even when ETS or auto-ARIMA wins, so the reader can see how much the better model bought you.
 
-**Treating periodogram peaks as significant by inspection.** The periodogram is a noisy estimator. A peak that's "obviously above the rest" can be sampling artefact, especially on series shorter than a few hundred observations. Cross-reference the dominant period against the ACF — if the same period shows up there, you're on firmer ground.
+**Treating periodogram peaks as significant by inspection.** The spectral card's top-frequency table is descriptive — the heights aren't tested against any null. A peak that's "obviously above the rest" can be sampling artefact, especially on series shorter than a few hundred observations. Run [Exploration](#exploration) for the formal Fisher's g-test, which reports significant periods directly and flags harmonics. Cross-reference against the ACF too — if the same period shows up there, you're on firmer ground.
 
 **Reporting in-sample fit instead of out-of-sample error.** A low ARIMA AIC means the model fits the *training* data well; it doesn't tell you how the model will forecast. The forecasting card's holdout and rolling-origin CV columns are the quantities to quote when the analysis is about prediction.
