@@ -81,7 +81,7 @@ Before running the full analysis, this step helps you decide how many factors or
 
 ### Configuration
 
-- **Factor/Component range to test** — minimum (default: 1) and maximum (default: 6). The maximum must be less than the number of selected variables.
+- **Factor/component range to test** — minimum (default: 1) and maximum (default: 6). The maximum must be less than the number of selected variables.
 - **Run parallel analysis** (on by default) — compares your eigenvalues against randomly generated data
 - **Show scree plot** (on by default)
 - **Show per-variable MSA** (off by default) — sampling adequacy for each individual variable
@@ -140,9 +140,9 @@ The scree plot can be exported as SVG.
 A table with one row per tested factor count:
 
 - **N** — number of factors/components
-- **Eigenvalue** — for that factor number
-- **Variance %** — proportion of variance explained by that factor
-- **Cumulative %** — running total of variance explained
+- **Eigenvalue** — for that factor number (for EFA, eigenvalues come from the reduced correlation matrix with squared multiple correlations on the diagonal)
+- **Variance %** — proportion of total variance explained by that factor
+- **Cumulative %** — running total. For PCA this approaches 100% as factors are added; for EFA it plateaus at the common-variance ceiling (sum of communalities ÷ number of variables) and will not reach 100%
 
 For EFA methods, additional fit indices appear:
 
@@ -189,7 +189,7 @@ Once you've decided on the number of factors, enter it and click **Run full anal
 | **Schmid-Leiman factor scores** | Hidden | Only available when Schmid-Leiman is enabled |
 | **Anti-image correlations** | Off | Useful for diagnosing individual variable adequacy |
 | **Anti-image covariances** | Off | |
-| **Factor/Component scores** | Off | Computes per-case scores for use in further analyses |
+| **Factor/component scores** | Off | Computes per-case scores for use in further analyses |
 | **Path diagram** | Off | Visual representation of the factor structure |
 
 When factor scores or Schmid-Leiman scores are enabled, a **Scoring method** dropdown appears:
@@ -282,7 +282,7 @@ A visual representation of the factor structure:
 
 The diagram can be exported as SVG.
 
-### Factor/Component correlations (oblique rotations only)
+### Factor/component correlations (oblique rotations only)
 
 A symmetric matrix showing correlations between all factors. The diagonal displays 1.00 in muted text.
 
@@ -295,7 +295,7 @@ A symmetric matrix showing correlations between all factors. The diagonal displa
 
 > **What are anti-image matrices?** The anti-image of a correlation is the part of the variance that *can't* be predicted from the other variables. Small anti-image correlations (off-diagonal) mean the variables share a lot of common variance — good for factor analysis. Large values suggest a variable is too unique to fit the common factor model.
 
-### Factor/Component scores
+### Factor/component scores
 
 A preview of the first 10 cases with computed scores for each factor/component. A note shows the total number of scored cases and the scoring method used.
 

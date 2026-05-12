@@ -7,6 +7,8 @@ description: CFA model specification, fit indices, modification indices, measure
 
 The **Confirmatory factor analysis** (CFA) module tests whether a hypothesized factor structure fits your observed data. You define which variables load on which factors using an interactive matrix, set estimation options, and run the model to get fit indices, parameter estimates, reliability metrics, modification suggestions, and an optional path diagram. The module also supports second-order factors, measurement invariance testing across groups, and side-by-side model comparison.
 
+> **CFA is the measurement-only entry into the SEM module.** If your model has structural paths between factors (`~`), mediation, or mean structure, see [Structural equation modeling](./structural-equation-modeling.md) — same editor, additional widgets for the structural part. Pure CFA models (only `=~` measurement equations) are run through `lavaan::cfa()` so reliability and discriminant validity tables stay available.
+
 > **EFA vs. CFA:** [Exploratory factor analysis](./factor-analysis.md) discovers structure — you let the data tell you how many factors there are and which variables load where. CFA *tests* structure — you specify the model upfront and ask "does this fit?" Use EFA when you don't have a theory yet. Use CFA when you have a specific structure to confirm — from prior EFA results, published literature, or theoretical reasoning. Critically, EFA and CFA should be run on **different samples**. Running both on the same data is circular — see [common pitfalls](./factor-analysis.md#common-pitfalls).
 
 1. [Select your variables](./getting-started.md#choosing-variables) (at least 4 numeric for a testable model)
@@ -53,7 +55,7 @@ When two or more first-order factors are defined, a **Second-order factors** sec
 
 ### Residual covariances
 
-Below the model matrix, you can specify residual covariances between pairs of observed variables. Select two variables from the dropdowns and click **Add**. Existing covariances appear as badges with a remove button.
+Below the model matrix, the **Covariances** section lets you add a covariance between any pair of variables — observed ↔ observed (residual ↔ residual), factor ↔ factor, or mixed (see [SEM covariances](./structural-equation-modeling.md#covariances) for the full picture). For pure CFA, residual ↔ residual is the typical case. Select two variables from the dropdowns and click **Add**; existing pairs appear as badges with a remove button.
 
 > **When to add residual covariances:** when two indicators share variance beyond what the factor explains — typically because they share method variance (e.g. similar wording, same response format, adjacent placement in a questionnaire). Don't add them just to improve fit — each one should be theoretically justifiable. The [modification indices](#modification-indices) section will suggest candidates.
 
@@ -80,19 +82,21 @@ Two methods for identifying the model:
 | **MLM** | Robust ML with Satorra-Bentler correction. Use when data are continuous but non-normal. |
 | **MLMVS** | Robust ML with Satterthwaite correction. Similar to MLM, alternative scaling. |
 | **MLMV** | Robust ML, scale-shifted. Another robust variant. |
-| **DWLS** | Diagonally Weighted Least Squares. Recommended for ordinal data (Likert scales). |
+| **WLSMV** | Robust DWLS, mean+variance adjusted. **Recommended default for ordinal indicators** (Likert scales). |
+| **ULSMV** | Robust ULS, mean+variance adjusted. Alternative for ordinal data. |
+| **DWLS** | Diagonally Weighted Least Squares. Ordinal indicators, non-robust variant. |
 | **ULS** | Unweighted Least Squares. Alternative for ordinal data, less common. |
 | **WLS** | Weighted Least Squares. Requires large samples (N > 1000). |
 | **GLS** | Generalized Least Squares. Robust to non-normality but less common in CFA. |
 
 **Assumptions:**
 - **ML** assumes multivariate normality. Check Mardia's tests in [Check data](#check-data). Use a robust estimator (MLM, MLMVS) if violated.
-- **DWLS** assumes ordinal indicators with underlying continuous distributions. Appropriate for Likert-type data.
+- **WLSMV / DWLS** assume ordinal indicators with underlying continuous distributions. Appropriate for Likert-type data.
 - **All estimators** assume the model is correctly specified — CFA only tests *your* model, not whether it's the best possible model.
-- Indicators should be **continuous or ordinal** with at least 4–5 response categories for ML. Binary or coarse ordinal items need DWLS.
+- Indicators should be **continuous or ordinal** with at least 4–5 response categories for ML. Binary or coarse ordinal items need WLSMV.
 - **Local independence** — after accounting for the factors, indicators should not be correlated. Residual covariances relax this for specific pairs.
 
-> **Ordinal data?** If your indicators are Likert-scale items (e.g. 1–5 or 1–7), use DWLS. Standard ML treats ordinal responses as continuous, which can bias estimates and inflate chi-square. DWLS models the underlying thresholds correctly. The [Check data](#check-data) diagnostics will recommend this when ordinal variables are detected.
+> **Ordinal data?** If your indicators are Likert-scale items (e.g. 1–5 or 1–7), use WLSMV (the robust, mean+variance-adjusted variant of DWLS). Standard ML treats ordinal responses as continuous, which can bias estimates and inflate chi-square. WLSMV models the underlying thresholds correctly and produces robust standard errors. Lavaan automatically promotes ML / DWLS to WLSMV when any indicator is marked ordinal — the [model summary](#single-group-results) shows what was actually used and what you requested if they differ. The [Check data](#check-data) diagnostics will recommend a thresholded estimator when ordinal variables are detected.
 
 ### Missing data
 
@@ -103,11 +107,13 @@ Two methods for identifying the model:
 
 ### Standardization
 
-Controls which parameter estimates are displayed:
+Sets which standardized column is visible by default in the result tables and which variant the path diagram opens on:
 
-- **Unstandardized** — raw metric estimates
+- **Unstandardized** — raw metric estimates only; both standardized columns hidden
 - **Completely standardized** (default) — standardized using both latent and observed variable variances. Loadings are interpretable as correlations between indicator and factor.
 - **Standardized (latent only)** — standardized using latent variable variance only
+
+After the run, you can toggle either standardized column on or off without rerunning — see [Standardized estimates toolbar](#standardized-estimates-toolbar).
 
 ### Bootstrap
 
@@ -127,13 +133,9 @@ When enabled, produces bias-corrected accelerated (BCa) confidence intervals. Th
 
 ### lavaan syntax
 
-An expandable section at the bottom shows the **lavaan syntax** generated from your model. It auto-updates as you modify the matrix. You can:
+An expandable section in the right column shows the **lavaan syntax** generated from your model. It is *not* a one-way preview — anything you type there flows back into the matrix, just as anything you do in the matrix flows into the text. There's no Apply/Cancel button — the matrix updates automatically as you type. The parser handles `=~` for loadings, `~~` for covariances, fixed values like `1*x1`, equality labels, backtick-quoted names, and continuation lines ending with `+`. A **Copy** button copies the current text to the clipboard.
 
-- **Copy** the syntax to the clipboard
-- **Edit** the syntax directly — **Apply** and **Cancel** buttons appear once you make changes
-- **Apply** edited syntax to import a model (the parser handles `=~` for loadings, `~~` for covariances, fixed values like `1*x1`, equality labels, backtick-quoted names, and continuation lines ending with `+`)
-
-> **Importing models from publications:** if a paper reports its CFA model in lavaan notation, you can paste the syntax directly and click Apply. This is often faster than building the model cell by cell.
+> **Importing models from publications:** if a paper reports its CFA model in lavaan notation, paste it into the box and the matrix reorganizes to match. Often faster than building the model cell by cell.
 
 ## Check data
 
@@ -162,7 +164,7 @@ The report covers:
 
 ## Single-group results
 
-Results appear in a **Confirmatory factor analysis** output card. A model summary at the top lists factors, number of indicators, estimator, degrees of freedom, sample size, free parameters, and N-to-parameter ratio.
+Results appear in a **Confirmatory factor analysis** output card. A model summary at the top lists factors, number of indicators, estimator, degrees of freedom, sample size, free parameters, and N-to-parameter ratio. If lavaan auto-upgraded the estimator (e.g. ML → WLSMV because an indicator is ordinal), the summary shows the actual estimator with the requested one in parentheses, so the substitution is never invisible. Under FIML, the displayed sample size is the full N (lavaan estimates on every case), not just complete cases.
 
 Two action buttons below the summary:
 
@@ -200,14 +202,23 @@ An SVG visualization of the fitted model:
 - **Error terms** — small orange circles to the right of each variable
 - **Residual covariances** — dashed double-headed arrows to the right of variables
 
-Loading values are displayed on the paths. A legend at the bottom explains the visual encoding. The diagram can be exported as SVG.
+Loading values are displayed on the paths. A legend at the bottom explains the visual encoding.
+
+A **standardization picker** sits above the diagram — three radio buttons that toggle between unstandardized, latent-only standardized (`std.lv`), and completely standardized (`std.all`). Switching is instant — all three variants are pre-rendered and the picker just swaps which is visible. Each variant has its own **Export as SVG** filename suffix.
+
+### Standardized estimates toolbar
+
+The first parameter-estimate table is preceded by a small toolbar with two checkboxes — **Latent only** and **Completely standardized**. Toggling them shows or hides the corresponding `Std. (latent only)` and `Std. (completely)` columns across every estimate table at once. The unstandardized **Estimate** column is always visible.
+
+> The toolbar makes it easy to compare standardized and unstandardized side by side without rerunning. The default visible column matches your [Standardization](#standardization) option choice from before the run.
 
 ### Parameter estimates
 
 When enabled, several tables of estimated model parameters appear. Each table shares a common set of columns:
 
 - **Estimate** — the unstandardized value in the original metric
-- **Std. estimate** — the standardized value (based on your [standardization](#standardization) choice). For loadings, this is interpretable as a correlation between the indicator and the factor.
+- **Std. (latent only)** — standardized using latent variance only
+- **Std. (completely)** — standardized using both latent and observed variances. For loadings, this is interpretable as a correlation between the indicator and the factor.
 - **CI** — confidence interval around the estimate (or bootstrap CI if [bootstrap](#bootstrap) is enabled)
 - **SE** — standard error, measuring how precisely the parameter is estimated. Smaller SE = more certainty.
 - **z** — the estimate divided by its SE. Larger absolute values mean stronger evidence that the parameter differs from zero.
@@ -380,8 +391,8 @@ CFA's popularity has surged in recent years — partly because reviewers increas
 
 **Reporting poor fit as acceptable.** Fit indices below standard thresholds (e.g. CFI < 0.90, RMSEA > 0.10) indicate meaningful misfit. If the model doesn't fit well, the options are to revise it (transparently), acknowledge the limitations, or reconsider the theoretical structure — not to relabel the thresholds.
 
-**DWLS fit index inflation.** DWLS estimation (recommended for ordinal data) tends to produce higher CFI and lower RMSEA compared to ML on the same data. This is a known property of the estimator, not evidence of better fit. Some researchers have proposed stricter thresholds for DWLS (e.g. CFI ≥ 0.99, RMSEA ≤ 0.03), though there's no universal consensus yet. Be cautious applying standard ML-derived cutoffs to DWLS results.
+**DWLS / WLSMV fit index inflation.** The DWLS family (including the recommended WLSMV variant for ordinal data) tends to produce higher CFI and lower RMSEA compared to ML on the same data. This is a known property of these estimators, not evidence of better fit. Some researchers have proposed stricter thresholds (e.g. CFI ≥ 0.99, RMSEA ≤ 0.03), though there's no universal consensus yet. Be cautious applying standard ML-derived cutoffs to DWLS or WLSMV results.
 
-**CFA as evidence, not proof.** Good model fit means the data is consistent with your theory — it doesn't mean the theory is correct. Multiple different models can produce equivalent fit. CFA provides supporting evidence for a structure, not definitive validation.
+**CFA as evidence, not proof.** Good model fit means the data is consistent with your theory — it doesn't mean the theory is correct. Multiple different models can produce equivalent fit. CFA provides supporting evidence for a structure, not definitive validation. If your theory specifies *directional* relationships between factors (rather than just measurement structure), see [Structural equation modeling](./structural-equation-modeling.md) — CFA only tests the measurement part.
 
 **Invariance testing as a checkbox.** Running the full configural → metric → scalar → strict sequence is thorough, but the value lies in understanding *which* parameters differ across groups and *why* — not just whether each level passes or fails. When invariance fails, use [partial invariance](#partial-invariance) to investigate the substantive differences.

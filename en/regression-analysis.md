@@ -40,7 +40,7 @@ Three optional variable buckets appear as collapsed accordions below the predict
 - **Total effect c** — the predictor's overall effect on the outcome
 - **Direct effect c'** — the predictor's effect controlling for the mediator
 - **Indirect effect a × b** — with bootstrap confidence interval. Significance is assessed by whether the CI excludes zero (no p-value).
-- **Proportion mediated** — what share of the total effect goes through the mediator
+- **Proportion mediated** — what share of the total effect goes through the mediator. Reported only when the total effect *c* is itself significant at the configured alpha; otherwise the ratio is unstable (tiny denominators produce wildly fluctuating "proportions") and the column is left blank.
 
 Bootstrap replications use the count from the global [settings](./settings.md).
 
@@ -190,9 +190,9 @@ When categorical predictors are present, a note lists the reference category for
 
 ### ANOVA table (linear only)
 
-Breaks down variance into regression, residual, and total rows with sum of squares, df, mean square, F-statistic, and p-value.
+A per-term **Type II** ANOVA: one row per model term plus a residual row, with sum of squares, df, mean square, F-statistic, and p-value. Each term's row reports its *marginal* contribution — how much the model's fit changes when that term alone is removed, holding all other terms fixed.
 
-> **Reading the ANOVA table:** the regression row shows how much variance your predictors explain; the residual row shows what's left unexplained. The F-statistic tests whether the explained portion is large enough to be meaningful. This is the same overall significance test as in the model fit section, just shown in more detail.
+> **Type II vs. Type I:** Type I (sequential) sums of squares depend on the order predictors enter the model, which can be misleading when predictors are correlated. Type II answers a cleaner question — "does this term add anything beyond the others?" — and gives the same answer regardless of input order. The overall model F-statistic is the same in both schemes; only the per-term decomposition differs.
 
 ### Correlations (linear only)
 
@@ -208,7 +208,11 @@ VIF and tolerance for each predictor:
 - VIF 5–10 — moderate collinearity
 - VIF above 10 — high collinearity (predictors are too correlated; estimates may be unstable)
 
+VIFs are computed on the **centered model design matrix**, so interaction terms shed the "non-essential" collinearity they otherwise inherit from sharing their parent variables. Grouped categorical predictors are reported as a single **GVIF** row — the published `GVIF^(1/(2·Df))` adjustment is squared so it is directly comparable to a plain VIF on a numeric predictor.
+
 > **What is collinearity?** When predictors are highly correlated with each other, the model struggles to separate their individual effects — standard errors inflate and coefficients become unstable. High VIF doesn't mean the model is wrong, but it means individual predictor effects are hard to trust. Consider removing or combining correlated predictors.
+
+> **Why centering for VIF?** A raw `X*W` interaction column is mechanically correlated with its parents `X` and `W` — that's arithmetic, not a modelling problem. Centering the predictors before forming the interaction removes that artificial correlation, leaving only the *real* collinearity that warrants attention. The fitted model's coefficients are unaffected; only the diagnostic uses the centered design.
 
 ### Residual diagnostics
 
@@ -222,13 +226,21 @@ VIF and tolerance for each predictor:
 
 ### Influence statistics
 
-- **Cook's D** — maximum value and count of observations with D > 1 (highly influential points)
-- **Leverage** — maximum hat value, threshold (2p/n), and count of high-leverage points
-- **Outliers** — count of standardized residuals exceeding |3|
+Five complementary diagnostics, with their conventional thresholds:
 
-> **Cook's D vs. leverage vs. outliers:** these capture different kinds of problematic observations. An *outlier* has an unusual outcome (large residual). A *high-leverage* point has unusual predictor values (it's far from the center of the data). *Cook's D* combines both — it measures how much the entire model would change if you removed that observation. A point can have high leverage without being influential (if it falls right on the trend line) or be an outlier without having leverage (if its predictors are typical). The most dangerous points are both — extreme predictors *and* an unusual outcome.
+- **Cook's D** — maximum value, plus two flag counts:
+	- `Cook's D > 1` — the textbook "highly influential" cutoff
+	- `Cook's D > 4/(n − p − 1)` — a size-aware threshold that scales with sample size and parameter count, useful in larger samples where `D > 1` almost never fires
+- **Leverage** — maximum hat value and count above `2p/n`
+- **|DFFITS|** — maximum absolute value and count above `2·√(p/n)`. DFFITS measures how much each observation's own fitted value would change if that observation were removed
+- **COVRATIO** — range, the surrounding band `1 ± 3p/n`, and count outside the band. COVRATIO captures how much each observation distorts the precision (covariance matrix) of the coefficient estimates
+- **Standardized residuals** — count of `|residual| > 3` (large residuals on the studentized scale)
 
-> **Should I remove influential observations?** Not automatically. High Cook's D means a single observation disproportionately affects the model — but it might be a legitimate data point. Investigate *why* it's influential (data entry error? genuine extreme case?) before deciding. Removing it and re-running the model shows how much it matters.
+> **Cook's D vs. leverage vs. DFFITS vs. COVRATIO vs. outliers:** these capture different kinds of problematic observations. An *outlier* has an unusual outcome (large residual). A *high-leverage* point has unusual predictor values (it's far from the center of the data). *Cook's D* combines both — it measures how much the entire model's fitted values would change if you removed that observation. *DFFITS* is similar in spirit but focuses on each observation's own predicted value. *COVRATIO* asks a different question: does this point inflate or deflate the precision of your coefficient estimates? The most dangerous points are flagged by several diagnostics at once — extreme predictors *and* an unusual outcome *and* a noticeable effect on coefficient precision.
+
+> **Two Cook's D thresholds, why?** The classic `D > 1` rule is intuitive and works for small samples, but in larger samples virtually nothing crosses it — every observation looks "safe" even when several are pulling the model around. The size-aware `4/(n − p − 1)` threshold scales with `n` and `p` so it stays informative as the sample grows. Reading both together: zero flags from the size-aware rule is genuinely reassuring; many flags there but none from the `> 1` rule means the dataset has *some* leverage but no single observation is dominant; flags from `> 1` always warrant attention.
+
+> **Should I remove influential observations?** Not automatically. A flagged observation disproportionately affects the model — but it might be a legitimate data point. Investigate *why* it's influential (data entry error? genuine extreme case?) before deciding. Removing it and re-running the model shows how much it matters.
 
 ### Goodness of fit
 
@@ -368,7 +380,13 @@ Model comparison performs an all-subsets search: every combination of predictors
 - **Minimum predictors** — fewest predictors per model (default 0, which includes the intercept-only model)
 - **Maximum predictors** — most predictors per model (leave empty for no limit)
 
-A maximum of 15 predictors is allowed (2¹⁵ = 32,768 models). If the count exceeds 100, a confirmation dialog appears.
+A maximum of 15 predictors is allowed (2¹⁵ = 32,768 models). A confirmation dialog appears at three tiers:
+
+- More than **100** models — a plain "this will compare *N* models" prompt
+- More than **1,000** models — adds "expect a noticeable wait"
+- More than **100,000** models — adds "likely many minutes to hours"
+
+When moderators are selected, the dialog also notes that interactions inflate the count (states per predictor = `1 + 2^nModerators`). There is no hard ceiling beyond the 15-predictor cap — you can always interrupt mid-run from the progress overlay.
 
 ### Output options
 
@@ -403,6 +421,8 @@ When enabled, a table showing:
 - **Importance** — sum of Akaike weights for models containing the term
 
 > **Full vs. conditional average:** the full average includes models where the predictor was absent (treated as zero), so it's shrunk toward zero — more conservative. The conditional average only includes models where the predictor was present, so it's closer to the actual effect when the variable matters. Importance tells you how often the predictor appears in good models — above 0.80 means it's probably essential.
+
+**Multinomial models** produce one model-averaged sub-table per outcome level vs. the reference category, since each outcome level has its own coefficient vector. Each sub-table has the same Full / SE / CI / Conditional / Importance columns as the single-equation case.
 
 ### Variable importance
 
@@ -511,7 +531,7 @@ Key things to include when writing up regression results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Regression analysis uses base R (`lm`, `glm`) for classic linear and binomial models, `MASS` for ordinal logistic and negative binomial, `nnet` for multinomial logistic, `car` for collinearity diagnostics, `lmtest` for residual diagnostics, `ResourceSelection` for Hosmer-Lemeshow tests, `pROC` for ROC / AUC analysis (per-curve AUC + CI, DeLong's test for binomial AUC comparisons, and `multiclass.roc` for Hand-Till M), and `glmnet`, `ordinalNet`, or `mpath` for regularized estimation. Somers' D and Kendall's tau-c for ordinal models are derived from `cor(method = "kendall")` plus tied-pair counts — no extra packages required. Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Regression analysis uses base R (`lm`, `glm`) for classic linear and binomial models, `MASS` for ordinal logistic and negative binomial, `nnet` for multinomial logistic, `car` for collinearity diagnostics and Type II ANOVA (`car::Anova`), `lmtest` for residual diagnostics, `ResourceSelection` for Hosmer-Lemeshow tests, `pROC` for ROC / AUC analysis (per-curve AUC + CI, DeLong's test for binomial AUC comparisons, and `multiclass.roc` for Hand-Till M), and `glmnet`, `ordinalNet`, or `mpath` for regularized estimation. Somers' D and Kendall's tau-c for ordinal models are derived from `cor(method = "kendall")` plus tied-pair counts — no extra packages required. Citations for R packages used in your analysis appear automatically at the top of the output section.
 
 ## Common pitfalls
 

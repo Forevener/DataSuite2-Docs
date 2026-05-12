@@ -170,7 +170,7 @@ Each cell shows:
 - Adjusted p-value, if [adjustment](./settings.md#multiple-comparison-adjustment) is enabled in addition mode
 - Raw MI and/or entropies, if **Append raw MI** / **Append entropies** is enabled (IT methods only)
 - Diagonal cells show a dash (a variable's correlation with itself is always trivially 1)
-- Error cells are highlighted in red
+- Error cells are highlighted in red — hover to see the specific reason (e.g. "Insufficient data", "Not a 2×2 table", "Constant variable — no information")
 
 For asymmetric methods (Somers' D, Theil's U, Chatterjee's ξ), a small *Direction: row → column* caption appears above the matrix. Each cell's value describes how well the **row variable predicts the column variable** — so the lower and upper triangles carry different numbers.
 
@@ -183,7 +183,7 @@ Columns include:
 - **Coefficient** — the correlation value with significance stars
 - **p-value** — and adjusted p-value if enabled in addition mode
 - **MI, H(var₁), H(var₂)** — appended when the **Append raw MI** / **Append entropies** checkboxes are enabled for IT methods
-- **Interpretation** — if the [interpretation setting](./settings.md#significance-formatting) is turned on
+- **Interpretation** — if the [interpretation setting](./settings.md#significance-formatting) is turned on. For failed pairs, this column shows the specific reason for the error instead.
 
 ### Interpretation
 
@@ -256,7 +256,7 @@ One scatter plot per variable pair, each in its own subsection. Each plot shows:
 
 - Scatter points for the raw data
 - An OLS regression line with a 95% confidence band
-- The correlation coefficient (r) and p-value displayed in the corner
+- The coefficient with the method's symbol (r, ρ, τ, …) and p-value in the corner — adjusted p-values follow the same [p-value adjustment display](./settings.md#multiple-comparison-adjustment) rule as the matrix and long-format tables
 - Plot range is padded by one tick interval so edge points aren't clipped
 
 ## Reporting checklist

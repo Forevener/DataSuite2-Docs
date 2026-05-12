@@ -175,7 +175,7 @@ When pairwise comparisons are produced (from post-hoc tests or automatic expansi
 
 ### Effect sizes
 
-Check **Include effect sizes** and select a measure from the dropdown. Available measures update based on the selected test (e.g. Cohen's d for t-tests, eta-squared for ANOVA, rank-biserial for Mann-Whitney, Cramer's V for chi-square).
+Check **Include effect sizes** and select a measure from the dropdown. Available measures update based on the selected test (e.g. Cohen's d for t-tests; η², ω², ε², or partial η² for ANOVA; rank-biserial for Mann-Whitney; Cramer's V for chi-square; φ or odds ratio for McNemar).
 
 Additional options:
 
@@ -325,7 +325,7 @@ Produced by automatic pairwise expansion (two-sample test with 3+ groups) or pos
 
 A legend explains the notation used.
 
-### Classification (ROC) analysis
+### Classification (ROC) results
 
 When ROC is enabled, results include a "Classification (ROC) analysis" sub-section. The main table has one row per (dependent variable × pair × threshold):
 
@@ -363,7 +363,7 @@ For pairwise group expansion across 3+ groups, the table is split into one secti
 One table per dependent variable showing each effect (main effects and interactions):
 
 - Effect name, F statistic with significance stars, df (effect and error), p-value
-- Partial eta-squared (if effect sizes enabled)
+- Effect size (if enabled): partial η² (default), η², ω², or ε² — selectable in **Effect size** dropdown
 - Interpretation distinguishing main effects from interactions
 
 ### ANCOVA

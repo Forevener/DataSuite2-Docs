@@ -42,7 +42,7 @@ Enable or disable each metric independently:
 | **Cronbach's alpha** | On | Average inter-item covariance relative to total variance. The most widely reported metric. |
 | **McDonald's omega (total)** | On | Based on a factor model — accounts for items contributing unequally to the scale. Often more accurate than alpha. |
 | **Composite reliability (CR)** | Off | Similar to omega but from a CFA framework. Common in structural equation modeling. |
-| **Split-half reliability** | Off | Splits items into two halves and correlates them, corrected with Spearman-Brown. Sensitive to how items are split. |
+| **Split-half reliability** | Off | Averages Spearman-Brown-corrected correlations across many random splits of the items (`psych::splitHalf`). The displayed value is the mean over splits; minimum and maximum splits are reported as additional bounds. |
 | **Guttman's lambda** | Off | Reports both Lambda 4 (greatest split-half) and Lambda 6 (item multiple correlation). |
 | **Average variance extracted (AVE)** | On | Average variance in items explained by the latent factor. Used to assess convergent validity. |
 | **Coefficient H** | Off | Maximal reliability based on factor loadings. Always ≥ omega. |
@@ -77,6 +77,8 @@ Five output sections can be toggled:
 ### Advanced options
 
 - **Confidence intervals** (on by default) — adds a CI column to the metrics table. The confidence level comes from your [global settings](./settings.md#significance-level).
+
+> **How CIs are computed:** Cronbach's alpha uses an analytic formula (Feldt 1965 / van Zyl, Neudecker & Nel 2000) and is instant. Every other metric — omega, CR, split-half, λ4/λ6, AVE, H, β, and GLB — uses **bootstrap percentile intervals**. Each replication refits the underlying models once and reads off every selected metric, so adding metrics costs little extra time; the number of replications is the [bootstrap replications setting](./settings.md). Enabling CIs with omega or GLB selected can be noticeably slow on larger scales — `omega()` and `glb.fa()` are refit on every replication.
 
 ## Reading results
 
@@ -123,7 +125,7 @@ AVE uses a different scale:
 
 ### Scale statistics
 
-A key-value table showing the number of items, number of cases, scale mean, scale SD, and scale variance.
+A key-value table showing the number of items, number of cases, scale mean, scale SD, and scale variance. When the [missing data method](./settings.md) is set to pairwise and any cases have missing values, an extra **Cases with complete data** row is shown — scale mean, SD, and variance are computed over those complete cases only (a partially-missing row otherwise gets summed with missing items treated as zero, which biases the scale score downward).
 
 > **Scale mean and SD:** these describe the total score (sum of all items, after reverse scoring). The scale mean divided by the number of items gives you the average item response, which can be useful for comparing scales with different numbers of items.
 
@@ -194,7 +196,7 @@ Results are grouped by variable type, so you don't need to run the analysis sepa
 
 ### ICC options
 
-When ICC is selected, two radio groups appear:
+When **ICC** or **SEM & SDC** is selected, two radio groups appear (SEM is derived from ICC, so it shares the same model and form):
 
 **Model:**
 - **One-way random** — each subject is rated by a different random set of raters
@@ -215,7 +217,7 @@ Results are grouped by variable type under separate headings:
 - **Ordinal variables** — Spearman ρ, Kendall's W, κ, Krippendorff's α
 - **Categorical variables** — κ, Krippendorff's α
 
-Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation.
+Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation. Metrics with a meaningful null distribution — ICC, Cohen's/Fleiss' κ, Kendall's W, Pearson r, and Spearman ρ — also show a p-value column and significance stars next to the coefficient. SEM, SDC, and Krippendorff's α have no associated p-value and display only the coefficient and CI.
 
 Interpretation thresholds for ICC and agreement coefficients (Koo & Li, 2016):
 
@@ -277,7 +279,7 @@ Key things to include when writing up reliability results:
 
 ## R reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa, Krippendorff's alpha, Kendall's W), `lme4` (ICC dependency), and `tidyr` (data reshaping). Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa and Kendall's W) and `tidyr` (data reshaping). Krippendorff's α and its bootstrap confidence interval are computed inline without an additional package. Citations for R packages used in your analysis appear automatically at the top of the output section.
 
 ## Common pitfalls
 

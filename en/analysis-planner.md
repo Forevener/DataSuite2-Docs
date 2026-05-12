@@ -49,7 +49,7 @@ All tests share these core inputs:
 
 Additional fields for specific tests:
 
-- **Tails** (one-sample t-test) — two-tailed, one-tailed greater, or one-tailed less
+- **Tails** (all t-tests and Pearson correlation) — two-tailed (default), one-tailed (greater), or one-tailed (less)
 - **Number of groups** (one-way ANOVA) — default 3
 - **Numerator / denominator df** (factorial ANOVA) — for specifying the effect and error degrees of freedom
 - **Number of predictors** (regression) — default 3
@@ -63,13 +63,17 @@ After clicking **Calculate**:
 
 1. **Main result** — a highlighted box with the answer (e.g. "Required sample size: 64 per group (128 total)")
 2. **Parameters used** — a summary table listing all inputs
-3. **Sensitivity analysis** — a table showing how the result changes. When solving for sample size, it shows power at 50%, 75%, 100%, 125%, and 150% of the calculated N. When solving for power, it varies the effect size. When solving for effect size, it varies the sample size.
+3. **Sensitivity analysis** — a table showing actual power (recomputed via `pwr`) at 50%, 75%, 100%, 125%, and 150% of the reference sample size. The reference is the calculated N when solving for sample size, or the entered N otherwise.
 
 > **Always check the sensitivity analysis.** Your effect size estimate is just that — an estimate. The sensitivity table shows what happens if you're wrong. If power drops to 0.50 at 75% of your calculated N, your study is fragile — consider aiming for a larger sample.
 
-### Power curve
+### Power curve and sensitivity heatmap
 
-Click **Show power curve** to generate an interactive chart plotting power (y-axis) against sample size (x-axis). A green crosshair marks the calculated result. Hover over the curve to see power at any sample size.
+Three buttons appear next to the results:
+
+- **Show power curve** — generates an interactive chart plotting power (y-axis) against sample size (x-axis). A green crosshair marks the calculated result. Hover over the curve to see power at any sample size.
+- **Show sensitivity heatmap** — renders a 2-D grid of power across a range of sample sizes (x-axis) and effect sizes (y-axis), anchored on your current inputs. Each cell shows the actual power computed by `pwr`, colored on a sequential scale (light = low power, dark = high power), with the value printed inside the cell.
+- **Export curve as PNG** — saves the currently-visible power curve as a 2× resolution PNG. Requires the power curve to be visible.
 
 ### Quick reference
 
@@ -96,7 +100,7 @@ Additional fields appear when needed:
 - **Sample size** — improves accuracy for Hedges' g (required when converting *from* g)
 - **Table dimensions** — required for Cramer's V
 - **Proportions (p1, p2)** — required for Cohen's h
-- **Degrees of freedom** — required for partial eta-squared
+- **Degrees of freedom** — required for partial eta-squared (both as input and as output); without df, partial η² inputs fall back to the plain η² formula
 - **Control event rate** — required for NNT
 
 > **How the converter works:** all input types are first converted to Cohen's d as a common pivot, then from d to every other metric. This means conversions between two non-d metrics go through an intermediate step, which can introduce small rounding artifacts.
@@ -140,9 +144,9 @@ Shows how measurement unreliability weakens observed correlations.
 
 **Inputs:**
 
-- **True/expected correlation** — the correlation you expect between the constructs (default 0.50)
-- **Reliability of measure X** — Cronbach's alpha or omega (default 0.80)
-- **Reliability of measure Y** — (default 0.80)
+- **True/expected correlation** — the correlation you expect between the constructs (must be in [−1, 1]; default 0.50)
+- **Reliability of measure X** — Cronbach's alpha or omega (must be in (0, 1]; default 0.80)
+- **Reliability of measure Y** — (must be in (0, 1]; default 0.80)
 
 **Output:** the expected observed (attenuated) correlation, the attenuation factor, and a plain-language explanation.
 
@@ -154,9 +158,9 @@ Estimates how adding or removing items changes a scale's [reliability](./reliabi
 
 **Inputs:**
 
-- **Current reliability** — default 0.70
-- **Current number of items** — default 10
-- **Target reliability** — default 0.80
+- **Current reliability** — must be strictly between 0 and 1 (default 0.70)
+- **Current number of items** — must be at least 1 (default 10)
+- **Target reliability** — must be strictly between 0 and 1 (default 0.80)
 
 **Output:** the required number of items, whether items need to be added or removed (and how many), and a table showing projected reliability at several scale lengths (half, current, 1.5×, 2×, and the target). The target row is highlighted.
 

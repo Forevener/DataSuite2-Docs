@@ -187,7 +187,7 @@ Three optional slower diagnostics (off by default):
 | **Average overlap** | Jaccard similarity between biclusters — high overlap (> 0.3, shown in yellow) means biclusters share many members |
 | **Cell coverage (%)** | Percentage of data cells included in at least one bicluster |
 
-If stability, F-statistic, or consensus diagnostics were enabled, additional columns appear.
+If stability, F-statistic, or consensus diagnostics were enabled, additional columns appear: **Stability** (Jaccard), **Avg row F** / **Avg col F** with **Row sig. (%)** / **Col sig. (%)**, and **Consensus** (Jaccard).
 
 A **suggested k** is provided based on elbow detection in the variance explained curve.
 
@@ -240,7 +240,7 @@ When [interpretation](./settings.md#significance-formatting) is enabled, silhoue
 
 In variable clustering mode, the data matrix is transposed — variables become the "observations" being clustered. Distance between variables is based on their correlation across observations: highly correlated variables end up in the same cluster.
 
-The output includes a **Variable cluster assignments** table showing which variables belong to each cluster. Cluster profiles and variable contribution options are hidden (not applicable). The silhouette plot and dendrogram use variable names as labels.
+The output includes a **Variable cluster assignments** table showing which variables belong to each cluster. Cluster profiles and variable contribution options are hidden (not applicable). The dendrogram labels its leaves with variable names; on the silhouette plot, hovering a bar reveals the corresponding variable name.
 
 > **Variable clustering vs. factor analysis:** both group variables, but they work differently. [Factor analysis](./factor-analysis.md) models latent constructs — it assumes your variables are caused by underlying factors and estimates a formal model with loadings and communalities. Variable clustering is purely distance-based — it groups variables that correlate highly, without assuming any generative model. Use factor analysis when you want to model latent structure and compute factor scores. Use variable clustering when you just need a quick grouping — for example, to identify redundant variables before running another analysis, or to check whether your variables naturally fall into the subscales you expect.
 
@@ -312,7 +312,6 @@ Key things to include when writing up cluster analysis results:
 - Any warnings (imbalanced clusters, low silhouette, negative silhouettes)
 
 **For biclustering:** report the algorithm, number of biclusters found, variance explained, cell coverage, and coherence (MSR). Include the membership table or heatmap.
-
 
 
 ## Reproducibility
