@@ -287,7 +287,7 @@ Inserted variables can be used in further analyses — as grouping variables for
 
 ## Missing data
 
-Missing values are handled by listwise deletion — only complete cases are used. When the number of complete cases differs from the total, the output reports both counts. A fixed random seed (42) ensures reproducible results.
+Missing values are handled by listwise deletion — only complete cases are used. When the number of complete cases differs from the total, the output reports both counts. Reproducibility is controlled by the [**Reproducibility seed**](./settings.md#reproducibility-seed) setting (default 42); the bicluster stability bootstrap uses [**Bootstrap seed**](./settings.md#bootstrap-seed) instead.
 
 > **Missing data and clustering:** unlike some analysis modules, cluster analysis does not support pairwise deletion. Every observation needs complete data on all selected variables. If missingness is widespread, consider reducing the number of variables or applying [imputation](./settings.md#missing-data) before running the analysis.
 
@@ -316,7 +316,7 @@ Key things to include when writing up cluster analysis results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Cluster analysis uses base R functions (`kmeans`, `hclust`) and the `cluster` package (for PAM and silhouette); biclustering uses the `biclust` and `fabia` packages. Citations appear automatically at the top of the output section. A fixed random seed (42) ensures reproducible results across runs.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Cluster analysis uses base R functions (`kmeans`, `hclust`) and the `cluster` package (for PAM and silhouette); biclustering uses the `biclust` and `fabia` packages. Citations appear automatically at the top of the output section. Clustering and biclustering steps are seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) (default 42); the bicluster stability bootstrap is seeded independently by [**Bootstrap seed**](./settings.md#bootstrap-seed) so you can vary one without the other.
 
 ## Common pitfalls
 

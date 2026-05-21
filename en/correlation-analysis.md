@@ -13,8 +13,9 @@ The **Correlation analysis** module measures the strength — and, where applica
 
 1. [Select your variables](#setting-up) (or leave both lists empty to correlate [all available variables](./getting-started.md#choosing-variables))
 2. Choose a [correlation method](#choosing-a-method)
-3. Adjust [display options](#display-options)
-4. Click **Calculate correlations**
+3. Optionally [control for covariates](#controlling-for-covariates-partial--semi-partial-correlation) (partial / semi-partial) or [test for differences](#testing-differences-between-correlations) between cells
+4. Adjust [display options](#display-options)
+5. Click **Calculate correlations**
 
 ## Setting up
 
@@ -38,6 +39,7 @@ When you change the correlation method, the lists automatically filter to show o
 | **Kendall's tau** | τ | Continuous or ordinal | Ordinal association (concordant/discordant pairs) |
 | **Blomqvist's beta** | β | Continuous + continuous | Median-based quadrant association, robust to outliers |
 | **Polychoric** | ρ<sub>poly</sub> | Ordinal + ordinal | Association between latent continuous distributions |
+| **Tetrachoric** | ρ<sub>tet</sub> | Binary + binary | The 2×2 special case of polychoric — assumes binaries dichotomize latent normals |
 | **Polyserial** | ρ<sub>ps</sub> | Continuous + ordinal | Assumes a latent continuous variable underlies the ordinal one |
 | **Somers' D** | D | Continuous or ordinal | Asymmetric ordinal association, adjusts for ties |
 | **Goodman & Kruskal's gamma** | γ | Continuous or ordinal | Ordinal association, ignores ties |
@@ -76,7 +78,7 @@ Several methods in the table above aren't taught in introductory statistics cour
 **Robust and variance-based.**
 
 - **Blomqvist's β** — also called *medial correlation*. Counts how often both variables land on the same side of their respective medians, then rescales to a `[-1, +1]` range. Because it uses only the sign of each value relative to the median (not its magnitude), it's highly resistant to outliers. A useful sanity check when Pearson's *r* seems dominated by a few extreme points.
-- **Correlation ratio (η²)** — the share of a continuous variable's variance that is explained by grouping on a categorical one. Mathematically equivalent to the `R²` of a one-way ANOVA. Use it when one side of the pair is truly categorical (not ordered) and the other is continuous — a case where Pearson simply doesn't apply.
+- **Correlation ratio (η²)** — the share of a continuous variable's variance that is explained by grouping on a categorical one. Mathematically equivalent to the `R²` of a one-way ANOVA. Use it when one side of the pair is truly categorical (not ordered) and the other is continuous — a case where Pearson simply doesn't apply. If you ask for η² on a pair where both variables are categorical, the result falls back to Cramér's V automatically — assigning arbitrary numeric codes to one side would make η² depend on the labelling, which isn't a property you want. For mixed continuous/categorical pairs, the categorical side is always the grouping factor and the continuous side is the value; for two continuous variables, the side with fewer unique values is treated as the grouping factor. This choice depends only on the variables' intrinsic types, not on which one you put as "left" or "right", so the η² matrix is symmetric in input order.
 
 **Information-theoretic.** All four are bounded `[0, 1]` and all share the same first step: discretize continuous variables into bins, compute the mutual information (MI) — the number of bits that knowing one variable tells you about the other — and then normalize in different ways.
 
@@ -87,9 +89,9 @@ Several methods in the table above aren't taught in introductory statistics cour
 
 **General-dependence detectors.** The classical correlations all miss non-monotonic patterns (a U-shape gives Pearson ≈ 0). These three don't.
 
-- **Hoeffding's D** — a classical nonparametric test statistic that is zero under independence and positive under any form of dependence. Its p-value is especially well-calibrated.
+- **Hoeffding's D** — a classical nonparametric test statistic that is zero under independence and positive under any form of dependence. Sample D can dip slightly below zero under independence — that's the noise floor around the null mean of 0, not anti-dependence — and the raw value is reported so you can see it. The unsigned visualizations clamp the display side at 0.
 - **Chatterjee's ξ** — introduced in 2021; reaches 1 when one variable is a perfect function of the other (even a wildly non-monotonic one) and 0 only under independence. **Asymmetric** — ξ(X → Y) tells you whether Y is a function of X, not the other way around.
-- **Distance correlation (dCor)** — energy-distance-based; zero *if and only if* the two variables are independent. Picks up any dependence a classical correlation misses, at the cost of being harder to interpret as "strength".
+- **Distance correlation (dCor)** — energy-distance-based; zero *if and only if* the two variables are independent. Picks up any dependence a classical correlation misses, at the cost of being harder to interpret as "strength". The reported value is the bias-corrected estimator (the same one used by the t-approximation p-value), so under independence it can dip slightly below zero — that's noise around the null mean of 0, not anti-dependence. The unsigned visualizations clamp the display side at 0.
 
 > **When to reach for a general-dependence measure:** classical correlations all have one blind spot — they can't tell a strong U-shape or cyclic pattern apart from no relationship at all. If your scatterplot shows *structure* but Pearson and Spearman both come back near zero, Chatterjee's ξ or distance correlation will catch it. Hoeffding's D is the classical choice for hypothesis tests of "are these independent at all?"
 
@@ -103,7 +105,7 @@ The convention used throughout this module is **row → column**: the value in c
 - **Pearson's r** assumes both variables are continuous and roughly normally distributed, with a linear relationship between them. Violations (skewness, outliers, curvilinear patterns) can distort the coefficient.
 - **Spearman's rho and Kendall's tau** only assume a monotonic relationship and ordinal-level data. No normality requirement — use these when Pearson's assumptions are violated.
 - **Blomqvist's β** assumes continuous data but has no distributional requirements beyond a well-defined median — robust to outliers and heavy tails.
-- **Polychoric and polyserial** assume ordinal variables reflect an underlying continuous normal distribution. This is generally reasonable for Likert-type items with 4+ response categories.
+- **Polychoric, polyserial, and tetrachoric** assume the discrete variables reflect underlying continuous normal distributions. Polychoric is generally reasonable for Likert-type items with 4+ response categories; tetrachoric is the 2×2 special case — sensible when the binary split is *artificial* (an underlying continuum was dichotomized), less so when the variable is genuinely binary by nature. **Phi** is a safer choice for genuine binaries; reach for tetrachoric when you have theoretical reason to believe the binary masks a continuum.
 - **Point-biserial and biserial** assume the continuous variable is normally distributed within each group defined by the binary variable. Biserial additionally assumes the binary split is artificial (an underlying continuum was dichotomized).
 - **Phi, Cramér's V, and the mutual-information family** all rest on a contingency-table framework — expected cell frequencies should ideally be ≥ 5 per cell. Continuous variables are auto-discretized into equal-frequency bins; with very small samples, the bins may be too sparse to trust.
 - **η² (correlation ratio)** relies on the one-way ANOVA framework — roughly equal variances across groups and approximately normal within-group distributions help the F-based p-value but don't affect the η² statistic itself.
@@ -128,6 +130,92 @@ When you select **Mixed/Auto**, the method for each pair is chosen based on vari
 | Ordinal | Categorical | Normalized mutual information |
 
 Asymmetric methods (Somers' D, Theil's U, Chatterjee's ξ) are never picked by Mixed/Auto — they require explicit user intent, since mixing a directional measure into an otherwise symmetric matrix would break the visual contract.
+
+## Controlling for covariates (partial & semi-partial correlation)
+
+A **Control for** list appears under the variable selection when the chosen method is **Pearson**, **Spearman**, or **Kendall** — these are the only methods that support partialling in this module. Pick one or more numeric covariates from the list; the module will compute the correlation between each pair *after* removing the linear (or rank-based) influence of those covariates.
+
+> **Why partial correlation?** Two variables can correlate strongly only because a third variable drives both. Controlling for that third variable strips out the shared influence and shows whether any direct relationship remains. The classic example is the ice-cream–drowning correlation: control for temperature and the correlation vanishes. Partial correlation is also how you detect *suppression*: cases where a relationship is hidden by a confounder and becomes visible (or even reverses) once the confounder is held constant.
+
+### Partial vs. semi-partial
+
+Once at least one covariate is selected, a mode radio appears:
+
+- **Partial (residualize both)** — the canonical partial correlation: removes the covariates' influence from *both* variables, then correlates the residuals. Symmetric. Use this when you're asking "what is the direct relationship between X and Y, holding Z constant?"
+- **Semi-partial (residualize variable 1 only)** — removes the covariates' influence only from Variable 1, then correlates the result with raw Variable 2. **Asymmetric** — the cell at row A / column B differs from the cell at row B / column A. Use this when you want to know how much *unique* variance Variable 1 contributes to Variable 2 above and beyond the covariates.
+- **Semi-partial (residualize variable 2 only)** — the mirror: residualize Variable 2 only.
+
+In matrix display, semi-partial output behaves like the other asymmetric methods — both triangles are populated with genuinely different numbers, the redundancy hider is forced off, and a *Direction: row → column* caption is added.
+
+### Zero-order companion
+
+Partial correlation is fundamentally a *comparative* statement, so each cell and each long-format row also reports the **zero-order** coefficient — the same correlation computed *without* the covariates, on the same complete-case sample. It's labeled with a `₀` subscript (e.g. `ρ₀` for Spearman). Read the result as "controlling for Z, the X–Y relationship moved from ρ₀ = 0.61 to ρ = 0.18" — the gap tells the confounding (or suppression) story directly.
+
+### Sample size, missing data, and scatterplots
+
+- Pairwise deletion now spans *all* involved variables — the pair (X, Y) and every covariate — so an observation missing any one of them is dropped. The minimum needed is `k + 3` complete cases, where *k* is the number of covariates.
+- The control list shows only numeric variables. Categorical covariates aren't supported in this pass; you can numeric-code them upstream if needed.
+- Control variables are excluded from the matrix axes — they appear *only* as covariates, never as subjects of correlation.
+- Scatterplots under **Pearson** and **Spearman** partials become **residual–residual scatterplots**: each axis shows the residuals of that variable after regressing out the covariates (for *semi-partial* modes, only the residualized side is replaced). The OLS line on a partial-Pearson residual scatter then has the slope of the partial regression coefficient, and the `r` value displayed in the corner matches the partial coefficient in the table. Axes are relabelled with a `| covariates` suffix. **Kendall** partial scatterplots are *not* residualized — the raw data is shown with the usual Nadaraya-Watson kernel smoother, since there is no exact rank-based analogue to OLS residualization that would reproduce the partial-τ value.
+
+> **A caveat on partial Spearman and partial Kendall.** Both rank-based partials are implemented via `ppcor` — partial Spearman as a Pearson partial on rank-transformed data (the residual scatter therefore shows residuals of **ranks**, with axis labels suffixed `(ranks) | covariates`), partial Kendall as a closed-form expression on pairwise τ's. These are common operational definitions but not the only ones in the literature; if your community uses a different convention (e.g. the Kendall partial τ derived from concordant/discordant triples), keep that in mind when comparing across tools.
+
+## Testing differences between correlations
+
+A correlation by itself often isn't the question — the real question is whether two correlations *differ*. Does X relate to Y more strongly than to Z? Did the X–Y correlation change across groups? Is the whole pattern of correlations the same in two samples? The **Test for differences between correlations** card lets you answer those questions directly, with the right test for each comparison structure.
+
+> **Why a special test?** You can't just look at two correlations side by side and call them different — sampling variability matters, and so does whether the two coefficients share a sample. Two r's from the **same sample** are statistically dependent (they share rows and often share variables), so the test must account for that dependence. Two r's from **different samples** are independent and need a different test. The card picks the right family for you based on the comparison structure.
+
+### Comparison structures
+
+Pick one of six structures from the **Comparison structure** dropdown — grouped into **Pairwise** (one comparison per cell pair) and **Joint** (a single omnibus statistic for the whole matrix). The options that don't apply to your current matrix shape are hidden automatically — for example, *within each row variable* needs at least two column variables.
+
+| Family | Structure | What it tests | Sample | Test family used |
+|---|---|---|---|---|
+| Pairwise | **Within each row variable** | All pairs of column-cells against each other (same row anchor) | Single | Williams' T2 (dependent overlapping) |
+| Pairwise | **Within each column variable** | All pairs of row-cells against each other (same column anchor) | Single | Williams' T2 (dependent overlapping) |
+| Pairwise | **Against a reference cell** | Every cell in the matrix against one chosen reference cell (**strongest |r|** or **weakest |r|**) | Single | Williams' T2 when cells share a variable; Steiger Z (Olkin–Finn covariance) when they don't |
+| Pairwise | **Between groups** | For each cell, the same pair across two groups defined by a grouping variable | Two (independent) | Fisher *z* for independent correlations |
+| Joint | **Pattern equality (single sample)** | All "the matrix is internally flat" constraint pairs at once — a single χ² for the whole matrix | Single | Steiger pattern-equality χ² |
+| Joint | **Equality across groups** | Whole correlation matrix is the same in every group | k groups (independent) | Jennrich (1970) trace χ² for k = 2; Wald χ² on Olkin–Siotani covariance at the pooled R̄ for k ≥ 3 |
+
+The **Between** and **Omnibus across groups** structures require a **Compare across (variable)** dropdown — pick the categorical variable that splits the sample into groups. The other four structures use the full sample.
+
+> **Reference cell pickers.** *Strongest |r|* picks the largest absolute coefficient in the matrix as the reference; *weakest |r|* picks the smallest. Both break ties lexically by `(row, col)` name so the pick is deterministic across runs.
+
+### Method coverage
+
+- **Closed-form path** — covers **Pearson**, **Spearman**, and **Kendall** (including their partials). Closed-form variance is canonical for Pearson; Spearman and Kendall use it as an asymptotically valid plug-in approximation, and partials use it with `df = n − k − 3` (Wilcox 2009, §10.11).
+- **Bootstrap path** — covers most other methods, including the asymmetric ones (Somers' D, Theil's U, Chatterjee's ξ — handled via an ordered pair grid so each direction gets its own distribution). The bootstrap path is only active when **Confidence intervals** is set to *Analytic* or *Percentile bootstrap*; with CIs off, only the closed-form-supported methods produce diff tests. Single-sample structures share a row-index draw across all pairs per iteration so within-sample dependence is preserved; between-group draws are independent per group.
+- **Semi-partial mode** always routes through the bootstrap, since the closed-form Δr variance formulas are derived for symmetric (zero-order or canonical-partial) coefficients.
+- **Mixed/Auto** has no diff test — the per-pair method dispatch can't be folded into a single comparison statistic. The card shows a warning if you try.
+
+### Omnibus fallback
+
+The pattern-equality and across-groups omnibus tests rely on a covariance matrix that can become rank-deficient on small samples or sparse group sizes. When that happens, the orchestrator falls back to a **Cauchy combination (ACAT, Liu & Xie 2020)** of the component pairwise tests — robust to arbitrary dependence between the components, at the cost of being less powerful than the proper joint test when the joint test is available. The output table labels which one was used.
+
+### Reading the comparison table
+
+For the four pairwise structures (row-wise, column-wise, reference, between), the output card shows one row per comparison with these columns:
+
+- **Pair A** and **Pair B** — the two cells being compared (variable names). The *reference* structure replaces Pair A with a banner above the table and shows only the **Compared cell**. The *between* structure replaces them with **Variable 1**, **Variable 2**, **Group A**, **Group B**.
+- **r (A)** and **r (B)** — the two coefficients (or just **r** in *reference* mode).
+- **Δr** — the difference r(A) − r(B).
+- **Statistic** — the test statistic with its label (e.g. `t = …` for Williams' T2, `Z = …` for Steiger / Fisher z, `Δr* = …` for the bootstrap), with significance stars.
+- **df** — degrees of freedom (where applicable).
+- **p-value** — raw p, plus adjusted p in a separate column if [adjustment](./settings.md#multiple-comparison-adjustment) is enabled in *addition* mode (otherwise the adjusted value replaces the raw one).
+
+For omnibus structures, a single-row table shows the test label, χ², df, and p-value.
+
+A footnote under the table identifies which test family was used (Williams' T2, Steiger Z, Fisher z, or percentile bootstrap with the replication count) and surfaces any plug-in caveats that apply (Spearman/Kendall plug-in approximation, partials' `n − k − 3` adjustment, semi-partial bootstrap routing).
+
+### P-value adjustment
+
+The same global [adjustment method](./settings.md#multiple-comparison-adjustment) that applies to the matrix is applied separately to the family of diff-test p-values — the matrix's p-values and the diff card's p-values are adjusted **independently**, since they answer different families of questions. Inside the diff card, all comparisons of a single structure are treated as one family.
+
+### Reporting comparisons
+
+When writing up a difference test, report: the comparison structure, the test family (Williams T2 / Steiger Z / Fisher z / bootstrap with B), the two coefficients, Δr, the test statistic with df, the p-value (raw and adjusted if applicable), and the sample size(s). For omnibus tests, report χ², df, p, and which omnibus variant was used (Steiger pattern, Jennrich, Wald on Olkin–Siotani, or ACAT fallback).
 
 ## Display options
 
@@ -154,6 +242,27 @@ Two checkboxes appear below the information-theoretic methods (NMI, AMI, coheren
 
 Both are off by default to keep the default view uncluttered.
 
+### P-value method (IT methods only)
+
+A dropdown appears alongside the IT options when an information-theoretic method (NMI, AMI, coherence, Theil's U) is selected:
+
+- **Analytic chi² (fast, tests independence)** — default. Uses the asymptotic result that `2n·MI ~ χ²((k_x−1)(k_y−1))` under independence. The test is correct for the *independence hypothesis* but its statistic is raw MI, not the normalized coefficient you see in the cell. Fast — single closed-form call per pair.
+- **Permutation (slower, tests the reported coefficient)** — shuffles one variable many times and recomputes the chosen coefficient on each shuffle. The shuffle count is derived from your [significance level](./settings.md#statistics-settings) (at least `20/α` reps so the threshold can be resolved) with your [bootstrap-replications setting](./settings.md#statistics-settings) as a floor; when p-adjustment is active, the count is inflated by `√(number of pairs)` to maintain resolution after correction. The reported p-value is the fraction of shuffles whose coefficient reaches or exceeds the observed value (with the standard +1/+1 finite-sample correction). This directly tests "is the reported NMI/AMI/coherence/Theil's U larger than chance?", which is most defensible for AMI, where the chi² approximation is only loose.
+
+Other methods (Pearson, Spearman, chi²-family, etc.) already have proper analytic or exact p-values and aren't affected by this setting.
+
+### Confidence intervals
+
+A dropdown controls whether each coefficient is reported with a confidence interval:
+
+- **None** (default) — no CIs are computed.
+- **Analytic (closed-form where supported)** — uses each method's natural closed-form CI: Fisher *z* transform for Pearson / Spearman (Bonett–Wright variance) / Kendall (Fieller) / point-biserial, and an **atanh-transformed (Fisher *z*) Wald interval with delta-method SE** for polychoric, polyserial, tetrachoric, biserial, Goodman & Kruskal's γ, and Somers' D — keeping the bounds inside the natural `[-1, 1]` range. Phi has no usable closed-form CI here (its asymptotic SE depends on the 2×2 marginal proportions, not just phi itself, so Fisher *z* bounds disagree with the chi² test) — use the bootstrap mode for phi.
+- **Percentile bootstrap (any method)** — resamples the data with replacement (using the [bootstrap settings](./settings.md#statistics-settings) for replications) and takes empirical quantiles. Currently supported for Pearson, Spearman, Kendall, point-biserial, phi, and the partial / semi-partial Pearson / Spearman / Kendall variants. Other methods show `—` in this mode for now.
+
+The confidence level is read from your global [confidence-level setting](./settings.md#statistics-settings). CIs appear as an extra column in the long table and as an extra line under the coefficient in matrix cells. Methods without a supported CI for the chosen mode show `—`.
+
+> **Which mode to pick?** Analytic is faster and produces narrower (more efficient) intervals when its assumptions hold. Bootstrap is more flexible but slower and a bit wider — useful when sample sizes are small, distributions are weird, or you simply don't trust the asymptotic approximation. For a quick check, analytic; for a final report on a small or non-normal dataset, bootstrap.
+
 ### Include visualizations
 
 Four visualization types are available as checkboxes: [edge bundling](#edge-bundling), [force-directed graph](#force-directed-graph), [correlogram](#correlogram), and [scatterplots](#scatterplots). Each produces a separate output card. All filter to statistically significant correlations where applicable.
@@ -164,10 +273,12 @@ Four visualization types are available as checkboxes: [edge bundling](#edge-bund
 
 Each cell shows:
 
-- The correlation coefficient with the method's symbol (r, ρ, τ, β, φ, V, D, γ, η², NMI, AMI, C<sub>R</sub>, U, D<sub>H</sub>, ξ, dCor)
+- The correlation coefficient with the method's symbol (r, ρ, τ, β, φ, V, D, γ, η², ρ<sub>poly</sub>, ρ<sub>tet</sub>, ρ<sub>ps</sub>, NMI, AMI, C<sub>R</sub>, U, D<sub>H</sub>, ξ, dCor)
 - Significance stars based on your [significance settings](./settings.md#significance-formatting)
 - The p-value (formatted according to your [p-value settings](./settings.md#p-value-settings))
 - Adjusted p-value, if [adjustment](./settings.md#multiple-comparison-adjustment) is enabled in addition mode
+- Confidence interval, if **Confidence intervals** is set to *Analytic* or *Percentile bootstrap* (and the method supports it)
+- Zero-order coefficient (with subscript ₀), if a partial / semi-partial run is active — the same correlation computed without the covariates
 - Raw MI and/or entropies, if **Append raw MI** / **Append entropies** is enabled (IT methods only)
 - Diagonal cells show a dash (a variable's correlation with itself is always trivially 1)
 - Error cells are highlighted in red — hover to see the specific reason (e.g. "Insufficient data", "Not a 2×2 table", "Constant variable — no information")
@@ -179,9 +290,11 @@ For asymmetric methods (Somers' D, Theil's U, Chatterjee's ξ), a small *Directi
 Columns include:
 
 - **Variable 1** and **Variable 2** — for asymmetric methods, the row reads as "Variable 1 → Variable 2" (Variable 1 is the predictor), and both orderings of each pair appear as separate rows
-- **Method** — shown only for Mixed/Auto; displays the symbol used for that pair, with the full method name in a tooltip
+- **Method** — shown for Mixed/Auto, *and* whenever a per-row fallback occurred (e.g. η² automatically falls back to Cramér's V on categorical × categorical pairs); displays the symbol used for that pair, with the full method name in a tooltip
 - **Coefficient** — the correlation value with significance stars
 - **p-value** — and adjusted p-value if enabled in addition mode
+- **CI** — confidence interval column, if **Confidence intervals** is enabled
+- **r₀ (ρ₀, τ₀, …)** — zero-order coefficient, if partials are active
 - **MI, H(var₁), H(var₂)** — appended when the **Append raw MI** / **Append entropies** checkboxes are enabled for IT methods
 - **Interpretation** — if the [interpretation setting](./settings.md#significance-formatting) is turned on. For failed pairs, this column shows the specific reason for the error instead.
 
@@ -217,7 +330,7 @@ Missing values are handled by the global [missing data setting](./settings.md#mi
 
 ## Visualizations
 
-All visualizations can be resized by dragging the handle in the bottom-right corner, and exported as SVG, PNG, or JPG via buttons below the chart. You can also export all plots at once — see [reading results](./getting-started.md#reading-results) for bulk export.
+All visualizations can be resized by dragging the handle in the bottom-right corner. To save figures, use the bulk export action — see [reading results](./getting-started.md#reading-results) — which captures every plot on the page in one step.
 
 ### Edge bundling
 
@@ -235,6 +348,8 @@ An interactive network where positively correlated variables attract each other 
 - **Drag** a node to reposition it — it stays fixed in place (shown with a blue dashed border)
 - **Click** a fixed node to release it back into the simulation
 - **Zoom** and **resize** work the same as edge bundling
+
+This visualization is automatically hidden when an asymmetric method (Somers' D, Theil's U, Chatterjee's ξ) is selected — an undirected graph layout can't faithfully render both directions of an asymmetric pair. Use the [correlogram](#correlogram) or the long-format table for those methods.
 
 > **Edge bundling vs. force-directed:** the edge bundling layout is better for getting an overview of correlation structure — you can quickly see clusters of related variables. The force-directed graph is better for exploring specific relationships interactively, since you can pull nodes apart and rearrange the layout.
 
@@ -255,9 +370,24 @@ If scatterplots are also enabled, clicking a cell scrolls to the corresponding s
 One scatter plot per variable pair, each in its own subsection. Each plot shows:
 
 - Scatter points for the raw data
-- An OLS regression line with a 95% confidence band
+- A reference line whose shape depends on the chosen method:
+	- **Pearson** and **point-biserial** — OLS regression line. A confidence band is drawn at your global confidence level when **Confidence intervals** is set to *Analytic* (closed-form conditional-mean band on the fitted line) or *Percentile bootstrap* (envelope of OLS lines refit on bootstrap resamples); no band is drawn when CIs are off.
+	- **Spearman**, **Kendall**, **polychoric**, **polyserial**, **biserial**, **Somers' D**, **Goodman & Kruskal's γ**, **Hoeffding's D**, **Chatterjee's ξ**, **distance correlation** — Nadaraya-Watson kernel smoother (no parametric line; reveals monotone or nonlinear structure)
+	- **Blomqvist's β** — median crosshairs (vertical at median X, horizontal at median Y), since the coefficient itself is defined by sign agreement around those medians
+	- **Phi**, **Cramér's V**, **η²**, **NMI**, **AMI**, **coherence**, **Theil's U** — no overlay; the pair is categorical and a continuous fit would mislead
 - The coefficient with the method's symbol (r, ρ, τ, …) and p-value in the corner — adjusted p-values follow the same [p-value adjustment display](./settings.md#multiple-comparison-adjustment) rule as the matrix and long-format tables
 - Plot range is padded by one tick interval so edge points aren't clipped
+
+#### Grouped scatterplots (between groups / equality across groups)
+
+When the active comparison structure is **Between groups** or the across-groups omnibus, the scatterplot card switches to a **grouped** layout — one subplot per variable pair, but with points and overlay lines colored by group. The other comparison structures (within row, within column, against reference, single-sample pattern equality) don't have a group dimension, so they remain viz-less.
+
+- **Points and overlay** are drawn separately for each group, with the same method-specific overlay choice (OLS line / kernel smoother / median crosshairs / no overlay) applied within each series.
+- **Colors** come from the project-wide Tableau-10 palette, in the same order the groups appear in the comparison table.
+- **Per-group r** appears in the top-right legend, with each entry colored to match its series — so the legend doubles as the color key.
+- **No confidence bands** are drawn in grouped mode — overlapping K bands is visually unreadable. Use the comparison table for the formal Δr statistic and its CI.
+- **Residualization** for Pearson/Spearman partials runs *within each group*, so each group's residual scatter reflects its own conditional relationship (not a pooled residualization that would smear group differences).
+- **Edge bundling, force-directed graph, and correlogram** are all skipped in grouped diff mode — they're inherently single-matrix displays and don't have a meaningful per-group rendering.
 
 ## Reporting checklist
 
@@ -265,20 +395,26 @@ Key things to include when writing up correlation results:
 
 **Method:**
 - Correlation method used (Pearson, Spearman, etc.) and why
+- For partial / semi-partial analyses: the covariates controlled for, and whether you used partial or semi-partial (and on which side)
+- For difference tests: the comparison family (pairwise vs. joint) and structure (within row / within column / against reference / between groups / pattern equality / equality across groups), the test used (Williams T2, Steiger Z, Fisher z, Jennrich χ², or percentile bootstrap with B replications), and — for *between groups* / *equality across groups* — the grouping variable
 - How missing data were handled (pairwise or listwise deletion)
 - P-value adjustment method, if any
+- CI method (analytic / bootstrap) and confidence level, if reporting intervals
 - Sample size
 
 **Results:**
 - The correlation coefficient with its symbol (r, ρ, τ, etc.)
+- Confidence interval, if computed
+- For partial analyses: the zero-order coefficient alongside, so readers can see the effect of controlling
 - P-value (exact or inequality)
 - Sample size per pair (if pairwise deletion was used and N varies)
 - Effect size interpretation, if relevant
 - For matrix output: whether the full matrix or selected pairs are reported
+- For difference tests: both r's (or, for omnibus, the test alone), Δr, the test statistic with df, and the p-value — adjusted and raw if both are shown
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Correlation analysis uses base R (`cor.test`) for the classical methods, plus `polycor` (polychoric and polyserial), `infotheo` (mutual information and entropy with Miller-Madow correction), `aricode` (adjusted mutual information), `energy` (distance correlation), and `Hmisc` (Hoeffding's D). Blomqvist's β, the correlation ratio η², and Chatterjee's ξ are implemented directly in base R. Citations for any package your analysis actually uses appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Correlation analysis uses base R (`cor.test`) for the classical methods, plus `polycor` (polychoric, polyserial, and tetrachoric), `infotheo` (mutual information and entropy with Miller-Madow correction), `aricode` (adjusted mutual information), `energy` (distance correlation), `Hmisc` (Hoeffding's D), `XICOR` (Chatterjee's ξ with ties-aware p-value), and `ppcor` (partial and semi-partial correlation for Pearson, Spearman, and Kendall). Blomqvist's β, the correlation ratio η², the signed φ coefficient, and Goodman & Kruskal's γ / Somers' D (with contingency-table ASE) are implemented directly in base R, as are all the correlation-comparison tests (Fisher *z*, Williams' T2, Steiger Z, Jennrich χ², the Wald χ² on Olkin–Siotani covariance, the Steiger pattern-equality χ², and the Cauchy combination fallback). Citations for any package your analysis actually uses appear automatically at the top of the output section.
 
 ## Common pitfalls
 

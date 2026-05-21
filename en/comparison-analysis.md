@@ -517,7 +517,7 @@ Key things to include when writing up comparison results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Comparison analysis uses base R for t-tests and chi-square, `car` for ANOVA-family tests, `emmeans` for post-hoc comparisons and estimated marginal means, `dunn.test` for Dunn's test, `effectsize` for effect size calculations, and `pROC` for ROC / AUC analysis and DeLong's test. Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Comparison analysis uses base R for t-tests and chi-square, `car` for ANOVA-family tests, `emmeans` for post-hoc comparisons and estimated marginal means, `dunn.test` for Dunn's test, `effectsize` for effect size calculations, and `pROC` for ROC / AUC analysis and DeLong's test. Citations for R packages used in your analysis appear automatically at the top of the output section. The Ross MI permutation test and ROC bootstrap CIs are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it to make permutation p-values and bootstrap CIs reproducible across runs.
 
 ## Common pitfalls
 

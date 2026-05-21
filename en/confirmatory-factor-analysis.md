@@ -377,7 +377,7 @@ Key things to include when writing up CFA results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. CFA uses the `lavaan` R package; reliability metrics use `semTools`. Citations for R packages used in your analysis appear automatically at the top of the output section. The lavaan syntax preview also lets you export the model specification directly.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. CFA uses the `lavaan` R package; reliability metrics use `semTools`. Citations for R packages used in your analysis appear automatically at the top of the output section. The lavaan syntax preview also lets you export the model specification directly. When bootstrap SEs are enabled (including across the configural / metric / scalar / strict models in invariance testing), lavaan's resamples are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it to make bootstrap SEs reproducible across runs.
 
 ## Common pitfalls
 

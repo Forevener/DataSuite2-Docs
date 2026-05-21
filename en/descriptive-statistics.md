@@ -37,7 +37,7 @@ Measures of where the "center" of your data lies.
 
 > **Mean vs. median:** when these two are close, your data is roughly symmetric. When they diverge, something is pulling the mean away — usually outliers or skew. For example, if the mean salary is \$75,000 but the median is \$55,000, a few very high salaries are inflating the average. In such cases, the median better represents the "typical" value.
 
-- **Mode** — the most frequently occurring value. Can be meaningful for any variable type, but especially for categorical data. A variable can have multiple modes if several values share the highest frequency. If every value is unique (no value repeats), the mode is reported as **N/A** — "no mode" rather than "every value is a mode".
+- **Mode** — the most frequently occurring value. Can be meaningful for any variable type, but especially for categorical data. A variable can have multiple modes if several values share the highest frequency. If every value is unique (no value repeats), the cell shows **No mode** — i.e. no value repeats, rather than "every value is a mode".
 
 - **Trimmed mean** — the mean after removing a percentage of extreme values from both ends. The trim percentage (0–50%, default 10%) controls how much is cut. A 10% trim removes the lowest 10% and the highest 10% of values before averaging. This gives a compromise between the mean (sensitive to outliers) and the median (ignores all but the middle value).
 
@@ -45,11 +45,9 @@ Measures of where the "center" of your data lies.
 
 - **Harmonic mean** — the reciprocal of the mean of reciprocals. Useful for averaging rates (e.g. speed, efficiency). Reported as **N/A** when any value is zero or negative.
 
-- **Hodges-Lehmann pseudomedian** — the median of all pairwise averages *(xᵢ + xⱼ)/2*. A robust location estimator that combines two desirable properties: it ignores outliers almost as well as the median, while being nearly as efficient as the mean when the data really is symmetric. Reported alongside its [confidence interval](#confidence-intervals), which inverts the Wilcoxon signed-rank distribution: exact for *n* ≤ 25, normal approximation with continuity correction for larger samples.
+- **Hodges-Lehmann pseudomedian** — the median of all pairwise averages *(xᵢ + xⱼ)/2*. A robust location estimator that combines two desirable properties: it ignores outliers almost as well as the median, while being nearly as efficient as the mean when the data really is symmetric. Reported alongside its [confidence interval](#confidence-intervals), which inverts the Wilcoxon signed-rank distribution. The estimator and CI are computed via R's `stats::wilcox.test(x, conf.int = TRUE)` — see [Reproducibility](#reproducibility).
 
 > **When to prefer HL:** when your data is roughly symmetric but you don't trust it to be normal, or when you want a robust location estimate that's more informative than a plain median. For very skewed data, the median is still more interpretable.
-
-> **Performance note:** the Hodges-Lehmann estimator considers *n(n+1)/2* pairwise averages, so memory and time grow quickly for large samples. For very large datasets you can press **Cancel** on the loading overlay to abort.
 
 ### Dispersion
 
@@ -65,7 +63,7 @@ Measures of how spread out your data is.
 
 > **Rule of thumb:** in a roughly normal distribution, about 68% of values fall within ±1 SD of the mean, and about 95% within ±2 SD.
 
-- **Winsorized standard deviation** — the SD computed after replacing the extreme values at each tail with the cutoff value at the boundary (rather than discarding them, as with the trimmed mean). The winsorization percentage (0–50%, default 10%) is set independently of the trimmed-mean percentage. Less sensitive to outliers than the plain SD; the natural companion to the trimmed mean.
+- **Winsorized standard deviation** — the SD computed after replacing the extreme values at each tail with the cutoff value at the boundary (rather than discarding them, as with the trimmed mean). The winsorization percentage (0–50%, default 10%) is set independently of the trimmed-mean percentage. Less sensitive to outliers than the plain SD; the natural companion to the trimmed mean. Reported as **N/A** when the chosen percentage would leave no central data (e.g. 50% on an even-*n* sample of 4 or 6 observations).
 
 > **Trimming vs. winsorizing:** trimming removes the outermost values; winsorizing keeps the sample size and instead pulls the extremes inward. Winsorized SD is what robust inference methods (e.g. Yuen's t-test) use to pair with a trimmed mean.
 
@@ -73,11 +71,13 @@ Measures of how spread out your data is.
 
 > **Practical use:** if IQR is much smaller than the range, it means your data has a compact core with a few far-flung values. This is a quick way to gauge whether outliers are inflating your spread statistics.
 
-- **Mean absolute deviation (MAD)** — the average absolute distance from the mean. Like IQR, it is less sensitive to outliers than SD, because it doesn't square the deviations (squaring amplifies the impact of extreme values). MAD is a good companion to the median when your data is skewed.
+- **Mean absolute deviation** — the average absolute distance from the mean. Like IQR, it is less sensitive to outliers than SD, because it doesn't square the deviations (squaring amplifies the impact of extreme values). A good companion to the mean when you want a spread measure with the same units but less sensitivity to extremes.
 
-> **SD vs. MAD:** for normally distributed data they tell a similar story. But if your data has outliers or heavy tails, SD can be inflated while MAD stays stable. If your SD is noticeably larger than your MAD, that's a sign that a few extreme values are driving the spread.
+- **Median absolute deviation** — the median of *|x − median(x)|*. The robust counterpart to mean AD: by replacing both the centring point (mean → median) and the aggregation (mean → median), it stays stable even when a substantial fraction of the data is contaminated. Multiplied by 1.4826 it estimates the SD of a normal distribution; the **Modified Z outliers** rule uses this internally.
 
-- **Coefficient of variation (CV)** — the standard deviation divided by the mean, expressed as a percentage. Useful for comparing variability between variables measured on different scales — for example, comparing the variability of reaction times (measured in milliseconds) with the variability of accuracy scores (measured in percent). The sample-vs-population toggle ([see below](#sample-vs-population-statistics)) controls which SD is used in the numerator. Only defined for non-negative, ratio-scale data; reported as **N/A** when the data contains any negative value or the mean is zero.
+> **SD vs. mean AD vs. median AD:** for clean normal data they tell a similar story. Heavy-tailed data inflates SD the most; the mean AD stays stable longer; the median AD is the most resistant of the three. If your SD is noticeably larger than your mean AD, that's a sign a few extreme values are driving the spread.
+
+- **Coefficient of variation (CV)** — the standard deviation divided by the mean, expressed as a percentage. Useful for comparing variability between variables measured on different scales — for example, comparing the variability of reaction times (measured in milliseconds) with the variability of accuracy scores (measured in percent). The sample-vs-population toggle ([see below](#sample-vs-population-statistics)) controls which SD is used in the numerator; the column header reflects the choice as `CV (%, s)` or `CV (%, σ)`. Only defined for non-negative, ratio-scale data; reported as **N/A** when the data contains any negative value or the mean is zero.
 
 ### Shape
 
@@ -91,7 +91,7 @@ How the distribution of values looks beyond center and spread.
 
 > **Heavy vs. light tails:** a distribution with heavy tails (positive kurtosis) produces more extreme values than you'd expect from a normal distribution — more outliers, more "surprising" data points. A distribution with light tails (negative kurtosis) is the opposite — values cluster closer together with fewer extremes. For example, exam scores that bunch in the middle with few very high or very low scores would have negative kurtosis.
 
-> **Sample vs. population formulas:** with the **Use sample statistics** toggle on, skewness and kurtosis use the bias-corrected sample estimators *G₁* and *G₂* — the same formulas Excel, SPSS, and SAS report by default. With the toggle off, the simpler population formulas *g₁* and *g₂* are used. Skewness needs at least 3 observations; kurtosis needs at least 4 (5 for the sample version). Both are undefined (reported as **N/A**) when the standard deviation is zero — i.e. all values are identical.
+> **Formulas:** skewness and kurtosis always use the bias-corrected sample estimators *G₁* and *G₂* — the same formulas Excel, SPSS, SAS, and R's `e1071::skewness(type = 2)` report by default. The sample-vs-population toggle does **not** affect them. Skewness needs at least 3 observations; kurtosis needs at least 4 (and SE/CI for kurtosis needs 5). Both are undefined (reported as **N/A**) when the standard deviation is zero — i.e. all values are identical.
 
 ### Counts
 
@@ -103,13 +103,13 @@ How the distribution of values looks beyond center and spread.
 
 - **Zero count** — how many observations equal zero, shown as both a count and a percentage.
 
-- **Mild outliers (1.5·IQR)** — count (and percent) of values falling outside *[Q1 − 1.5·IQR, Q3 + 1.5·IQR]*. These are the values that appear as individual points beyond the whiskers in a standard box plot.
+- **Mild outliers (1.5·IQR)** — count (and percent) of values falling outside *[Q1 − 1.5·IQR, Q3 + 1.5·IQR]*. These are the values that appear as individual points beyond the whiskers in a standard box plot. Inlier range is **N/A** when the IQR is zero (at least half the data sits at a single value), since the rule loses its meaning.
 
-- **Extreme outliers (3·IQR)** — count (and percent) of values falling outside the wider band *[Q1 − 3·IQR, Q3 + 3·IQR]*. Always a subset of the mild outliers — these are the truly far-from-typical values.
+- **Extreme outliers (3·IQR)** — count (and percent) of values falling outside the wider band *[Q1 − 3·IQR, Q3 + 3·IQR]*. Always a subset of the mild outliers — these are the truly far-from-typical values. Same IQR=0 caveat as above.
 
-- **Modified Z outliers (|M| > 3.5)** — count (and percent) of values whose modified Z-score *M = 0.6745·(x − median)/MAD* exceeds 3.5 in absolute value (Iglewicz & Hoaglin 1993). Unlike a classical Z-score, this rule uses the median and MAD (median absolute deviation), so the centre and scale used to flag outliers are themselves resistant to outliers — a single extreme value can no longer "mask" others. Reported as zero flagged when the MAD is zero (more than half the data is identical to the median).
+- **Modified Z outliers (|M| > 3.5)** — count (and percent) of values whose modified Z-score *M = 0.6745·(x − median)/MAD* exceeds 3.5 in absolute value (Iglewicz & Hoaglin 1993). Here MAD is the **median absolute deviation**, not the mean form. Unlike a classical Z-score, this rule uses the median and median AD, so the centre and scale used to flag outliers are themselves resistant to outliers — a single extreme value can no longer "mask" others. When the median AD is zero (more than half the data is identical to the median), the rule loses its meaning — same as the IQR=0 case above.
 
-Each outlier rule that is enabled also produces an **Inlier range** column showing the cutoff pair *[lower, upper]*. Pasted directly into a filter as `value BETWEEN lower AND upper`, this keeps the inliers; inverting the condition keeps the outliers.
+Each outlier rule that is enabled also produces an **Inlier range** column showing the cutoff pair *[lower, upper]*. Pasted directly into a filter as `value BETWEEN lower AND upper`, this keeps the inliers; inverting the condition keeps the outliers. In the degenerate cases noted above (IQR=0, MAD=0), both the count and the inlier-range cells report **N/A**; hovering the cell shows an explanation of why the rule could not be applied.
 
 > **Picking a rule:** for general use, the **mild outliers (1.5·IQR)** rule matches what a box plot shows and works on any distribution shape. The **extreme** rule isolates the most unambiguous outliers. The **modified Z** rule is the right choice when you want a Z-style threshold without the masking problem of the classical mean/SD version — it agrees with the IQR rules on heavy-tailed data but uses a sharper, distance-based cutoff.
 
@@ -131,7 +131,9 @@ The standard error estimates how much a statistic would vary if you repeated the
 - **SE of skewness** — standard error of the sample skewness
 - **SE of kurtosis** — standard error of the sample kurtosis
 
-> **Method for skewness/kurtosis SE and CI:** a **SE/CI method** dropdown appears in the **Shape** section when any of the four corresponding stats are enabled. Choose **Analytical (normal-theory)** for closed-form SEs derived under the assumption of a normal underlying distribution, or **Bootstrap** for a distribution-free alternative that resamples the data — the CI uses the bias-corrected and accelerated (BCa) method (Efron 1987), which adjusts the percentile bounds for bias and skewness in the sampling distribution. Bootstrap uses the resample count from your global [**Bootstrap replicates**](./settings.md) setting.
+> **Method for skewness/kurtosis SE and CI:** a **SE/CI method** dropdown appears in the **Shape** section when any of the four corresponding stats are enabled. Choose **Analytical (normal-theory)** for closed-form SEs derived under the assumption of a normal underlying distribution, or **Bootstrap** for a distribution-free alternative that resamples the data — the CI uses the bias-corrected and accelerated (BCa) method (Efron 1987), which adjusts the percentile bounds for bias and skewness in the sampling distribution. Bootstrap uses the resample count from your global [**Bootstrap replications**](./settings.md#bootstrap-replications) setting; entering an integer in [**Bootstrap seed**](./settings.md#bootstrap-seed) (instead of leaving it empty) makes the resamples reproducible across runs. The method that was used appears in the column header itself — `SE (Skewness, normal)` vs `SE (Skewness, bootstrap)`, and likewise for the CI columns — so the source is unambiguous when the table is exported or shared. The header reads "bootstrap" rather than "BCa" because the small-sample fallback to the percentile interval (described below) leaves the column still labelled honestly. When the sample is too small for the bias/acceleration corrections to be estimated reliably, the SE and CI cells still show values (with the CI falling back to the percentile interval) and a hover tooltip flags them as degraded; the point estimate in the **Skewness** / **Kurtosis** column remains valid.
+
+> **Where to find the "excess kurtosis" toggle:** the **Report as excess kurtosis** checkbox lives in the **Shape** section and appears whenever kurtosis itself or its SE/CI is selected — so you can request the CI alone and still control the excess-vs-raw form.
 
 ### Confidence intervals
 
@@ -162,7 +164,7 @@ Information-theoretic and ecological measures of how spread-out values are acros
 
 ### Sample vs. population statistics
 
-The **Use sample statistics (n-1 denominator)** checkbox (on by default) controls whether variance, standard deviation, Winsorized SD, coefficient of variation, skewness, and kurtosis use sample-based formulas (n-1 denominator, bias-corrected) or their population counterparts.
+The **Use sample statistics (n-1 denominator)** checkbox (on by default) controls whether variance, standard deviation, Winsorized SD, and coefficient of variation use sample-based formulas (n-1 denominator, bias-corrected) or their population counterparts. Skewness and kurtosis always use their bias-corrected sample forms (*G₁*, *G₂*) regardless of this toggle.
 
 - **Sample statistics (n-1)** — use this when your data is a sample from a larger population, which is almost always the case in research. The result labels show *s²* and *s*.
 - **Population statistics (n)** — use this only when your data represents the entire population of interest. The result labels show *σ²* and *σ*.
@@ -191,8 +193,14 @@ Key things to include when writing up descriptive statistics:
 - Central tendency (mean or median, depending on distribution shape; HL pseudomedian for symmetric-but-non-normal data)
 - Dispersion (SD, Winsorized SD, IQR, or range as appropriate)
 - Sample size per variable, especially if it varies due to missing data
-- Skewness and kurtosis if distribution shape is relevant to subsequent analyses (state which formula and SE/CI method were used)
+- Skewness and kurtosis if distribution shape is relevant to subsequent analyses (state which SE/CI method was used — analytical or bootstrap)
 - Outlier counts when extreme values affect interpretation — note the rule used (1.5·IQR, 3·IQR, or modified Z with |M|>3.5) and consider quoting the inlier range so readers know exactly which values were flagged
+
+## Reproducibility
+
+Most descriptive statistics are computed in the browser without R. The one exception is the **Hodges-Lehmann pseudomedian** and its confidence interval, which are computed via R's base `stats::wilcox.test(x, conf.int = TRUE, conf.level = ...)` — this matches the CI rule (exact signed-rank inversion for small *n*, normal approximation for large *n*) that R uses across its own ecosystem. The call appears in the [R console](./r-console.md), and a citation for the `stats` package is added automatically when HL is selected.
+
+The bootstrap paths (BCa CIs for skewness/kurtosis and SE of the median) use `Math.random` when [**Bootstrap seed**](./settings.md#bootstrap-seed) is empty, so successive runs on the same data produce slightly different intervals. Enter any integer in that setting to get fully reproducible results — every bootstrap call in the run starts from that seed.
 
 ## Common pitfalls
 
@@ -208,7 +216,7 @@ Key things to include when writing up descriptive statistics:
 
 **Treating SE or CI of proportion as off when they don't appear.** These stats are computed only for binary categorical variables (exactly two non-missing levels). With one level the proportion is trivially 1; with three or more, a single proportion no longer summarises the variable — use the [frequency table](./distribution-analysis.md#frequency-tables) for the full per-category breakdown instead.
 
-**Reading "no mode" as zero observations.** A mode report of **N/A** doesn't mean the variable is empty — it means every observed value is unique, so no value is more frequent than any other. For continuous numeric data this is the typical state; the mode is usually only informative for discrete or categorical variables.
+**Reading "No mode" as zero observations.** A **No mode** cell doesn't mean the variable is empty — it means every observed value is unique, so no value is more frequent than any other. For continuous numeric data this is the typical state; the mode is usually only informative for discrete or categorical variables.
 
 ## Notes
 
@@ -216,9 +224,7 @@ Key things to include when writing up descriptive statistics:
 - Coefficient of variation is omitted when the mean is zero or any value is negative — hovering an empty CV cell shows the explanation
 - Proportion, SE of proportion, and CI for proportion are blank for non-binary categoricals — hovering an empty cell shows why
 - Skewness and kurtosis are reported as **N/A** when all values are identical (zero variance)
-- Mode is reported as **N/A** when every value is unique (no value repeats)
+- Mode is reported as **No mode** when every value is unique (no value repeats)
 - The CI for the median is computed exactly from the sample order statistics; it reports **N/A** for small samples where no rank pair achieves the requested coverage (e.g. *n* = 5 at 95%) — hovering an empty cell shows the explanation
 - The CI for proportion uses the Wilson score interval, which is naturally bounded in [0, 1] without artificial clamping
-- For numeric columns, an unparseable value (e.g. a stray text entry) is counted as missing rather than silently dropped, so **sampleSize + missing = total** always holds
-- For large samples, the Hodges-Lehmann pseudomedian can be slow to compute (*n²/2* pairwise averages); the **Cancel** button on the loading overlay aborts the calculation
 - Each run produces a new results card — you can generate multiple tables with different statistics selected and compare them side by side

@@ -559,7 +559,7 @@ Missing values are handled by the global [missing data setting](./settings.md#mi
 
 ## R reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md). IRT analysis uses the `mirt` R package for model fitting, rotations, item and person parameters, fit statistics, DIF, and score conversion. Preliminary analysis additionally uses `mokken` for scalability, monotonicity, IIO, rest-score local independence, and nonparametric reliability. Citations for R packages appear automatically at the top of the output.
+Every analysis prints the underlying R code to the [R console](./r-console.md). IRT analysis uses the `mirt` R package for model fitting, rotations, item and person parameters, fit statistics, DIF, and score conversion. Preliminary analysis additionally uses `mokken` for scalability, monotonicity, IIO, rest-score local independence, and nonparametric reliability. Citations for R packages appear automatically at the top of the output. The resampled individual reliability (RIR) sub-sample step is seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it for reproducible RIR values across runs.
 
 ## Common pitfalls
 

@@ -23,14 +23,14 @@ One table is produced per variable.
 - **Percentage** — percentage of all rows, including missing values (on by default)
 - **Valid percentage** — percentage calculated from non-missing values only
 - **Total row** — adds a summary row at the bottom
-- **Cumulative count** — running total of counts over valid (non-missing) observations
+- **Cumulative valid count** — running total of counts over valid (non-missing) observations
 - **Cumulative valid percentage** — running total of *valid* percentages (reaches 100% at the last row)
 
 > **Percentage vs. valid percentage:** if 10 out of 100 rows are missing and a value appears 30 times, its percentage is 30% (of 100), but its valid percentage is 33.3% (of 90). Valid percentage is more useful when you want to ignore the missing data.
 
 > **Why "cumulative valid"?** Cumulative count and cumulative percentage both run over non-missing observations, so the cumulative percentage column always ends at 100% regardless of how many missings there are. This matches SPSS behavior and keeps the cumulative columns interpretable when the (over-all-rows) *Percentage* column doesn't reach 100%.
 
-> **Total row with missing values:** the cumulative columns accumulate over valid observations, so the Total row leaves *Valid percentage*, *Cumulative count*, and *Cumulative valid percentage* blank whenever any missings are present — they don't have a sensible subtotal at that row. The *Count* and *Percentage* columns still show the full N and 100%.
+> **Total row with missing values:** the cumulative columns accumulate over valid observations, so the Total row leaves *Valid percentage*, *Cumulative valid count*, and *Cumulative valid percentage* blank whenever any missings are present — they don't have a sensible subtotal at that row. The *Count* and *Percentage* columns still show the full N and 100%.
 
 ### Sorting
 
@@ -94,7 +94,9 @@ A single table with one row per variable. For each selected test, two columns ap
 When the [interpretation column is enabled](./settings.md#significance-formatting), an extra **Interpretation** column appears:
 
 - **Single test selected** — shows "Evidence against normality" or "No evidence against normality" based on the p-value vs. the significance level.
-- **Multiple tests selected** — shows an agreement summary like "4/6 tests: evidence against normality". The colored verdict reflects the majority of valid tests; tests that failed to run (e.g. due to sample size) are reported separately and excluded from the count.
+- **Multiple tests selected** — shows an agreement summary like "4/6 tests: evidence against normality" with a tri-state colored verdict: green when all valid tests fail to reject, red when all of them reject, and amber for any mix in between. Tests that failed to run (e.g. due to sample size) are reported separately and excluded from the count.
+
+> **Why no majority vote?** The normality tests are all examining the same null hypothesis on the same data, so their outcomes are heavily correlated — "majority of 7 tests rejected" isn't statistically combinable in the way a true meta-analysis would be. The tri-state verdict surfaces disagreement honestly rather than papering over it with a vote.
 
 If a variable doesn't meet a test's minimum sample size, that test's cell shows an "Insufficient data" message with the actual n and the required minimum. The test still runs for variables that do meet the minimum.
 
@@ -119,6 +121,10 @@ Check **Overlay variables on one plot** to compare multiple variables side-by-si
 
 Overlay mode requires at least two variables. With only one variable selected, plots are rendered the normal way regardless of the checkbox.
 
+If you select **only** plot types that overlay mode skips (e.g. just Histogram, or only Q-Q with a non-normal reference), no result card is produced and a warning is shown — turn overlay off or pick a compatible plot type to proceed.
+
+Variables with no valid numerical data are excluded from the overlay and listed in an info note above the plots. Box plots, violin plots, and the Q-Q overlay additionally drop variables with fewer than 2 valid observations (no spread to summarize) and zero-variance variables (a constant carries no distributional information). Each case appears in its own per-plot note below the chart ("Excluded (n < 2): …" and "Excluded zero-variance: …").
+
 ### Histogram
 
 Shows the distribution as bars, where each bar represents a range of values (a "bin") and its height shows how many observations fall in that range.
@@ -128,12 +134,12 @@ Options:
 - **Density curve** (on by default) — overlays a smooth curve (red) estimating the underlying distribution shape using a Gaussian-kernel density estimate with a robust Silverman bandwidth (the rule's `0.9·σ·n^(-1/5)` form applies directly to a Gaussian kernel)
 - **Normal curve** — overlays a theoretical normal distribution (green dashed) for comparison
 - **Show rug** — adds short tick marks at each observation along the bottom of the chart, revealing the exact data points behind the bars
-- **Show skewness and kurtosis** — annotates the plot with sample skewness and excess kurtosis (a normal distribution has skew ≈ 0 and excess kurtosis ≈ 0)
+- **Show skewness and kurtosis** — annotates the plot with the bias-corrected sample skewness (G1, labelled *skew*) and excess kurtosis (G2, labelled *ex.kurt*) — the Fisher-Pearson estimators used by SPSS, SAS, and Excel's `SKEW`/`KURT`. A normal distribution has both ≈ 0. Requires n ≥ 4 (both estimators well-defined); the annotation is omitted otherwise.
 - **Bin calculation method** — Auto (recommended), Sturges, Scott, or Freedman-Diaconis
 
 > **Reading a histogram:** look for the overall shape. Is it roughly bell-shaped (normal)? Skewed to one side? Has multiple peaks (bimodal)? When the density curve and normal curve are both visible, comparing them shows how your actual data departs from normality. The right-side density axis matches the left-side count axis via the relationship *count = density × n × binWidth* — so the two scales are not arbitrary, they're calibrated to each other.
 
-Hover over any bar to see the count and value range. For discrete integer data with few unique values, bins automatically align to individual integers.
+Hover over any bar to see the count and value range. When the data is integer-valued with at most 50 distinct values, bins automatically align to individual integers — one bar per observed value, with ticks only at those values. This works for both dense integers (e.g. 0–20) and sparse integers (e.g. mostly 0–5 plus a few far-away outliers); sparse data simply yields wide trailing bars that visually reflect the gap. In the sparse-integer case, the density and normal-curve overlays are suppressed (with a note below the chart) because bin widths vary by orders of magnitude and the mean-bin-width scale factor would produce visually meaningless curves.
 
 ### Box plot
 
@@ -152,20 +158,20 @@ Hover over a box to see a tooltip with all five-number summary values, the IQR, 
 
 ### Q-Q plot
 
-Plots your data's quantiles against theoretical quantiles of a chosen reference distribution. If the data follows the reference distribution, points fall along the diagonal reference line (the line is fit through the Q1 and Q3 of both axes, matching R's `qqline`).
+Plots your data's quantiles against theoretical quantiles of a chosen reference distribution. If the data follows the reference distribution, points fall along the diagonal reference line. For location-scale references (Normal, Lognormal-after-log, Student's t, Uniform) the line is fit through Q1 and Q3 of both axes (matching R's `qqline`) — robust under departures from the reference and the basis on which the confidence band is built. For the Exponential reference, which is scale-only with no location, the line goes through the origin with slope equal to the sample mean (the moment / MLE estimate of the scale). Requires at least 3 valid observations and some variation in the sample; below that, a "requires …" notice is shown in place of the plot.
 
 Options:
 
 - **Reference distribution** — *Normal* (default), *Student's t*, *Exponential*, *Uniform*, or *Lognormal*. The Q-Q plot is a general distribution-comparison tool, not just a normality check — switching the reference lets you test other distributional assumptions.
-- **Degrees of freedom** (Student's t only) — controls the t-reference shape. Leave blank to use *max(2, n − 1)*; type a positive number to override. The floor of 2 keeps the Student-t reference line well defined (finite variance) for very small samples — for n ≤ 2 the fallback uses df = 2 instead of n − 1.
-- **Confidence band** — shades a region around the reference line. Points inside the band are consistent with the reference; points outside are notable departures. The CI band is available for the **Normal** and **Lognormal** references (Lognormal is plotted in log-sample space, where the standard normal closed-form standard error applies). The checkbox is hidden for other references.
+- **Degrees of freedom** (Student's t only) — controls the t-reference shape. Leave blank to use *max(2, n − 1)*; type a number ≥ 2 to override. The floor of 2 keeps the Student-t inverse-CDF and density well defined for very small samples; values below 2 are clamped to 2.
+- **Confidence band** — shades a region around the reference line. Points inside the band are consistent with the reference; points outside are notable departures. The band uses the reference-line slope/intercept plus the pointwise standard error of the order statistics — SE ≈ |slope| / f(F⁻¹(p)) · √(p(1−p)/n) — and is drawn only across the range where observations exist (so it doesn't flare in the empty tails where the reference density goes to zero). Available for every reference distribution: closed-form densities are used for Normal, Lognormal (in log-sample space), Student's t, Exponential, and Uniform.
 - **Detrended (residuals vs reference)** — subtracts the reference line from each point's y-coordinate, so the reference becomes a horizontal line at zero. Small deviations become much easier to see than in the standard "diagonal" view.
 
 > **Reading a Q-Q plot:** points that hug the line indicate the reference distribution fits. Systematic deviations tell you how the data differs: an S-shaped curve suggests heavy or light tails, points curving away at one end indicate skewness, and a few stray points at the extremes are outliers. This is often more useful than a normality test for understanding *how* your data departs from normality, not just *whether* it does.
 
 > **Why detrended?** On a regular Q-Q plot, points near the middle of the distribution are visually packed against the line and small wobbles are hard to spot. Detrending flattens the line to y = 0, so the y-axis becomes "how far each point is from the reference" — small departures stand out clearly. Both views are useful: standard for overall shape, detrended for fine detail.
 
-> **Which reference distribution?** Use Normal for typical assumption checks. Switch to Student's t when you suspect heavy tails — leave the *Degrees of freedom* field empty to default to *max(2, n − 1)*, or enter a specific df to match the model you're checking against. Exponential is for waiting times and other right-skewed positive-only data. Lognormal is for multiplicative processes (incomes, particle sizes); the sample is log-transformed internally and plotted against a standard-normal reference, so the y-axis reads "Sample quantiles (log scale)" and the CI band is available. Non-positive observations are dropped automatically with a red "Excluded N non-positive value(s)" annotation above the plot. Uniform tests whether your data is evenly spread.
+> **Which reference distribution?** Use Normal for typical assumption checks. Switch to Student's t when you suspect heavy tails — leave the *Degrees of freedom* field empty to default to *max(2, n − 1)*, or enter a specific df to match the model you're checking against. Exponential is for waiting times and other right-skewed positive-only data — its support is [0, ∞), so the plot refuses to render when the sample contains negative values (a categorical mismatch with the reference). Lognormal is for multiplicative processes (incomes, particle sizes); the sample is log-transformed internally and plotted against a standard-normal reference, so the y-axis reads "Sample quantiles (log scale)" and the CI band is available. Non-positive observations are dropped automatically with an "Excluded N non-positive value(s)" annotation below the plot. Uniform tests whether your data is evenly spread.
 
 ### Violin plot
 
@@ -216,7 +222,7 @@ Key things to include when writing up distribution analysis results:
 
 ## Reproducibility
 
-Normality tests print the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. The module uses base R (`shapiro.test`) plus the `nortest` package (Anderson-Darling, Lilliefors, Cramér-von Mises, Shapiro-Francia), `moments` (Jarque-Bera), and `Rita` (D'Agostino-Pearson), depending on which tests you select. Citations for R packages used appear automatically at the top of the output section. Frequency tables and distribution plots are computed in JavaScript and do not produce R code.
+Normality tests print the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. The module uses base R (`shapiro.test`) plus the `nortest` package (Anderson-Darling, Lilliefors, Cramér-von Mises, Shapiro-Francia), `moments` (Jarque-Bera and D'Agostino-Pearson), depending on which tests you select. Citations for R packages used appear automatically at the top of the output section. Frequency tables and distribution plots are computed in JavaScript and do not produce R code.
 
 ## Common pitfalls
 

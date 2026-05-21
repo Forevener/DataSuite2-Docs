@@ -288,7 +288,7 @@ Multiple fits — CFA-shape, SEM-shape, or mixed — can be queued and compared.
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — inspect, copy, or re-run. SEM uses the `lavaan` R package; reliability and discriminant validity metrics use `semTools`. Citations appear at the top of the output card. The lavaan syntax box also lets you export the model specification directly.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — inspect, copy, or re-run. SEM uses the `lavaan` R package; reliability and discriminant validity metrics use `semTools`. Citations appear at the top of the output card. The lavaan syntax box also lets you export the model specification directly. When bootstrap SEs are enabled, lavaan's resamples are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it to make bootstrap SEs and indirect-effect CIs reproducible across runs.
 
 ## Common pitfalls
 

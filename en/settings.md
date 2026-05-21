@@ -46,6 +46,14 @@ Sets the confidence level used across all analyses that produce confidence inter
 
 Number of resampling iterations for bootstrap-based calculations. Range: 10–10,000. Default: 100. Higher values give more stable estimates but take longer to compute.
 
+### Bootstrap seed
+
+Seeds the pseudo-random generator used by every bootstrap, permutation, or resampling-based inference step — including BCa CIs in descriptive statistics, ROC bootstrap CIs in regression and comparison, lavaan bootstrap SEs in SEM and CFA, Krippendorff's α and other reliability bootstrap CIs, bicluster stability bootstrap, and the Ross MI permutation test in comparison analysis. **Empty** (default) means "use fresh randomness each run" — results vary slightly between runs even on identical data. Any integer (including 0) makes a run fully reproducible: the same seed on the same data produces identical resamples across the entire analysis. Useful when reporting results in a paper or comparing two configurations on the exact same resamples.
+
+### Reproducibility seed
+
+Seeds the pseudo-random generator used by non-bootstrap procedures that still depend on randomness — clustering and biclustering (initial centroids, FABIA initialization), factor-analysis parallel analysis (null-distribution Monte Carlo), cross-validation fold assignment in regression ROC, and the Shapiro-Wilk sub-sample for large residual sets. **Empty** means "use fresh randomness each run"; default is **42**. Any integer (including 0) makes these steps fully reproducible across runs. Kept separate from **Bootstrap seed** so you can vary bootstrap resamples while holding the rest of the analysis fixed (or vice versa).
+
 ### Assumption test significance level
 
 The alpha threshold for assumption tests (normality, homogeneity of variance, sphericity, etc.). Default: 0.05. This is separate from the main significance level because assumption tests serve the opposite purpose — a higher alpha (e.g. 0.10) is *more* conservative, catching more violations.

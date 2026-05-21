@@ -443,7 +443,7 @@ Key things to include when writing up factor analysis results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Factor analysis uses the `psych` R package; citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Factor analysis uses the `psych` R package; citations for R packages used in your analysis appear automatically at the top of the output section. Parallel analysis (when enabled) draws Monte Carlo null distributions seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) — leave it empty for fresh null distributions each run, or set an integer for stable comparisons.
 
 ## Common pitfalls
 

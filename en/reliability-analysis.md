@@ -42,7 +42,7 @@ Enable or disable each metric independently:
 | **Cronbach's alpha** | On | Average inter-item covariance relative to total variance. The most widely reported metric. |
 | **McDonald's omega (total)** | On | Based on a factor model — accounts for items contributing unequally to the scale. Often more accurate than alpha. |
 | **Composite reliability (CR)** | Off | Similar to omega but from a CFA framework. Common in structural equation modeling. |
-| **Split-half reliability** | Off | Averages Spearman-Brown-corrected correlations across many random splits of the items (`psych::splitHalf`). The displayed value is the mean over splits; minimum and maximum splits are reported as additional bounds. |
+| **Mean split-half (Brown-corrected)** | Off | Averages Brown-corrected reliabilities across many random splits of the items (`psych::splitHalf`). The displayed value is the mean over splits; minimum and maximum splits are reported as additional bounds. |
 | **Guttman's lambda** | Off | Reports both Lambda 4 (greatest split-half) and Lambda 6 (item multiple correlation). |
 | **Average variance extracted (AVE)** | On | Average variance in items explained by the latent factor. Used to assess convergent validity. |
 | **Coefficient H** | Off | Maximal reliability based on factor loadings. Always ≥ omega. |
@@ -78,7 +78,7 @@ Five output sections can be toggled:
 
 - **Confidence intervals** (on by default) — adds a CI column to the metrics table. The confidence level comes from your [global settings](./settings.md#significance-level).
 
-> **How CIs are computed:** Cronbach's alpha uses an analytic formula (Feldt 1965 / van Zyl, Neudecker & Nel 2000) and is instant. Every other metric — omega, CR, split-half, λ4/λ6, AVE, H, β, and GLB — uses **bootstrap percentile intervals**. Each replication refits the underlying models once and reads off every selected metric, so adding metrics costs little extra time; the number of replications is the [bootstrap replications setting](./settings.md). Enabling CIs with omega or GLB selected can be noticeably slow on larger scales — `omega()` and `glb.fa()` are refit on every replication.
+> **How CIs are computed:** Cronbach's alpha uses **Feldt's F-based interval** (Feldt 1965), which is exact under tau-equivalence, bounded below 1, and instant. Every other metric — omega, CR, mean split-half, λ4/λ6, AVE, H, β, and GLB — uses **bootstrap percentile intervals**. Each replication refits the underlying models once and reads off every selected metric, so adding metrics costs little extra time; the number of replications is the [bootstrap replications setting](./settings.md). Enabling CIs with omega or GLB selected can be noticeably slow on larger scales — `omega()` and `glb.fa()` are refit on every replication.
 
 ## Reading results
 
@@ -181,22 +181,22 @@ Enable any combination of metrics. Each score variable gets whichever metrics ap
 | **ICC** | Yes | | | Model and form selectable |
 | **Pearson r** | Yes | | | 2 conditions only |
 | **Spearman ρ** | Yes | Yes | | 2 conditions only |
-| **SEM & SDC** | Yes | | | Derived from ICC |
+| **SEM & SDC** | Yes | | | ANOVA-based; matches the ICC model |
 | **Kendall's W** | Yes | Yes | | |
-| **Cohen's / Fleiss' κ** | | Yes | Yes | Auto-selects Cohen (2 raters) or Fleiss (3+) |
+| **Cohen's / Light's / Fleiss' κ** | | Yes | Yes | Cohen (2 raters); Light (3+ raters, ordinal); Fleiss (3+ raters, nominal) |
 | **Krippendorff's α** | Yes | Yes | Yes | Bootstrap CI — may be slow |
 
 Results are grouped by variable type, so you don't need to run the analysis separately for continuous and categorical variables.
 
 > **What is ICC?** The intraclass correlation coefficient quantifies how much of the total variance in scores is due to true differences between subjects, rather than differences between raters or random error. An ICC of 0.90 means 90% of the variance reflects actual subject differences — the measurement is highly reproducible.
 
-> **What is kappa?** Cohen's kappa measures agreement between two raters on categorical ratings, corrected for chance agreement. Two raters might agree 80% of the time — but if they're rating a binary outcome that's 90% "yes," chance alone would produce 82% agreement. Kappa strips that out. Fleiss' kappa extends this to three or more raters.
+> **What is kappa?** Cohen's kappa measures agreement between two raters on categorical ratings, corrected for chance agreement. Two raters might agree 80% of the time — but if they're rating a binary outcome that's 90% "yes," chance alone would produce 82% agreement. Kappa strips that out. With three or more raters, the module picks the right extension automatically: **Fleiss' κ** for nominal (unordered) categories, and **Light's κ** — the mean of all pairwise quadratic-weighted Cohen's κ — for ordinal categories, so the distance between adjacent categories still counts as partial agreement.
 
-> **SEM and SDC:** the standard error of measurement (SEM) quantifies the precision of individual scores — a smaller SEM means more precise measurement. The smallest detectable change (SDC) tells you the minimum change in a score that exceeds measurement error. If a patient's score changes by less than the SDC, you can't be confident the change is real.
+> **SEM and SDC:** the standard error of measurement (SEM) quantifies the precision of individual scores — a smaller SEM means more precise measurement. It's computed as `sqrt(MS_residual)` from the ANOVA matching the chosen ICC model (one-way → within-subject residual; two-way / mixed → subject×rater residual). The smallest detectable change (SDC = SEM · z · √2) tells you the minimum change in a score that exceeds measurement error. If a patient's score changes by less than the SDC, you can't be confident the change is real.
 
 ### ICC options
 
-When **ICC** or **SEM & SDC** is selected, two radio groups appear (SEM is derived from ICC, so it shares the same model and form):
+When **ICC** or **SEM & SDC** is selected, two radio groups appear (SEM's ANOVA model is taken from the same selection):
 
 **Model:**
 - **One-way random** — each subject is rated by a different random set of raters
@@ -217,7 +217,7 @@ Results are grouped by variable type under separate headings:
 - **Ordinal variables** — Spearman ρ, Kendall's W, κ, Krippendorff's α
 - **Categorical variables** — κ, Krippendorff's α
 
-Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation. Metrics with a meaningful null distribution — ICC, Cohen's/Fleiss' κ, Kendall's W, Pearson r, and Spearman ρ — also show a p-value column and significance stars next to the coefficient. SEM, SDC, and Krippendorff's α have no associated p-value and display only the coefficient and CI.
+Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation. Metrics with a meaningful null distribution — ICC, Cohen's / Fleiss' κ, Kendall's W, Pearson r, and Spearman ρ — also show a p-value column and significance stars next to the coefficient. Light's κ (ordinal, ≥3 raters), SEM, SDC, and Krippendorff's α have no closed-form p-value and display only the coefficient and CI.
 
 Interpretation thresholds for ICC and agreement coefficients (Koo & Li, 2016):
 
@@ -239,14 +239,14 @@ Kappa uses the Landis & Koch scale:
 | 0.60–0.80 | Substantial |
 | Above 0.80 | Almost perfect |
 
-> **Krippendorff's α and bootstrap:** the confidence interval for Krippendorff's alpha is computed using bootstrap resampling, which can take noticeable time with many variables or large samples. The number of bootstrap replications is controlled by the [bootstrap replications setting](./settings.md). Other metrics use analytical confidence intervals and compute instantly.
+> **Bootstrap-based CIs:** confidence intervals for Cohen's / Light's / Fleiss' κ, Kendall's W, SEM (and SDC), and Krippendorff's α are computed by percentile bootstrap — none of these have well-behaved closed-form intervals across the full range of inputs. ICC, Pearson r, and Spearman ρ use their standard analytical intervals and compute instantly. The number of bootstrap replications is controlled by the [bootstrap replications setting](./settings.md); bootstrap can take noticeable time with many variables or large samples.
 
 ### Assumptions
 
 - **Subjects are independent.** Each subject should be a different person (or unit). Repeated measurements from the same subject under different conditions are fine — that's what the condition variable captures.
 - **Same set of conditions for all subjects.** Every subject should ideally have a score under every condition (rater, time point). Missing combinations are handled but can reduce precision.
 - **ICC assumes continuous, normally distributed data.** For ordinal or categorical data, use kappa or Krippendorff's alpha instead.
-- **Kappa assumes categorical data.** For ordinal data, weighted kappa (used automatically) accounts for the distance between categories. For continuous data, use ICC.
+- **Kappa assumes categorical data.** For ordinal data, weighted kappa (quadratic weights, used automatically — Cohen's weighted κ with 2 raters, Light's κ with 3+) accounts for the distance between categories. For continuous data, use ICC.
 
 ## Missing data
 
@@ -279,7 +279,7 @@ Key things to include when writing up reliability results:
 
 ## R reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa and Kendall's W) and `tidyr` (data reshaping). Krippendorff's α and its bootstrap confidence interval are computed inline without an additional package. Citations for R packages used in your analysis appear automatically at the top of the output section.
+Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa and Kendall's W) and `tidyr` (data reshaping). Krippendorff's α and its bootstrap confidence interval are computed inline without an additional package; SEM uses base R's `aov()`. Citations for R packages used in your analysis appear automatically at the top of the output section. Bootstrap CIs (for ω, composite reliability, mean split-half, Guttman's λ, AVE, coefficient H, Revelle's β, GLB, Cohen's / Light's / Fleiss' κ, Kendall's W, SEM, and Krippendorff's α) are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it to make CIs reproducible across runs.
 
 ## Common pitfalls
 
