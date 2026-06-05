@@ -39,7 +39,7 @@ Measures of where the "center" of your data lies.
 
 - **Mode** — the most frequently occurring value. Can be meaningful for any variable type, but especially for categorical data. A variable can have multiple modes if several values share the highest frequency. If every value is unique (no value repeats), the cell shows **No mode** — i.e. no value repeats, rather than "every value is a mode".
 
-- **Trimmed mean** — the mean after removing a percentage of extreme values from both ends. The trim percentage (0–50%, default 10%) controls how much is cut. A 10% trim removes the lowest 10% and the highest 10% of values before averaging. This gives a compromise between the mean (sensitive to outliers) and the median (ignores all but the middle value).
+- **Trimmed mean** — the mean after removing a percentage of extreme values from both ends. The trim percentage (0–50%, default 10%) controls how much is cut. A 10% trim removes the lowest 10% and the highest 10% of values before averaging. This gives a compromise between the mean (sensitive to outliers) and the median (ignores all but the middle value). At the maximum 50% trim everything outside the centre is removed, so the result equals the median (matching R's `mean(x, trim = 0.5)`).
 
 - **Geometric mean** — the nth root of the product of values. Appropriate for data that is multiplicative in nature, such as growth rates or ratios. Reported as **N/A** when any value is zero or negative.
 
@@ -126,7 +126,7 @@ The standard error estimates how much a statistic would vary if you repeated the
 > **Standard deviation vs. standard error:** SD describes the spread of individual values in your data. SE describes the precision of a computed statistic (like the mean). SD stays roughly the same as you collect more data; SE shrinks, because larger samples give more precise estimates.
 
 - **SE of mean** — standard error of the arithmetic mean
-- **SE of median** — bootstrap standard error of the median: the empirical SD of the median across resamples with replacement. No distributional assumption.
+- **SE of median** — bootstrap standard error of the median: the empirical SD of the median across resamples with replacement, using the resample count from your global [**Bootstrap replications**](./settings.md#bootstrap-replications) setting. No distributional assumption.
 - **SE of proportion** — for binary categorical variables only (exactly two categories)
 - **SE of skewness** — standard error of the sample skewness
 - **SE of kurtosis** — standard error of the sample kurtosis

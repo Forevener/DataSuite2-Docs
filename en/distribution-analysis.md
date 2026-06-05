@@ -26,7 +26,7 @@ One table is produced per variable.
 - **Cumulative valid count** — running total of counts over valid (non-missing) observations
 - **Cumulative valid percentage** — running total of *valid* percentages (reaches 100% at the last row)
 
-> **Percentage vs. valid percentage:** if 10 out of 100 rows are missing and a value appears 30 times, its percentage is 30% (of 100), but its valid percentage is 33.3% (of 90). Valid percentage is more useful when you want to ignore the missing data.
+> **Percentage vs. valid percentage:** if 10 out of 100 rows are missing and a value appears 30 times, its percentage is 30% (of 100), but its valid percentage is 33.3% (of 90). Valid percentage is more useful when you want to ignore the missing data. When you enable both columns and the variable has no missing values, the two are identical, so the plain *Percentage* column is dropped to avoid a redundant duplicate.
 
 > **Why "cumulative valid"?** Cumulative count and cumulative percentage both run over non-missing observations, so the cumulative percentage column always ends at 100% regardless of how many missings there are. This matches SPSS behavior and keeps the cumulative columns interpretable when the (over-all-rows) *Percentage* column doesn't reach 100%.
 
@@ -34,20 +34,22 @@ One table is produced per variable.
 
 ### Sorting
 
-- Count (highest first) — default
+- Value (ascending) — default
+- Value (descending)
+- Count (highest first)
 - Count (lowest first)
-- Value (A–Z)
-- Value (Z–A)
 
-> **Sort options when compressing into ranges:** count-based sorts are disabled when **Compress numerical values into ranges** is on. Sorting a compressed-range table by count would scramble the contiguous range axis and make the cumulative columns meaningless, so the table is always sorted by range (ascending by default; switch to descending via **Value (Z–A)**).
+> **Cumulative columns follow the sort:** the cumulative columns only make sense in value order, so they're hidden whenever a count-based sort is active (a note explains why) — sort by value to bring them back.
+
+> **Sort options when compressing into ranges:** count-based sorts are disabled when **Compress numerical values into ranges** is on. Sorting a compressed-range table by count would scramble the contiguous range axis and make the cumulative columns meaningless, so the table is always sorted by range (ascending by default; switch to descending via **Value (descending)**).
 
 ### Compressing numeric values into ranges
 
 Numeric variables with many distinct values can produce unwieldy tables. Check **Compress numerical values into ranges** to group values into bins:
 
 - **Maximum categories** (default 20) — if the number of unique values is below this threshold, values are shown individually; otherwise they are grouped
-- **Number of bins** (default 10) — how many bins to create. Empty bins are kept in the output so the range axis stays contiguous. When **Equal-count** binning is selected on heavily-tied data, multiple quantile boundaries can collapse onto the same value; the table then shows fewer bins than requested and a small note appears below it ("requested *X* bins, but tied values collapsed boundaries — showing *Y* bins").
-- **Binning mode** — *Equal-width* (default) places bin boundaries evenly across the value range; *Equal-count (quantile)* uses sample quantiles as boundaries so each bin holds roughly the same number of observations
+- **Number of bins** (default 10) — how many bins to create. Empty bins are kept in the output so the range axis stays contiguous. When **Equal-count** binning is selected on heavily-tied data, a few very frequent values can fill whole bins on their own, so the table shows fewer bins than requested and a small note appears below it ("requested *X* bins, but tied values collapsed boundaries — showing *Y* bins").
+- **Binning mode** — *Equal-width* (default) places bin boundaries evenly across the value range; *Equal-count (quantile)* uses sample quantiles as boundaries so each bin holds roughly the same number of observations. Counts are only approximately equal — identical values can't be split across bins, so heavy ties leave some bins fuller than others
 
 > **Equal-width vs. equal-count:** equal-width bins are easier to interpret ("how many observations fall between 10 and 20?") and match the histogram view. Equal-count bins are more useful for heavily skewed data — they give every bin meaningful weight instead of letting one or two bins dominate.
 
@@ -98,7 +100,7 @@ When the [interpretation column is enabled](./settings.md#significance-formattin
 
 > **Why no majority vote?** The normality tests are all examining the same null hypothesis on the same data, so their outcomes are heavily correlated — "majority of 7 tests rejected" isn't statistically combinable in the way a true meta-analysis would be. The tri-state verdict surfaces disagreement honestly rather than papering over it with a vote.
 
-If a variable doesn't meet a test's minimum sample size, that test's cell shows an "Insufficient data" message with the actual n and the required minimum. The test still runs for variables that do meet the minimum.
+If a variable doesn't meet a test's minimum sample size, that test's cell shows an "Insufficient data" message with the actual n and the required minimum. The test still runs for variables that do meet the minimum. Constant variables (every valid value identical) are flagged up front with a "Zero variance" message for every selected test — every supported test needs spread, so there is nothing to compute.
 
 ## Distribution plots
 
@@ -131,7 +133,7 @@ Shows the distribution as bars, where each bar represents a range of values (a "
 
 Options:
 
-- **Density curve** (on by default) — overlays a smooth curve (red) estimating the underlying distribution shape using a Gaussian-kernel density estimate with a robust Silverman bandwidth (the rule's `0.9·σ·n^(-1/5)` form applies directly to a Gaussian kernel)
+- **Density curve** (on by default) — overlays a smooth curve (red) estimating the underlying distribution shape using a Gaussian-kernel density estimate with a robust Silverman bandwidth (the rule's `0.9·σ·n^(-1/5)` form applies directly to a Gaussian kernel). For dense integer data the bandwidth is given a small floor (≈¾ of the integer step) so the curve doesn't collapse into a spike at each integer
 - **Normal curve** — overlays a theoretical normal distribution (green dashed) for comparison
 - **Show rug** — adds short tick marks at each observation along the bottom of the chart, revealing the exact data points behind the bars
 - **Show skewness and kurtosis** — annotates the plot with the bias-corrected sample skewness (G1, labelled *skew*) and excess kurtosis (G2, labelled *ex.kurt*) — the Fisher-Pearson estimators used by SPSS, SAS, and Excel's `SKEW`/`KURT`. A normal distribution has both ≈ 0. Requires n ≥ 4 (both estimators well-defined); the annotation is omitted otherwise.
@@ -139,7 +141,10 @@ Options:
 
 > **Reading a histogram:** look for the overall shape. Is it roughly bell-shaped (normal)? Skewed to one side? Has multiple peaks (bimodal)? When the density curve and normal curve are both visible, comparing them shows how your actual data departs from normality. The right-side density axis matches the left-side count axis via the relationship *count = density × n × binWidth* — so the two scales are not arbitrary, they're calibrated to each other.
 
-Hover over any bar to see the count and value range. When the data is integer-valued with at most 50 distinct values, bins automatically align to individual integers — one bar per observed value, with ticks only at those values. This works for both dense integers (e.g. 0–20) and sparse integers (e.g. mostly 0–5 plus a few far-away outliers); sparse data simply yields wide trailing bars that visually reflect the gap. In the sparse-integer case, the density and normal-curve overlays are suppressed (with a note below the chart) because bin widths vary by orders of magnitude and the mean-bin-width scale factor would produce visually meaningless curves.
+Hover over any bar to see the count and value. When the data is integer-valued with at most 50 distinct values, the histogram switches to a discrete layout — one bar per value rather than arbitrary bins. There are two variants, chosen automatically:
+
+- **To-scale (dense integers)** — when the values span a small enough range and the gaps don't dominate, each integer gets a unit-width bar across the whole range, and integers with no observations show as zero-height gaps. The x-axis stays to scale, so the density and normal-curve overlays still work.
+- **Evenly-spaced (sparse or gappy integers)** — when the values are spread too far apart (e.g. mostly 0–5 plus a far-away outlier) or most slots would be empty, each present value gets an equal-width bar spaced evenly and labelled with its value. The x-axis is no longer to scale, so the density and normal-curve overlays are hidden (with a note below the chart).
 
 ### Box plot
 
@@ -149,10 +154,10 @@ Options:
 
 - **Show outliers** (on by default) — displayed as diamond shapes
 - **Show mean** (on by default) — shown as a hollow circle
-- **Median notch** — adds a notch around the median. If the notches of two box plots don't overlap, their medians are likely significantly different.
+- **Median notch** — adds a notch around the median spanning its confidence interval, computed distribution-free from the order statistics (Hettmansperger–Sheather interpolation) at your global [confidence level](./settings.md#confidence-level). The notch is asymmetric when the data are skewed, and is omitted for groups too small to support the interval at that level. If the notches of two box plots don't overlap, their medians are likely significantly different.
 - **Data points** — displays individual observations alongside the box, giving you the full picture rather than just the summary
 
-> **Reading a box plot:** the box spans the interquartile range (Q1 to Q3) — the middle 50% of your data. The thick line inside the box is the median. Whiskers extend to the most extreme non-outlier values (within 1.5 × IQR from the box edges). Points beyond the whiskers are outliers. If the median line isn't centered in the box, the data is skewed.
+> **Reading a box plot:** the box spans the interquartile range (Q1 to Q3) — the middle 50% of your data. The thick line inside the box is the median. Whiskers extend to the most extreme non-outlier values (within 1.5 × IQR from the box edges). Points beyond the whiskers are outliers. If the median line isn't centered in the box, the data is skewed. Quartiles use the linear-interpolation method (type 7), matching the quartiles reported elsewhere in DataSuite 2.
 
 Hover over a box to see a tooltip with all five-number summary values, the IQR, the mean (if enabled), and a list of outlier values (capped at 8 with a "+N more" suffix when there are too many to display).
 
