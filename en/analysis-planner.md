@@ -5,7 +5,7 @@ description: Power analysis, effect size conversion, alpha correction, reliabili
 
 # Analysis planner
 
-The **Analysis planner** is a study-planning toolkit with six tools: power analysis, effect size conversion, alpha correction, reliability and attenuation planning, precision planning, and group allocation optimization. Each tool is a collapsible section — open the one you need.
+The **Analysis planner** is a study-planning toolkit with six tools: power analysis, effect size conversion, alpha correction, reliability and attenuation planning, precision planning, and group allocation optimization. Each tool is a collapsible section – open the one you need.
 
 > **Why plan ahead?** Running a study without planning sample size, effect size expectations, and multiple-comparison strategy is like building a house without a blueprint. Power analysis tells you how many participants you need. Alpha correction tells you how to handle multiple tests. Reliability planning tells you how many items your scale needs. Doing this *before* data collection avoids the two most common problems in research: underpowered studies that miss real effects, and post-hoc rationalization of unexpected results.
 
@@ -13,7 +13,7 @@ The **Analysis planner** is a study-planning toolkit with six tools: power analy
 
 Determines sample size, statistical power, or minimum detectable effect size for a planned study.
 
-> **What is statistical power?** Power is the probability that your study will detect a real effect if one exists. A power of 0.80 means an 80% chance of getting a significant result when there truly is an effect — and a 20% chance of missing it. The convention is to aim for 0.80, though 0.90 is better for expensive studies or important decisions. Power depends on three things: effect size (bigger effects are easier to detect), sample size (more data helps), and significance level (stricter alpha requires more evidence).
+> **What is statistical power?** Power is the probability that your study will detect a real effect if one exists. A power of 0.80 means an 80% chance of getting a significant result when there truly is an effect – and a 20% chance of missing it. The convention is to aim for 0.80, though 0.90 is better for expensive studies or important decisions. Power depends on three things: effect size (bigger effects are easier to detect), sample size (more data helps), and significance level (stricter alpha requires more evidence).
 
 ### Choosing a test
 
@@ -32,48 +32,50 @@ The effect size metric, parameter fields, and sample size label update automatic
 
 ### Solve for
 
-Choose which parameter to calculate — the other two become inputs:
+Choose which parameter to calculate – the other two become inputs:
 
-- **Sample size** (default) — "how many participants do I need?"
-- **Power** — "what's my chance of detecting the effect with this sample?"
-- **Effect size** — "what's the smallest effect I can detect with this sample?"
+- **Sample size** (default) – "how many participants do I need?"
+- **Power** – "what's my chance of detecting the effect with this sample?"
+- **Effect size** – "what's the smallest effect I can detect with this sample?"
 
 ### Parameters
 
 All tests share these core inputs:
 
-- **Effect size** — the expected magnitude of the effect. The metric changes with the test type (Cohen's d for t-tests, Cohen's f for one-way ANOVA, r for correlation, f² for regression and factorial ANOVA, Cohen's w for chi-square, Cohen's h for proportions). Default values follow Cohen's "medium" conventions.
-- **Significance level (alpha)** — default 0.05
-- **Power (1 − β)** — default 0.80
-- **Sample size** — label adjusts per test ("per group", "number of pairs", "total sample size", etc.)
+- **Effect size** – the expected magnitude of the effect. The metric changes with the test type (Cohen's d for t-tests, Cohen's f for one-way ANOVA, r for correlation, f² for regression and factorial ANOVA, Cohen's w for chi-square, Cohen's h for proportions). Default values follow Cohen's "medium" conventions.
+- **Significance level (alpha)** – default 0.05
+- **Power (1 − β)** – default 0.80
+- **Sample size** – label adjusts per test ("per group", "number of pairs", "total sample size", etc.)
 
 Additional fields for specific tests:
 
-- **Tails** (all t-tests and Pearson correlation) — two-tailed (default), one-tailed (greater), or one-tailed (less)
-- **Number of groups** (one-way ANOVA) — default 3
-- **Numerator / denominator df** (factorial ANOVA) — for specifying the effect and error degrees of freedom
-- **Number of predictors** (regression) — default 3
-- **Degrees of freedom** (chi-square) — help text shows the formula: categories − 1 for goodness of fit, (rows − 1) × (cols − 1) for independence
+- **Tails** (all t-tests and Pearson correlation) – two-tailed (default), one-tailed (greater), or one-tailed (less)
+- **Number of groups** (one-way ANOVA) – default 3
+- **Numerator / denominator df** (factorial ANOVA) – for specifying the effect and error degrees of freedom
+- **Number of predictors** (regression) – default 3
+- **Degrees of freedom** (chi-square) – help text shows the formula: categories − 1 for goodness of fit, (rows − 1) × (cols − 1) for independence
 
-> **What effect size should I use?** Don't default to "medium" just because it's the default. Look at prior research in your field — meta-analyses are the best source. If no prior data exists, run a small pilot study. Cohen's conventions (small/medium/large) are rough guides, not prescriptions. In some fields, d = 0.20 is a meaningful effect; in others, it's noise.
+> **What effect size should I use?** Don't default to "medium" just because it's the default. Look at prior research in your field – meta-analyses are the best source. If no prior data exists, run a small pilot study. Cohen's conventions (small/medium/large) are rough guides, not prescriptions. In some fields, d = 0.20 is a meaningful effect; in others, it's noise.
 
 ### Results
 
 After clicking **Calculate**:
 
-1. **Main result** — a highlighted box with the answer (e.g. "Required sample size: 64 per group (128 total)")
-2. **Parameters used** — a summary table listing all inputs
-3. **Sensitivity analysis** — a table showing actual power (recomputed via `pwr`) at 50%, 75%, 100%, 125%, and 150% of the reference sample size. The reference is the calculated N when solving for sample size, or the entered N otherwise.
+1. **Main result** – a highlighted box with the answer (e.g. "Required sample size: 64 per group (128 total)")
+2. **Parameters used** – a summary table listing all inputs
+3. **Sensitivity analysis** – a table showing actual power (recomputed via `pwr`) at 50%, 75%, 100%, 125%, and 150% of the reference sample size. The reference is the calculated N when solving for sample size, or the entered N otherwise.
 
-> **Always check the sensitivity analysis.** Your effect size estimate is just that — an estimate. The sensitivity table shows what happens if you're wrong. If power drops to 0.50 at 75% of your calculated N, your study is fragile — consider aiming for a larger sample.
+> **Always check the sensitivity analysis.** Your effect size estimate is just that – an estimate. The sensitivity table shows what happens if you're wrong. If power drops to 0.50 at 75% of your calculated N, your study is fragile – consider aiming for a larger sample.
 
 ### Power curve and sensitivity heatmap
 
 Three buttons appear next to the results:
 
-- **Show power curve** — generates an interactive chart plotting power (y-axis) against sample size (x-axis). A green crosshair marks the calculated result. Hover over the curve to see power at any sample size.
-- **Show sensitivity heatmap** — renders a 2-D grid of power across a range of sample sizes (x-axis) and effect sizes (y-axis), anchored on your current inputs. Each cell shows the actual power computed by `pwr`, colored on a sequential scale (light = low power, dark = high power), with the value printed inside the cell.
-- **Export curve as PNG** — saves the currently-visible power curve as a 2× resolution PNG. Requires the power curve to be visible.
+- **Show power curve** – generates an interactive chart plotting power (y-axis) against sample size (x-axis). A green crosshair marks the calculated result. Hover over the curve to see power at any sample size.
+- **Show sensitivity heatmap** – renders a 2-D grid of power across a range of sample sizes (x-axis) and effect sizes (y-axis), anchored on your current inputs. Each cell shows the actual power computed by `pwr`, colored on a sequential scale (light = low power, dark = high power), with the value printed inside the cell.
+- **Export curve as PNG** – saves the currently-visible power curve as a 2× resolution PNG. Requires the power curve to be visible.
+
+Both the power curve and the sensitivity heatmap are resizable and carry their own SVG / PNG / JPG export buttons beside the chart (see [resizing and exporting charts](./getting-started.md#resizing-and-exporting-charts)); the dedicated **Export curve as PNG** button above is an additional shortcut that saves the curve at 2× resolution.
 
 ### Quick reference
 
@@ -97,11 +99,11 @@ Select the input type from 15 options: Cohen's d, Hedges' g, Correlation r, R²,
 
 Additional fields appear when needed:
 
-- **Sample size** — improves accuracy for Hedges' g (required when converting *from* g)
-- **Table dimensions** — required for Cramer's V
-- **Proportions (p1, p2)** — required for Cohen's h
-- **Degrees of freedom** — required for partial eta-squared (both as input and as output); without df, partial η² inputs fall back to the plain η² formula
-- **Control event rate** — required for NNT
+- **Sample size** – improves accuracy for Hedges' g (required when converting *from* g)
+- **Table dimensions** – required for Cramer's V
+- **Proportions (p1, p2)** – required for Cohen's h
+- **Degrees of freedom** – required for partial eta-squared (both as input and as output); without df, partial η² inputs fall back to the plain η² formula
+- **Control event rate** – required for NNT
 
 > **How the converter works:** all input types are first converted to Cohen's d as a common pivot, then from d to every other metric. This means conversions between two non-d metrics go through an intermediate step, which can introduce small rounding artifacts.
 
@@ -113,12 +115,12 @@ After clicking **Convert**, a table shows every metric with its value and a verb
 
 Shows adjusted significance thresholds for multiple comparisons, so you can plan your alpha correction *before* running the study.
 
-> **Why correct for multiple comparisons?** If you test 20 hypotheses at alpha = 0.05, you expect one false positive by chance alone — even if none of the effects are real. Alpha correction adjusts the threshold to control this inflation. The question is *how* to correct. This tool shows you what each method does to your per-test threshold, so you can make an informed choice. See also the [p-value adjustment setting](./settings.md#multiple-comparison-adjustment) for applying corrections to actual results.
+> **Why correct for multiple comparisons?** If you test 20 hypotheses at alpha = 0.05, you expect one false positive by chance alone – even if none of the effects are real. Alpha correction adjusts the threshold to control this inflation. The question is *how* to correct. This tool shows you what each method does to your per-test threshold, so you can make an informed choice. See also the [p-value adjustment setting](./settings.md#multiple-comparison-adjustment) for applying corrections to actual results.
 
 ### Alpha correction input
 
-- **Number of comparisons** — default 10
-- **Family-wise alpha level** — default 0.05
+- **Number of comparisons** – default 10
+- **Family-wise alpha level** – default 0.05
 
 ### Alpha correction output
 
@@ -129,7 +131,7 @@ After clicking **Calculate thresholds**, a table shows the adjusted p-value thre
 | **Bonferroni** | Constant threshold: α / m. Simple but conservative. |
 | **Šidák** | Slightly less conservative than Bonferroni: 1 − (1 − α)^(1/m). |
 | **Holm / Hochberg / Hommel** | Step-wise methods that use different thresholds for each ranked p-value. All three share the same threshold values but differ in procedure. Hommel ≥ Hochberg ≥ Holm in statistical power. |
-| **Benjamini-Hochberg (FDR)** | Controls the false discovery *rate* rather than the family-wise error rate — more permissive, better for exploratory work. |
+| **Benjamini-Hochberg (FDR)** | Controls the false discovery *rate* rather than the family-wise error rate – more permissive, better for exploratory work. |
 | **Benjamini-Yekutieli (BY)** | Conservative FDR control that makes no assumptions about test dependence. |
 
 > **Reading the table:** sequential methods (Holm, Hochberg, BH) compare each p-value to a *different* threshold depending on its rank. The table shows what those thresholds look like at three positions. The most significant p-value has the strictest threshold; the least significant has the most lenient.
@@ -144,13 +146,13 @@ Shows how measurement unreliability weakens observed correlations.
 
 **Inputs:**
 
-- **True/expected correlation** — the correlation you expect between the constructs (must be in [−1, 1]; default 0.50)
-- **Reliability of measure X** — Cronbach's alpha or omega (must be in (0, 1]; default 0.80)
-- **Reliability of measure Y** — (must be in (0, 1]; default 0.80)
+- **True/expected correlation** – the correlation you expect between the constructs (must be in [−1, 1]; default 0.50)
+- **Reliability of measure X** – Cronbach's alpha or omega (must be in (0, 1]; default 0.80)
+- **Reliability of measure Y** – (must be in (0, 1]; default 0.80)
 
 **Output:** the expected observed (attenuated) correlation, the attenuation factor, and a plain-language explanation.
 
-> **Why this matters for planning:** if your measures have reliability of 0.70 each, a true correlation of r = 0.50 will appear as roughly r = 0.35 in your data. That means you need a *larger* sample to detect it — your power analysis should use the attenuated correlation, not the true one. This tool helps you see the gap.
+> **Why this matters for planning:** if your measures have reliability of 0.70 each, a true correlation of r = 0.50 will appear as roughly r = 0.35 in your data. That means you need a *larger* sample to detect it – your power analysis should use the attenuated correlation, not the true one. This tool helps you see the gap.
 
 ### Scale length planning (Spearman-Brown)
 
@@ -158,13 +160,13 @@ Estimates how adding or removing items changes a scale's [reliability](./reliabi
 
 **Inputs:**
 
-- **Current reliability** — must be strictly between 0 and 1 (default 0.70)
-- **Current number of items** — must be at least 1 (default 10)
-- **Target reliability** — must be strictly between 0 and 1 (default 0.80)
+- **Current reliability** – must be strictly between 0 and 1 (default 0.70)
+- **Current number of items** – must be at least 1 (default 10)
+- **Target reliability** – must be strictly between 0 and 1 (default 0.80)
 
 **Output:** the required number of items, whether items need to be added or removed (and how many), and a table showing projected reliability at several scale lengths (half, current, 1.5×, 2×, and the target). The target row is highlighted.
 
-> **Diminishing returns:** doubling the items on a 10-item scale with alpha = 0.70 gets you to about 0.82 — nice improvement. But going from 20 to 40 items only gets you from 0.82 to 0.90. Each additional item contributes less. At some point, a longer questionnaire causes respondent fatigue, which *hurts* data quality. Find the sweet spot.
+> **Diminishing returns:** doubling the items on a 10-item scale with alpha = 0.70 gets you to about 0.82 – nice improvement. But going from 20 to 40 items only gets you from 0.82 to 0.90. Each additional item contributes less. At some point, a longer questionnaire causes respondent fatigue, which *hurts* data quality. Find the sweet spot.
 
 ## Precision planning (CI width)
 
@@ -174,12 +176,12 @@ Determines sample size based on how *precise* an estimate needs to be, rather th
 
 ### Precision input
 
-- **Estimate type** — Mean (default), Proportion, or Correlation
+- **Estimate type** – Mean (default), Proportion, or Correlation
   - Mean: enter expected SD (default 1.0, from pilot data or literature)
-  - Proportion: enter expected proportion (default 0.50 — the most conservative choice, giving maximum variance)
+  - Proportion: enter expected proportion (default 0.50 – the most conservative choice, giving maximum variance)
   - Correlation: enter expected correlation (default 0.30)
-- **Confidence level** — 90%, 95% (default), or 99%
-- **Desired margin of error** — half-width of the confidence interval (default 0.50)
+- **Confidence level** – 90%, 95% (default), or 99%
+- **Desired margin of error** – half-width of the confidence interval (default 0.50)
 
 ### Precision output
 
@@ -189,7 +191,7 @@ After clicking **Calculate sample size**:
 - A statement of the resulting CI properties
 - A table showing required N at six margin values (0.5×, 0.75×, 1×, 1.25×, 1.5×, and 2× the entered margin). The entered value is highlighted.
 
-> **Why the table matters:** halving the margin of error roughly quadruples the required sample size. The table makes this trade-off visible — you might decide that ±0.75 is precise enough when ±0.50 would need four times as many participants.
+> **Why the table matters:** halving the margin of error roughly quadruples the required sample size. The table makes this trade-off visible – you might decide that ±0.75 is precise enough when ±0.50 would need four times as many participants.
 
 ## Group allocation optimizer
 
@@ -197,9 +199,9 @@ Explores how unequal group sizes affect power for a two-group comparison.
 
 ### Allocation input
 
-- **Group sizes (n1, n2)** — both default to 50
-- **Effect size (Cohen's d)** — default 0.50
-- **Significance level (alpha)** — default 0.05
+- **Group sizes (n1, n2)** – both default to 50
+- **Effect size (Cohen's d)** – default 0.50
+- **Significance level (alpha)** – default 0.05
 
 ### Allocation output
 
@@ -212,7 +214,7 @@ After clicking **Calculate power**:
 
 A **Power by allocation ratio** table compares standard ratios (1:1, 1:2, 2:1, 1:3, 3:1, 2:3, 3:2) all derived from the same total N. The equal-allocation row is highlighted in green; the current allocation in blue. Rows are sorted by power.
 
-> **When unequal allocation makes sense:** equal groups always maximize statistical power, but practical constraints often make that impossible. In clinical trials, recruiting patients with a rare condition is harder than recruiting healthy controls. In educational research, intact classrooms have fixed sizes. This tool shows exactly how much power you lose — often less than you'd think. A 2:1 ratio with N = 90 (60 vs. 30) typically loses only 1–3% power compared to 45 vs. 45.
+> **When unequal allocation makes sense:** equal groups always maximize statistical power, but practical constraints often make that impossible. In clinical trials, recruiting patients with a rare condition is harder than recruiting healthy controls. In educational research, intact classrooms have fixed sizes. This tool shows exactly how much power you lose – often less than you'd think. A 2:1 ratio with N = 90 (60 vs. 30) typically loses only 1–3% power compared to 45 vs. 45.
 
 ## Reporting checklist
 
@@ -222,7 +224,7 @@ Power analysis and study planning parameters belong in the **Method** section of
 - The statistical test you planned for (e.g. independent samples t-test)
 - Target power (e.g. 0.80)
 - Significance level (e.g. 0.05, one-tailed or two-tailed)
-- Expected effect size and its source (prior research, meta-analysis, pilot study — not "Cohen's medium" without justification)
+- Expected effect size and its source (prior research, meta-analysis, pilot study – not "Cohen's medium" without justification)
 - The resulting required sample size
 - Whether you accounted for attrition (e.g. "we aimed for N = 80 to account for 20% expected dropout")
 
@@ -234,7 +236,7 @@ Power analysis and study planning parameters belong in the **Method** section of
 - The target margin of error and confidence level
 - Expected variability (SD, proportion, or correlation) and its source
 
-> **"We used Cohen's medium effect size"** is not a justification. Reviewers increasingly expect a substantive rationale — what effect size is meaningful in your context? Use prior literature, meta-analyses, or the [effect size converter](#effect-size-converter) to translate between metrics. If no prior data exists, be transparent about that and report a sensitivity analysis showing power across a range of plausible effect sizes.
+> **"We used Cohen's medium effect size"** is not a justification. Reviewers increasingly expect a substantive rationale – what effect size is meaningful in your context? Use prior literature, meta-analyses, or the [effect size converter](#effect-size-converter) to translate between metrics. If no prior data exists, be transparent about that and report a sensitivity analysis showing power across a range of plausible effect sizes.
 
 ## Reproducibility
 

@@ -5,27 +5,27 @@ description: Use the built-in R console in DataSuite 2 to run R commands directl
 
 # R console
 
-DataSuite 2 includes a full R console powered by [WebR](https://docs.r-wasm.org/webr/latest/) — R running entirely in your browser. Click the **R console** button (monitor icon) in the top bar to open it.
+DataSuite 2 includes a full R console powered by [WebR](https://docs.r-wasm.org/webr/latest/) – R running entirely in your browser. Click the **R console** button (monitor icon) in the top bar to open it.
 
 ## Why use the console?
 
-**Every analysis you run in DataSuite prints its R code to the console.** When you click "Calculate" in any analysis module, the actual R commands appear in the console output — the same code you'd write yourself in RStudio or any other R environment.
+**Every analysis you run in DataSuite prints its R code to the console.** When you click "Calculate" in any analysis module, the actual R commands appear in the console output – the same code you'd write yourself in RStudio or any other R environment.
 
 This means you can:
 
-- **Learn R by example** — run an analysis through the UI, then read the generated code to understand what happened under the hood
-- **Verify the methodology** — see exactly which functions, parameters, and corrections were applied
-- **Tweak and rerun** — copy a command from the console output, modify it (different parameters, a different model specification), and run it directly
-- **Go beyond the UI** — the built-in modules cover common analyses, but R can do much more. Use the console for anything the modules don't offer.
+- **Learn R by example** – run an analysis through the UI, then read the generated code to understand what happened under the hood
+- **Verify the methodology** – see exactly which functions, parameters, and corrections were applied
+- **Tweak and rerun** – copy a command from the console output, modify it (different parameters, a different model specification), and run it directly
+- **Go beyond the UI** – the built-in modules cover common analyses, but R can do much more. Use the console for anything the modules don't offer.
 
-You don't need to know R to use DataSuite — but if you're curious, the console is always there, showing you what's happening and letting you take the wheel when you want to.
+You don't need to know R to use DataSuite – but if you're curious, the console is always there, showing you what's happening and letting you take the wheel when you want to.
 
 ## Running commands
 
 Type R code in the input field and press **Enter** to execute (or click the **Run** button). Results appear in the console output area above.
 
-- **Shift+Enter** — insert a newline for multi-line input
-- **Up/Down arrows** — navigate through command history (up to 50 commands, persistent across sessions)
+- **Shift+Enter** – insert a newline for multi-line input
+- **Up/Down arrows** – navigate through command history (up to 50 commands, persistent across sessions)
 
 ```r
 mean(c(1, 2, 3, 4, 5))
@@ -35,7 +35,7 @@ mean(c(1, 2, 3, 4, 5))
 
 Type `/` to see a list of special commands. Use **Up/Down** to navigate and **Tab** to autocomplete.
 
-### `/data` — load your dataset into R
+### `/data` – load your dataset into R
 
 Makes the currently loaded DataSuite data available as a data frame called `df`. After running this, you can use standard R functions:
 
@@ -48,7 +48,7 @@ str(df)
 
 The data frame includes all variables currently selected in DataSuite, with any active [filters](./getting-started.md#filtering-cases) and [transformations](./data-transformation.md) applied.
 
-### `/output <variable>` — render results in the output section
+### `/output <variable>` – render results in the output section
 
 Takes an R variable and displays it as a formatted result card alongside your other analysis results.
 
@@ -59,13 +59,13 @@ model <- lm(Score ~ Age + Group, data = df)
 
 Different types are rendered differently:
 
-- **Data frames and matrices** — formatted tables
-- **Named vectors** — key-value tables
-- **Short unnamed vectors** — comma-separated values
-- **Long vectors** (20+ elements) — truncated with a count
-- **Lists** — rendered recursively, with each named element in its own subsection
+- **Data frames and matrices** – formatted tables
+- **Named vectors** – key-value tables
+- **Short unnamed vectors** – comma-separated values
+- **Long vectors** (20+ elements) – truncated with a count
+- **Lists** – rendered recursively, with each named element in its own subsection
 
-### `/upload` — bring in external files
+### `/upload` – bring in external files
 
 Opens a file picker to upload a file into R's virtual filesystem (at `/home/web_user/`). You can then read it from R:
 
@@ -74,7 +74,7 @@ Opens a file picker to upload a file into R's virtual filesystem (at `/home/web_
 external_data <- read.csv("myfile.csv")
 ```
 
-### `/download <filename>` — save files from R
+### `/download <filename>` – save files from R
 
 Downloads a file from R's virtual filesystem to your computer:
 
@@ -85,23 +85,23 @@ write.csv(results, "output.csv")
 
 If the file isn't found, the console suggests running `list.files()` to see what's available.
 
-### `/clear` — clear console output
+### `/clear` – clear console output
 
 Clears the console output area. Does not affect your R session or variables.
 
-### `/reset` — restart R
+### `/reset` – restart R
 
 Reinitializes the R engine from scratch. All variables, loaded packages, and session state are lost. Use this if something goes wrong or you want a clean slate.
 
-### `/clearplots` — clear the plot gallery
+### `/clearplots` – clear the plot gallery
 
 Removes all plots from the **Plots** tab (see [plotting](#plotting) below).
 
-### `/outputplot [n]` — send a plot to results
+### `/outputplot [n]` – send a plot to results
 
 Sends a plot to the output section as a result card. Without an argument, sends the latest plot. With a number (e.g. `/outputplot 3`), sends that specific plot. With `all`, sends every plot in the gallery.
 
-### `/help` — show available commands
+### `/help` – show available commands
 
 Displays all slash commands and links to R documentation resources:
 
@@ -119,69 +119,69 @@ Use [`/outputplot`](#outputplot-n--send-a-plot-to-results) to send plots to the 
 
 ## R formula notation
 
-Many R functions — including `lm()`, `glm()`, `t.test()`, `aov()`, and plot functions — use a formula to describe relationships between variables. The general form is `response ~ terms`, read as "response is modeled by terms." DataSuite's [regression module](./regression-analysis.md) and [path analysis](./regression-analysis.md#path-analysis-advanced-mode) use the same notation.
+Many R functions – including `lm()`, `glm()`, `t.test()`, `aov()`, and plot functions – use a formula to describe relationships between variables. The general form is `response ~ terms`, read as "response is modeled by terms." DataSuite's [regression module](./regression-analysis.md) and [path analysis](./regression-analysis.md#path-analysis-advanced-mode) use the same notation.
 
 ### Operators
 
 | Operator | Meaning | Example | Expands to |
 |---|---|---|---|
-| `~` | "is modeled by" — separates left (response) and right (predictors) sides | `Y ~ X` | Y predicted by X |
+| `~` | "is modeled by" – separates left (response) and right (predictors) sides | `Y ~ X` | Y predicted by X |
 | `+` | include a term | `Y ~ A + B` | main effects of A and B |
 | `-` | exclude a term | `Y ~ A*B - A:B` | A and B without their interaction |
-| `*` | crossing — main effects plus interaction | `Y ~ A * B` | A + B + A:B |
+| `*` | crossing – main effects plus interaction | `Y ~ A * B` | A + B + A:B |
 | `:` | interaction only (no main effects) | `Y ~ A + B + A:B` | same as `A * B` |
 | `^` | crossing up to a degree | `Y ~ (A + B + C)^2` | all main effects + all two-way interactions |
-| `I()` | "as-is" — use arithmetic literally | `Y ~ X + I(X^2)` | linear and quadratic terms |
+| `I()` | "as-is" – use arithmetic literally | `Y ~ X + I(X^2)` | linear and quadratic terms |
 | `1` | intercept (included by default) | `Y ~ X - 1` | remove the intercept |
 | `.` | all other variables in the data frame | `Y ~ .` | Y predicted by every other column |
 
 ### Common patterns
 
-**Simple regression** — one predictor:
+**Simple regression** – one predictor:
 
 ```r
 Y ~ X
 ```
 
-**Multiple regression** — several predictors:
+**Multiple regression** – several predictors:
 
 ```r
 Y ~ A + B + C
 ```
 
-**Interaction** — does the effect of A depend on B?
+**Interaction** – does the effect of A depend on B?
 
 ```r
 Y ~ A * B          # same as A + B + A:B
 ```
 
-**Polynomial** — quadratic or cubic terms:
+**Polynomial** – quadratic or cubic terms:
 
 ```r
 Y ~ X + I(X^2)              # quadratic
 Y ~ X + I(X^2) + I(X^3)     # cubic
 ```
 
-**Full factorial** — all interactions up to a given order:
+**Full factorial** – all interactions up to a given order:
 
 ```r
 Y ~ (A + B + C)^2     # all main effects + all two-way interactions
 Y ~ A * B * C          # all main effects + all two-way + three-way interaction
 ```
 
-**No intercept** — force the line through the origin:
+**No intercept** – force the line through the origin:
 
 ```r
 Y ~ X - 1
 ```
 
-**Everything** — predict from all other columns:
+**Everything** – predict from all other columns:
 
 ```r
 Y ~ .
 ```
 
-> **When to use `I()`:** R formula operators (`+`, `*`, `^`) have special meanings inside formulas. If you need the arithmetic version — for example, X squared — wrap it in `I()` so R treats it as a calculation rather than a formula operator. `Y ~ X^2` means "crossing X with itself" (which is just X), while `Y ~ I(X^2)` means "X squared as a predictor."
+> **When to use `I()`:** R formula operators (`+`, `*`, `^`) have special meanings inside formulas. If you need the arithmetic version – for example, X squared – wrap it in `I()` so R treats it as a calculation rather than a formula operator. `Y ~ X^2` means "crossing X with itself" (which is just X), while `Y ~ I(X^2)` means "X squared as a predictor."
 
 ## Examples
 
@@ -214,7 +214,7 @@ Say you ran a t-test through the UI and the console shows:
 t.test(Score ~ Group, data = df, var.equal = FALSE)
 ```
 
-You can copy that line, modify it, and rerun — for example, switch to a one-sided test:
+You can copy that line, modify it, and rerun – for example, switch to a one-sided test:
 
 ```r
 t.test(Score ~ Group, data = df, var.equal = FALSE, alternative = "greater")
@@ -239,11 +239,11 @@ ds_library(psych)
 describe(df)
 ```
 
-Use `ds_library()` instead of `library()` to load packages. It installs the package if needed, retries automatically on network failures, and falls back to alternative repositories if the primary one is unavailable. Most popular packages are available as WebR-compiled versions, but some may not be — see [Things to know](#things-to-know) below.
+Use `ds_library()` instead of `library()` to load packages. It installs the package if needed, retries automatically on network failures, and falls back to alternative repositories if the primary one is unavailable. Most popular packages are available as WebR-compiled versions, but some may not be – see [Things to know](#things-to-know) below.
 
 ## Things to know
 
 - **This is WebR, not desktop R.** Most base R and many CRAN packages work, but some packages that rely on system libraries or compiled code may not be available. If a package fails to load, it likely hasn't been compiled for WebR yet.
 - **`help()` and `?` are not available.** Use `example(functionName)` to see usage examples, or consult the documentation links above.
-- **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep. (Command history *does* persist — see [running commands](#running-commands).)
+- **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep. (Command history *does* persist – see [running commands](#running-commands).)
 - **The console shares the R engine with analyses.** If you run a heavy computation in the console, built-in analyses will wait until it finishes (and vice versa).

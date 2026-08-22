@@ -9,7 +9,7 @@ The **Reliability analysis** module has three tabs: **Internal consistency** eva
 
 ## Internal consistency
 
-> **What is internal consistency?** If you have a questionnaire with 10 items all meant to measure "anxiety," internal consistency tells you whether they actually hang together. High consistency (e.g. alpha = 0.85) means people who score high on one item tend to score high on the others. Low consistency means some items might be measuring something else — or might be scored in the wrong direction.
+> **What is internal consistency?** If you have a questionnaire with 10 items all meant to measure "anxiety," internal consistency tells you whether they actually hang together. High consistency (e.g. alpha = 0.85) means people who score high on one item tend to score high on the others. Low consistency means some items might be measuring something else – or might be scored in the wrong direction.
 
 1. [Select your scale items](./getting-started.md#choosing-variables) (at least two numeric variables)
 2. Mark any [reverse-scored items](#reverse-scored-items)
@@ -17,19 +17,43 @@ The **Reliability analysis** module has three tabs: **Internal consistency** eva
 4. Toggle [output options](#output-options)
 5. Click **Calculate reliability**
 
+> **Several subscales in one file?** Don't run the analysis once per scale by hand – see [Multiple scales (subscales)](#multiple-scales-subscales).
+
 ## Requirements
 
 - At least two numeric variables must be selected. Categorical variables are automatically excluded (and listed in the output).
 - At least one reliability metric must be checked.
 
+## Multiple scales (subscales)
+
+Most questionnaires bundle several subscales into one dataset – a personality inventory might carry separate **ANX**, **EXT**, and **OPE** scales in one file. Rather than selecting each subscale's items and running the analysis once per scale, turn on **Analyze as multiple scales (subscales)**: define them all at once and get one reliability run per scale plus a side-by-side comparison.
+
+> **Why per scale?** Internal consistency assumes the items measure a *single* construct. One analysis over a mix of subscales produces a misleading "overall" coefficient. Splitting by scale is the statistically correct approach – this mode just saves you from doing it by hand three, six, or a dozen times.
+
+Checking the box reveals a **Scales** matrix: rows are your selected items, columns are scales. Click a cell to assign an item to a scale; click it again to remove it.
+
+- **Auto-detect from names** – groups items by the prefix before the first underscore (`ANX_1`, `ANX_2` → scale **ANX**). With `scale_item` naming this fills in every scale in one click; it runs automatically the first time you enable the mode.
+- **Add / remove scales** – use the **+** and **×** controls in each column header; rename a scale by editing its header text.
+- **Clear** – resets the matrix to a single empty scale.
+
+Each scale needs at least two assigned items to run. Unassigned items are ignored; an item may belong to more than one scale if you need it to.
+
+> **Naming tip:** auto-detect keys off the text before the first underscore, so `anx_1` and `anx_2` group together but `anxiety1` and `anxiety2` won't. If your items aren't named that way, assign them by clicking cells – the result is identical.
+
+The reverse-scored items list on the left stays a single control, but is **grouped by scale** so it's easy to scan. Because reverse-scoring is a property of the item, an item you flag is reversed in every scale it belongs to.
+
 ## Reverse-scored items
 
-A panel on the left lists all selected numeric variables. Click or drag-select items that should be reverse-scored before analysis. Reverse scoring flips each value using the formula: `new = (max + min) - old`, where min and max come from the item's observed range.
+A panel on the left lists all selected numeric variables. Click or drag-select items that should be reverse-scored before analysis. Reverse scoring flips each value using the formula: `new = (max + min) - old`.
 
 Two buttons below the list:
 
-- **Deselect all** — clears all reverse-scoring selections
-- **Invert selection** — toggles each item's status
+- **Deselect all** – clears all reverse-scoring selections
+- **Invert selection** – toggles each item's status
+
+Below them, **Response scale range** sets the **Lowest** and **Highest** values that reversal mirrors around. Leave both empty and the range is taken from the lowest and highest response observed across the whole scale.
+
+> **Why declare the range?** If nobody in your sample ever ticked "1" on a 1–5 item, the observed range is 2–5 and reversing around it silently rescales that item. Typing the scale's real endpoints keeps every item on the scale the questionnaire was written for. The observed range is pooled across all items rather than read per item, so items sharing one response format stay comparable either way.
 
 > **When to reverse-score:** many questionnaires mix positively and negatively worded items to reduce response bias. For example, a self-esteem scale might have "I feel good about myself" (positive) and "I feel useless" (negative). Without reverse-scoring the negative items, they'd drag the total in the wrong direction and artificially lower reliability. Check the original questionnaire's scoring instructions. See the [questionnaire scoring guide](./questionnaire-scoring-guide.md) for step-by-step examples.
 
@@ -40,27 +64,31 @@ Enable or disable each metric independently:
 | Metric | Default | What it measures |
 |---|---|---|
 | **Cronbach's alpha** | On | Average inter-item covariance relative to total variance. The most widely reported metric. |
-| **McDonald's omega (total)** | On | Based on a factor model — accounts for items contributing unequally to the scale. Often more accurate than alpha. |
+| **McDonald's omega (total)** | On | Based on a factor model – accounts for items contributing unequally to the scale. Often more accurate than alpha. |
 | **Composite reliability (CR)** | Off | Similar to omega but from a CFA framework. Common in structural equation modeling. |
-| **Mean split-half (Brown-corrected)** | Off | Averages Brown-corrected reliabilities across many random splits of the items (`psych::splitHalf`). The displayed value is the mean over splits; minimum and maximum splits are reported as additional bounds. |
-| **Guttman's lambda** | Off | Reports both Lambda 4 (greatest split-half) and Lambda 6 (item multiple correlation). |
+| **Split-half reliability** | Off | Averages the Rulon–Flanagan split-half reliability across many random splits of the items (`psych::splitHalf`). The displayed value is the mean over splits. |
+| **Guttman's lambda** | Off | Reports Lambda 2 (a tighter lower bound than alpha), Lambda 4 (greatest split-half) and Lambda 6 (item multiple correlation). |
 | **Average variance extracted (AVE)** | On | Average variance in items explained by the latent factor. Used to assess convergent validity. |
 | **Coefficient H** | Off | Maximal reliability based on factor loadings. Always ≥ omega. |
-| **Revelle's beta** | Off | Worst split-half reliability — a lower bound on the general factor saturation. |
+| **Revelle's beta** | Off | Worst split-half reliability – a lower bound on the general factor saturation. |
 | **Greatest lower bound (GLB)** | Off | The theoretical minimum reliability. May fail to converge on some datasets. |
 
-> **Alpha vs. omega:** Cronbach's alpha assumes all items contribute equally to the scale (tau-equivalence). In practice, that's rarely true — some items are better indicators than others. McDonald's omega uses a factor model to account for this, making it a more accurate estimate. Report both if your audience expects alpha, but trust omega when they disagree.
+Two coefficients arrive as companions rather than as their own checkbox: **Cronbach's alpha** also reports **standardized alpha** (alpha on the correlation matrix instead of the covariance matrix), and **McDonald's omega** also reports **omega hierarchical** whenever the bifactor solution supports it – the share of score variance attributable to the general factor alone.
 
-> **What is AVE?** AVE answers a different question than the other metrics: "on average, does the latent factor explain more than half the variance in each item?" An AVE above 0.50 means the factor accounts for more variance than measurement error — a threshold for convergent validity.
+> **Split-half and standardized alpha.** With an even number of items, the mean split-half coefficient is *algebraically identical* to standardized alpha – averaging Rulon–Flanagan reliability over every split is the same computation from a different direction. Selecting both is a useful check that nothing has gone wrong, but the two are not independent evidence.
+
+> **Alpha vs. omega:** Cronbach's alpha assumes all items contribute equally to the scale (tau-equivalence). In practice, that's rarely true – some items are better indicators than others. McDonald's omega uses a factor model to account for this, making it a more accurate estimate. Report both if your audience expects alpha, but trust omega when they disagree.
+
+> **What is AVE?** AVE answers a different question than the other metrics: "on average, does the latent factor explain more than half the variance in each item?" An AVE above 0.50 means the factor accounts for more variance than measurement error – a threshold for convergent validity.
 >
-> **Don't panic over low AVE.** The 0.50 threshold is strict, and values of 0.30–0.45 are common even for well-established, widely published scales. This happens because psychological constructs are inherently broad — a 10-item depression scale covers sleep, appetite, mood, and concentration, so no single factor will explain most of the variance in every item. If your alpha and omega are solid (0.70+), a low AVE usually just means your scale captures a broad construct rather than a narrow one. AVE matters most when you need to demonstrate that two scales measure *different* things (discriminant validity) — in that context, the 0.50 rule carries more weight.
+> **Don't panic over low AVE.** The 0.50 threshold is strict, and values of 0.30–0.45 are common even for well-established, widely published scales. This happens because psychological constructs are inherently broad – a 10-item depression scale covers sleep, appetite, mood, and concentration, so no single factor will explain most of the variance in every item. If your alpha and omega are solid (0.70+), a low AVE usually just means your scale captures a broad construct rather than a narrow one. AVE matters most when you need to demonstrate that two scales measure *different* things (discriminant validity) – in that context, the 0.50 rule carries more weight.
 
 **Assumptions:**
-- **All metrics** assume the items are meant to measure a single underlying construct (unidimensionality). If the scale is multidimensional (e.g. two subscales mixed together), overall reliability may be misleading — compute it per subscale instead.
-- **Cronbach's alpha** additionally assumes tau-equivalence — that all items contribute equally. When items have unequal factor loadings (which is typical), alpha underestimates or overestimates true reliability. Omega does not have this limitation.
+- **All metrics** assume the items are meant to measure a single underlying construct (unidimensionality). If the scale is multidimensional (e.g. two subscales mixed together), overall reliability may be misleading – compute it per subscale instead, using [multiple-scales mode](#multiple-scales-subscales).
+- **Cronbach's alpha** additionally assumes tau-equivalence – that all items contribute equally. When items have unequal factor loadings (which is typical), alpha underestimates or overestimates true reliability. Omega does not have this limitation.
 - **Items should have similar response scales.** Mixing items with different ranges (e.g. a 1–5 Likert item with a 0–100 slider) violates the equal-weight assumption and can distort all metrics. Standardize items first or analyze them separately.
-- **Sufficient sample size.** Reliability estimates stabilize with more data — small samples (N < 50) can produce unstable coefficients. Confidence intervals widen substantially with small N, so always enable and report them.
-- **No unscored items.** All items must be scored in the same direction. Negatively worded items need [reverse scoring](#reverse-scored-items) before analysis — otherwise they artificially deflate reliability.
+- **Sufficient sample size.** Reliability estimates stabilize with more data – small samples (N < 50) can produce unstable coefficients. Confidence intervals widen substantially with small N, so always enable and report them.
+- **No unscored items.** All items must be scored in the same direction. Negatively worded items need [reverse scoring](#reverse-scored-items) before analysis – otherwise they artificially deflate reliability.
 
 ## Output options
 
@@ -70,19 +98,23 @@ Five output sections can be toggled:
 |---|---|---|
 | **Item statistics** | On | Mean and SD for each item |
 | **Scale statistics** | On | Number of items, cases, scale mean, SD, and variance |
-| **Item-total correlations** | On | Corrected item-total and item-rest correlations |
-| **Reliability if item deleted** | Off | Every selected metric recalculated after dropping each item |
+| **Item-total correlations** | On | Three columns per item: raw, corrected (item-rest), and disattenuated |
+| **Reliability if item deleted** | Off | Every selected metric recalculated after dropping each item (needs at least three items) |
 | **Inter-item correlation matrix** | Off | Full pairwise correlation matrix among items |
 
 ### Advanced options
 
-- **Confidence intervals** (on by default) — adds a CI column to the metrics table. The confidence level comes from your [global settings](./settings.md#significance-level).
+- **Confidence intervals** (on by default) – adds a CI column to the metrics table. The confidence level comes from your [global settings](./settings.md#significance-level).
 
-> **How CIs are computed:** Cronbach's alpha uses **Feldt's F-based interval** (Feldt 1965), which is exact under tau-equivalence, bounded below 1, and instant. Every other metric — omega, CR, mean split-half, λ4/λ6, AVE, H, β, and GLB — uses **bootstrap percentile intervals**. Each replication refits the underlying models once and reads off every selected metric, so adding metrics costs little extra time; the number of replications is the [bootstrap replications setting](./settings.md). Enabling CIs with omega or GLB selected can be noticeably slow on larger scales — `omega()` and `glb.fa()` are refit on every replication.
+> **How CIs are computed:** Cronbach's alpha uses **Feldt's F-based interval** (Feldt 1965), which is exact under tau-equivalence, bounded below 1, and instant. Every other metric – omega, CR, split-half, λ2/λ4/λ6, AVE, H, β, and GLB – uses **bias-corrected percentile bootstrap intervals**. Each replication refits the underlying models once and reads off every selected metric, so adding metrics costs little extra time; the number of replications is the [bootstrap replications setting](./settings.md). Enabling CIs with omega or GLB selected can be noticeably slow on larger scales – `omega()` and `glb.fa()` are refit on every replication.
 
 ## Reading results
 
 Results appear in a "Reliability analysis" output card with the following sections:
+
+### Summary table (multiple scales)
+
+In [multiple-scales mode](#multiple-scales-subscales) the card opens with a **Summary** table – one row per scale, one column per selected coefficient (α, ω, AVE, …), with confidence intervals inline when enabled. It's the side-by-side comparison you'd otherwise assemble by hand. Each scale's full output (the sections below) then follows under its own **Scale: [name]** heading.
 
 ### Scale information
 
@@ -96,10 +128,10 @@ A summary block at the top listing:
 
 A table with one row per selected metric:
 
-- **Metric** — the coefficient name
-- **Value** — the computed reliability coefficient
-- **CI** — confidence interval (if enabled)
-- **Interpretation** — a qualitative label (if [interpretation](./settings.md#significance-formatting) is enabled)
+- **Metric** – the coefficient name
+- **Value** – the computed reliability coefficient
+- **CI** – confidence interval (if enabled)
+- **Interpretation** – a qualitative label (if [interpretation](./settings.md#significance-formatting) is enabled)
 
 Interpretation thresholds:
 
@@ -121,11 +153,15 @@ AVE uses a different scale:
 | 0.50–0.70 | Acceptable convergent validity |
 | 0.70 and above | Good convergent validity |
 
-> **Above 0.95 — too good?** Extremely high reliability can mean your items are near-duplicates of each other. If alpha is 0.97, you might have redundant items that could be trimmed without losing information. Check the inter-item correlation matrix — if most correlations are above 0.90, consider shortening the scale.
+**Coefficients shown without a verdict.** λ4, GLB, Revelle's β and omega hierarchical get an em dash in the **Interpretation** column instead of a label, and a note under the table says so. The 0.70/0.80 cut-offs above were derived for alpha and omega; λ4 and GLB are bounds on reliability rather than estimates of it, and β and ω_h describe general-factor saturation, so reading them against the same bands would be misleading.
+
+**When an estimator fails.** The coefficients are produced by four separate model fits (alpha, factor analysis, split-half, omega). If one of them fails on your data, the coefficients that depend on it keep their rows with a blank value, and a note under the table names the failed estimator and what it cost. Nothing silently disappears.
+
+> **Above 0.95 – too good?** Extremely high reliability can mean your items are near-duplicates of each other. If alpha is 0.97, you might have redundant items that could be trimmed without losing information. Check the inter-item correlation matrix – if most correlations are above 0.90, consider shortening the scale.
 
 ### Scale statistics
 
-A key-value table showing the number of items, number of cases, scale mean, scale SD, and scale variance. When the [missing data method](./settings.md) is set to pairwise and any cases have missing values, an extra **Cases with complete data** row is shown — scale mean, SD, and variance are computed over those complete cases only (a partially-missing row otherwise gets summed with missing items treated as zero, which biases the scale score downward).
+A key-value table showing the number of items, number of cases, scale mean, scale SD, scale variance, the **standard error of measurement** (`SD · √(1 − α)`, shown when Cronbach's alpha is selected – the precision of an individual total score), the **mean inter-item correlation**, and the **inter-item correlation range** (the smallest and largest off-diagonal correlation). When the [missing data method](./settings.md) is set to pairwise and any cases have missing values, an extra **Cases with complete data** row is shown – scale mean, SD, and variance are computed over those complete cases only (a partially-missing row otherwise gets summed with missing items treated as zero, which biases the scale score downward).
 
 > **Scale mean and SD:** these describe the total score (sum of all items, after reverse scoring). The scale mean divided by the number of items gives you the average item response, which can be useful for comparing scales with different numbers of items.
 
@@ -133,44 +169,53 @@ A key-value table showing the number of items, number of cases, scale mean, scal
 
 A combined table with one row per item. Which columns appear depends on your output options:
 
-- **Mean** and **SD** — basic item descriptives
-- **Corrected item-total r** — correlation between the item and the sum of all *other* items
-- **Item-rest r** — correlation between the item and the rest of the scale (slightly different correction)
-- **[Metric] if deleted** — the metric value if this item were removed (one column per selected metric)
-- **Interpretation** — per-item diagnostics when enabled:
-  - Negative item-total correlation — suggests checking reverse scoring
-  - Very weak discrimination — corrected item-total r below 0.20
-  - Poor discrimination — corrected item-total r between 0.20 and 0.30
-  - Good discrimination — corrected item-total r at or above 0.50
-  - Possible floor or ceiling effect — mean near the item minimum or maximum
-  - Low variance / flat responses — very small SD relative to the item range
-  - Deletion would improve a metric — names the metric and shows the improvement
-  - "Good item" — no issues detected
+- **Mean**, **SD** and **N** – basic item descriptives
+- **Item-total r** – correlation between the item and the total score, the item itself included
+- **Corrected item-total r (item-rest)** – correlation between the item and the sum of all *other* items. This is the classical corrected coefficient, and the one the discrimination cut-offs below are applied to.
+- **Item-total r corrected for overlap and reliability** – the item-rest correlation additionally disattenuated for the scale's unreliability. Systematically higher than the item-rest value; useful as an estimate of the item's correlation with the construct, not as a discrimination index.
+- **[Metric] if deleted** – the metric value if this item were removed (one column per selected metric)
+- **Interpretation** – per-item diagnostics when enabled:
+  - Negative correlation – suggests checking reverse scoring
+  - Very weak discrimination – item-rest r below 0.20
+  - Poor discrimination – item-rest r between 0.20 and 0.30
+  - Good discrimination – item-rest r at or above 0.50
+  - Possible floor or ceiling effect – too large a share of responses sits at the item's minimum or maximum
+  - Low variance / flat responses – very small SD relative to the item range
+  - Deletion would improve a metric – names the metric and shows the improvement
+  - "Good item" – no issues detected
 
-> **What is item-total correlation?** It tells you how well each item "agrees" with the rest of the scale. A high value (0.50+) means the item measures the same thing as the other items. A low value (below 0.30) means the item is out of step — it might be poorly worded, misunderstood by respondents, or measuring something different. A negative value almost always means the item needs reverse scoring.
+**Flagged items are clickable.** When an item correlates negatively with the rest of the scale, its name in the first column becomes a **Mark this item for reverse scoring** action. Selecting it ticks the item in the reverse-scored list on the left; re-run the analysis to apply it.
 
-> **"If deleted" — should I delete items?** Not automatically. The "if deleted" column shows what would happen to reliability if you dropped each item. If removing an item would substantially improve a metric (e.g. alpha jumps from 0.72 to 0.81), it's worth investigating — but only remove items for good reasons (poor wording, low discrimination, theoretical misfit), not just to chase a higher number.
+> **What is item-total correlation?** It tells you how well each item "agrees" with the rest of the scale. Read the **corrected (item-rest)** column for this: it leaves the item out of the total it is compared against, so the item cannot inflate its own correlation. A high value (0.50+) means the item measures the same thing as the other items. A low value (below 0.30) means the item is out of step – it might be poorly worded, misunderstood by respondents, or measuring something different. A negative value almost always means the item needs reverse scoring.
+
+> **Deletion would improve – how big is "improve"?** Any gain the displayed precision can actually render is named, and it is shown as a caution rather than a problem. On most scales at least one item will nudge some coefficient upward by a hair; that is sampling noise, not a finding. See the pitfall on [deleting items](#common-pitfalls) below.
+
+> **"If deleted" – should I delete items?** Not automatically. The "if deleted" column shows what would happen to reliability if you dropped each item. If removing an item would substantially improve a metric (e.g. alpha jumps from 0.72 to 0.81), it's worth investigating – but only remove items for good reasons (poor wording, low discrimination, theoretical misfit), not just to chase a higher number.
 
 ### Inter-item correlation matrix
 
 A symmetric matrix showing pairwise correlations among all items. Useful for spotting clusters of highly related items or pairs that don't belong together.
 
-> **What to look for:** most correlations should fall between 0.20 and 0.80. Below 0.20 suggests the items aren't measuring the same thing. Above 0.80 suggests redundancy. A block of high correlations among a subset of items might indicate a sub-factor — consider whether [factor analysis](./factor-analysis.md) could reveal a cleaner structure.
+When every item in the scale is [typed as ordinal](./getting-started.md#choosing-variables), a note under the matrix states that the correlations are **product-moment** (Pearson). Every coefficient on the card is estimated from that same matrix, so what they describe is the reliability of the *summed item scores* – not of the latent variables assumed to sit behind the response categories. Polychoric-based alternatives exist and give higher numbers; whether they are the better estimate is actively disputed in the literature, so DataSuite reports the product-moment estimate and names its basis rather than choosing a side for you.
+
+> **What to look for:** most correlations should fall between 0.20 and 0.80. Below 0.20 suggests the items aren't measuring the same thing. Above 0.80 suggests redundancy. A block of high correlations among a subset of items might indicate a sub-factor – consider whether [factor analysis](./factor-analysis.md) could reveal a cleaner structure.
 
 ## Reproducibility
 
 The **Reproducibility** tab assesses whether measurements can be reproduced across raters, time points, or methods. It works with long-format data: each row is one observation of one subject under one condition.
 
-> **Internal consistency vs. reproducibility:** internal consistency asks "do the items hang together?" — it looks at one measurement occasion. Reproducibility asks "do we get the same answer when we measure again?" — it compares across raters or time points. A scale can have excellent internal consistency but poor inter-rater agreement if raters interpret items differently.
+> **Internal consistency vs. reproducibility:** internal consistency asks "do the items hang together?" – it looks at one measurement occasion. Reproducibility asks "do we get the same answer when we measure again?" – it compares across raters or time points. A scale can have excellent internal consistency but poor inter-rater agreement if raters interpret items differently.
 
 ### Data layout
 
 Two dropdowns configure how DataSuite reads your data:
 
-- **Subject ID** — the column identifying each subject. If your data was converted from wide to long format using the [column stacker](./data-transformation.md), this is auto-selected.
-- **Condition variable** — the column identifying each rater, time point, or measurement occasion.
+- **Subject ID** – the column identifying each subject. If your data was converted from wide to long format using the [column stacker](./data-transformation.md), this is auto-selected.
+- **Condition variable** – the column identifying each rater, time point, or measurement occasion.
 
 All remaining selected variables are treated as score variables and analyzed in bulk.
+
+Each subject may appear only once per condition. If any subject–condition pair repeats, the analysis stops and tells you how many rows are involved – aggregate the duplicates or restack the data first, because every metric here assumes one score per cell.
 
 ### Reproducibility metrics
 
@@ -182,30 +227,32 @@ Enable any combination of metrics. Each score variable gets whichever metrics ap
 | **Pearson r** | Yes | | | 2 conditions only |
 | **Spearman ρ** | Yes | Yes | | 2 conditions only |
 | **SEM & SDC** | Yes | | | ANOVA-based; matches the ICC model |
-| **Kendall's W** | Yes | Yes | | |
+| **Kendall's W** | Yes | Yes | | 3+ conditions only |
 | **Cohen's / Light's / Fleiss' κ** | | Yes | Yes | Cohen (2 raters); Light (3+ raters, ordinal); Fleiss (3+ raters, nominal) |
-| **Krippendorff's α** | Yes | Yes | Yes | Bootstrap CI — may be slow |
+| **Krippendorff's α** | Yes | Yes | Yes | Bootstrap CI – may be slow |
 
 Results are grouped by variable type, so you don't need to run the analysis separately for continuous and categorical variables.
 
-> **What is ICC?** The intraclass correlation coefficient quantifies how much of the total variance in scores is due to true differences between subjects, rather than differences between raters or random error. An ICC of 0.90 means 90% of the variance reflects actual subject differences — the measurement is highly reproducible.
+> **What is ICC?** The intraclass correlation coefficient quantifies how much of the total variance in scores is due to true differences between subjects, rather than differences between raters or random error. An ICC of 0.90 means 90% of the variance reflects actual subject differences – the measurement is highly reproducible.
 
-> **What is kappa?** Cohen's kappa measures agreement between two raters on categorical ratings, corrected for chance agreement. Two raters might agree 80% of the time — but if they're rating a binary outcome that's 90% "yes," chance alone would produce 82% agreement. Kappa strips that out. With three or more raters, the module picks the right extension automatically: **Fleiss' κ** for nominal (unordered) categories, and **Light's κ** — the mean of all pairwise quadratic-weighted Cohen's κ — for ordinal categories, so the distance between adjacent categories still counts as partial agreement.
+> **What is kappa?** Cohen's kappa measures agreement between two raters on categorical ratings, corrected for chance agreement. Two raters might agree 80% of the time – but if they're rating a binary outcome that's 90% "yes," chance alone would produce 82% agreement. Kappa strips that out. With three or more raters, the module picks the right extension automatically: **Fleiss' κ** for nominal (unordered) categories, and **Light's κ** – the mean of all pairwise quadratic-weighted Cohen's κ – for ordinal categories, so the distance between adjacent categories still counts as partial agreement.
 
-> **SEM and SDC:** the standard error of measurement (SEM) quantifies the precision of individual scores — a smaller SEM means more precise measurement. It's computed as `sqrt(MS_residual)` from the ANOVA matching the chosen ICC model (one-way → within-subject residual; two-way / mixed → subject×rater residual). The smallest detectable change (SDC = SEM · z · √2) tells you the minimum change in a score that exceeds measurement error. If a patient's score changes by less than the SDC, you can't be confident the change is real.
+> **SEM and SDC:** the standard error of measurement (SEM) quantifies the precision of individual scores – a smaller SEM means more precise measurement. It's computed as `sqrt(MS_residual)` from the ANOVA matching the chosen ICC model (one-way → within-subject residual; two-way / mixed → subject×rater residual). The smallest detectable change (SDC = SEM · z · √2) tells you the minimum change in a score that exceeds measurement error. If a patient's score changes by less than the SDC, you can't be confident the change is real.
 
 ### ICC options
 
 When **ICC** or **SEM & SDC** is selected, two radio groups appear (SEM's ANOVA model is taken from the same selection):
 
 **Model:**
-- **One-way random** — each subject is rated by a different random set of raters
-- **Two-way random** — the same raters rate all subjects, and raters are a random sample from a larger population (most common)
-- **Two-way mixed** — the same raters rate all subjects, and these specific raters are the only ones of interest
+- **One-way random (absolute agreement)** – each subject is rated by a different random set of raters
+- **Two-way random (absolute agreement)** – the same raters rate all subjects, and raters are a random sample from a larger population (most common)
+- **Two-way mixed (consistency)** – the same raters rate all subjects, and these specific raters are the only ones of interest
+
+> **Absolute agreement vs. consistency** is not a separate control – it follows from the model. The two random-effects models ask whether raters give the *same score*, so a rater who is consistently two points high lowers the coefficient. The mixed model asks only whether raters *rank* subjects the same way, so a constant offset costs nothing.
 
 **Form:**
-- **Single measures** — reliability of a single rater's score
-- **Average measures** — reliability of the mean across all raters
+- **Single measures** – reliability of a single rater's score
+- **Average measures** – reliability of the mean across all raters
 
 > **Which ICC to choose?** In most research scenarios, **two-way random, single measures** (ICC2,1) is appropriate: the same raters score all subjects, raters represent a larger population, and you want to know how reliable one rater is. Use **average measures** when you'll always average across the same number of raters in practice.
 
@@ -213,11 +260,11 @@ When **ICC** or **SEM & SDC** is selected, two radio groups appear (SEM's ANOVA 
 
 Results are grouped by variable type under separate headings:
 
-- **Continuous variables** — ICC, Pearson r, Spearman ρ, SEM, SDC, Kendall's W, Krippendorff's α
-- **Ordinal variables** — Spearman ρ, Kendall's W, κ, Krippendorff's α
-- **Categorical variables** — κ, Krippendorff's α
+- **Continuous variables** – ICC, Pearson r, Spearman ρ, SEM, SDC, Kendall's W, Krippendorff's α
+- **Ordinal variables** – Spearman ρ, Kendall's W, κ, Krippendorff's α
+- **Categorical variables** – κ, Krippendorff's α
 
-Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation. Metrics with a meaningful null distribution — ICC, Cohen's / Fleiss' κ, Kendall's W, Pearson r, and Spearman ρ — also show a p-value column and significance stars next to the coefficient. Light's κ (ordinal, ≥3 raters), SEM, SDC, and Krippendorff's α have no closed-form p-value and display only the coefficient and CI.
+Each table has one row per variable and columns for each applicable metric, with optional confidence intervals and interpretation. Metrics with a meaningful null distribution – ICC, Cohen's / Fleiss' κ, Kendall's W, Pearson r, and Spearman ρ – also show a p-value column and significance stars next to the coefficient. Light's κ (ordinal, ≥3 raters), SEM, SDC, and Krippendorff's α have no closed-form p-value and display only the coefficient and CI.
 
 Interpretation thresholds for ICC and agreement coefficients (Koo & Li, 2016):
 
@@ -239,14 +286,26 @@ Kappa uses the Landis & Koch scale:
 | 0.60–0.80 | Substantial |
 | Above 0.80 | Almost perfect |
 
-> **Bootstrap-based CIs:** confidence intervals for Cohen's / Light's / Fleiss' κ, Kendall's W, SEM (and SDC), and Krippendorff's α are computed by percentile bootstrap — none of these have well-behaved closed-form intervals across the full range of inputs. ICC, Pearson r, and Spearman ρ use their standard analytical intervals and compute instantly. The number of bootstrap replications is controlled by the [bootstrap replications setting](./settings.md); bootstrap can take noticeable time with many variables or large samples.
+Krippendorff's α is read against its author's own bands (Krippendorff 2004), which are stricter than the ICC scale printed beside them:
+
+| Value | Label |
+|---|---|
+| Below 0.667 | Unacceptable |
+| 0.667–0.800 | Tentative |
+| 0.800 and above | Acceptable |
+
+> **Why three scales?** Each coefficient carries the cut-offs its own literature established. Applying the ICC bands to Krippendorff's α would call 0.70 "moderate" where its author calls it good enough only for tentative conclusions.
+
+> **Kendall's W with two conditions.** W is reported only for three or more conditions. With exactly two it equals `(1 + Spearman ρ) / 2` – the correlation row restated on another scale – so it is dropped, and a note in the output says why.
+
+> **Bootstrap-based CIs:** confidence intervals for Cohen's / Light's / Fleiss' κ, Kendall's W, SEM (and SDC), and Krippendorff's α are computed by percentile bootstrap – none of these have well-behaved closed-form intervals across the full range of inputs. ICC, Pearson r, and Spearman ρ use their standard analytical intervals and compute instantly. The number of bootstrap replications is controlled by the [bootstrap replications setting](./settings.md); bootstrap can take noticeable time with many variables or large samples.
 
 ### Assumptions
 
-- **Subjects are independent.** Each subject should be a different person (or unit). Repeated measurements from the same subject under different conditions are fine — that's what the condition variable captures.
+- **Subjects are independent.** Each subject should be a different person (or unit). Repeated measurements from the same subject under different conditions are fine – that's what the condition variable captures.
 - **Same set of conditions for all subjects.** Every subject should ideally have a score under every condition (rater, time point). Missing combinations are handled but can reduce precision.
 - **ICC assumes continuous, normally distributed data.** For ordinal or categorical data, use kappa or Krippendorff's alpha instead.
-- **Kappa assumes categorical data.** For ordinal data, weighted kappa (quadratic weights, used automatically — Cohen's weighted κ with 2 raters, Light's κ with 3+) accounts for the distance between categories. For continuous data, use ICC.
+- **Kappa assumes categorical data.** For ordinal data, weighted kappa (quadratic weights, used automatically – Cohen's weighted κ with 2 raters, Light's κ with 3+) accounts for the distance between categories. For continuous data, use ICC.
 
 ## Missing data
 
@@ -269,7 +328,7 @@ Key things to include when writing up reliability results:
 - Reliability coefficient values with confidence intervals
 - Item-total correlations (or at least note any problematic items)
 - Whether any items were removed and why
-- For multi-dimensional scales: reliability per subscale, not just overall
+- For multi-dimensional scales: reliability per subscale, not just overall ([multiple-scales mode](#multiple-scales-subscales) reports every subscale at once)
 
 **For reproducibility analyses:**
 - ICC model and form used (e.g. "ICC(2,1), two-way random, single measures")
@@ -279,16 +338,16 @@ Key things to include when writing up reliability results:
 
 ## R reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) — you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa and Kendall's W) and `tidyr` (data reshaping). Krippendorff's α and its bootstrap confidence interval are computed inline without an additional package; SEM uses base R's `aov()`. Citations for R packages used in your analysis appear automatically at the top of the output section. Bootstrap CIs (for ω, composite reliability, mean split-half, Guttman's λ, AVE, coefficient H, Revelle's β, GLB, Cohen's / Light's / Fleiss' κ, Kendall's W, SEM, and Krippendorff's α) are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) — set it to make CIs reproducible across runs.
+Every analysis prints the underlying R code to the [R console](./r-console.md) – you can inspect, copy, or re-run the exact commands. Internal consistency uses the `psych` R package. Reproducibility additionally uses `irr` (for kappa and Kendall's W) and `tidyr` (data reshaping). Krippendorff's α and its bootstrap confidence interval are computed inline without an additional package; SEM uses base R's `aov()`. Citations for R packages used in your analysis appear automatically at the top of the output section. Bootstrap CIs (for ω, composite reliability, split-half, Guttman's λ, AVE, coefficient H, Revelle's β, GLB, Cohen's / Light's / Fleiss' κ, Kendall's W, SEM, and Krippendorff's α) are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) – set it to make CIs reproducible across runs.
 
 ## Common pitfalls
 
-**Reporting only alpha.** Cronbach's alpha remains the most requested metric, but it assumes all items contribute equally (tau-equivalence) — which is rarely true. If alpha and omega disagree, alpha is usually the less accurate estimate. Report both; increasingly, journals expect omega.
+**Reporting only alpha.** Cronbach's alpha remains the most requested metric, but it assumes all items contribute equally (tau-equivalence) – which is rarely true. If alpha and omega disagree, alpha is usually the less accurate estimate. Report both; increasingly, journals expect omega.
 
-**Treating alpha as a measure of unidimensionality.** A scale can have high alpha and still be multidimensional — alpha reflects average inter-item correlation, not factor structure. A 20-item scale with two distinct sub-factors can easily produce alpha = 0.85. If you need to demonstrate unidimensionality, use [factor analysis](./factor-analysis.md).
+**Treating alpha as a measure of unidimensionality.** A scale can have high alpha and still be multidimensional – alpha reflects average inter-item correlation, not factor structure. A 20-item scale with two distinct sub-factors can easily produce alpha = 0.85. If you need to demonstrate unidimensionality, use [factor analysis](./factor-analysis.md).
 
 **Reverse-scoring mistakes.** Forgetting to reverse-score negatively worded items is the most common cause of unexpectedly low reliability. The telltale sign: one or more items with negative item-total correlations. Check the original questionnaire's scoring instructions before running the analysis.
 
-**Deleting items to maximize alpha.** Removing every item that would "improve alpha if deleted" can produce a shorter scale that works well in your sample but poorly elsewhere. Only remove items with clear substantive problems (low discrimination, ambiguous wording, theoretical misfit) — not just because the number goes up by 0.01.
+**Deleting items to maximize alpha.** Removing every item that would "improve alpha if deleted" can produce a shorter scale that works well in your sample but poorly elsewhere. Only remove items with clear substantive problems (low discrimination, ambiguous wording, theoretical misfit) – not just because the number goes up by 0.01.
 
 **Ignoring sample-specific results.** Reliability is a property of *scores in your sample*, not the test itself. A scale with published alpha of 0.90 might produce 0.65 in your sample if your population is more homogeneous or the items don't work the same way in your context. Always compute and report reliability for your own data.

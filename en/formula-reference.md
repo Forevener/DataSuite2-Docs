@@ -5,13 +5,13 @@ description: Variables, operators, math functions, string functions, and advance
 
 # Formula reference
 
-Formulas in DataSuite 2 are powered by [Math.js](https://mathjs.org/) with additional string and utility functions. This page covers what's available — from simple arithmetic to advanced expressions.
+Formulas in DataSuite 2 are powered by [Math.js](https://mathjs.org/) with additional string and utility functions. This page covers what's available – from simple arithmetic to advanced expressions.
 
 ## Quick start
 
 > For step-by-step scoring examples with real questionnaires, see the [questionnaire scoring guide](./questionnaire-scoring-guide.md).
 
-A formula is evaluated once per row — think of it as writing a calculation that runs for each participant (row) in your data, using that participant's values. Reference your selected input variables as `v1`, `v2`, `v3`, etc.:
+A formula is evaluated once per row – think of it as writing a calculation that runs for each participant (row) in your data, using that participant's values. Reference your selected input variables as `v1`, `v2`, `v3`, etc.:
 
 ```
 (v1 + v2) / 2
@@ -29,13 +29,13 @@ That's enough for most use cases. Read on for the full reference.
 
 ### Input variables
 
-When you select variables in the input panel, they are numbered in the order you selected them. For example, if you select Age, Score, and Grade — they become `v1`, `v2`, and `v3` respectively. The reference badges next to each variable name in the input panel show the assigned numbers.
+When you select variables in the input panel, they are numbered in the order you selected them. For example, if you select Age, Score, and Grade – they become `v1`, `v2`, and `v3` respectively. The reference badges next to each variable name in the input panel show the assigned numbers.
 
 | Reference | Meaning |
 |---|---|
 | `v1`, `v2`, `v3`, ... | value of the 1st, 2nd, 3rd, ... input variable in the current row |
 | `c1`, `c2`, `c3`, ... | full column array of the 1st, 2nd, 3rd, ... input variable (all rows) |
-| `v1:v7` | expands to all variables from `v1` through `v7` — use inside functions like `sum(v1:v7)` |
+| `v1:v7` | expands to all variables from `v1` through `v7` – use inside functions like `sum(v1:v7)` |
 
 Missing values are treated as `0` when accessed via `v1`, `v2`, etc.
 
@@ -47,7 +47,7 @@ Missing values are treated as `0` when accessed via `v1`, `v2`, etc.
 | `v` | current value of the variable being processed (see below) |
 | `c` | full column array of the variable being processed (see below) |
 
-`v` and `c` are available when a rule has multiple input variables and the output is set to [replace original values](./data-transformation.md#output-options). In that case, the formula runs once per variable per row — `v` is the current cell value and `c` is the full column. This is useful for applying the same transformation to many variables at once, e.g. `v * 100` to convert all selected variables to percentages.
+`v` and `c` are available when a rule has multiple input variables and the output is set to [replace original values](./data-transformation.md#output-options). In that case, the formula runs once per variable per row – `v` is the current cell value and `c` is the full column. This is useful for applying the same transformation to many variables at once, e.g. `v * 100` to convert all selected variables to percentages.
 
 ## Values and syntax
 
@@ -61,7 +61,7 @@ Strings are enclosed in double quotes: `"hello"`. Use `+` to concatenate: `"ID_"
 
 ### Booleans
 
-`true` and `false` — returned by comparisons and logical operators, and used in conditionals.
+`true` and `false` – returned by comparisons and logical operators, and used in conditionals.
 
 ### Arrays
 
@@ -135,7 +135,7 @@ These return `true` or `false`. Comparisons work with both numbers and strings.
 condition ? valueIfTrue : valueIfFalse
 ```
 
-Example — assign a label based on a score:
+Example – assign a label based on a score:
 
 ```
 v1 >= 70 ? "pass" : "fail"
@@ -185,7 +185,7 @@ These work with multiple values or arrays (e.g. via the `v1:v7` range syntax):
 
 ### Trigonometric
 
-`sin(x)`, `cos(x)`, `tan(x)`, `asin(x)`, `acos(x)`, `atan(x)` — all in radians.
+`sin(x)`, `cos(x)`, `tan(x)`, `asin(x)`, `acos(x)`, `atan(x)` – all in radians.
 
 ### Custom aggregate functions
 
@@ -199,11 +199,11 @@ These work with multiple values or arrays (e.g. via the `v1:v7` range syntax):
 
 All string functions work on text values. Most take a string as the first argument.
 
-Many string functions also support **dot syntax** — calling the function as a method on the value. Both forms are equivalent:
+Many string functions also support **dot syntax** – calling the function as a method on the value. Both forms are equivalent:
 
 ```
 contains(v1, "test")    // function syntax
-v1.contains("test")     // dot syntax — same result
+v1.contains("test")     // dot syntax – same result
 ```
 
 Use whichever reads more naturally. Dot syntax can be especially convenient for chaining: `v1.trim().toLowerCase()`.
@@ -296,24 +296,24 @@ Dates in DataSuite 2 are stored as text in ISO 8601 format (`YYYY-MM-DD`, e.g. `
 
 Supported `unit` values for `dateDiff` and `dateAdd`:
 
-- **`"day"`** — exact integer days.
-- **`"week"`** — exact `days / 7` for `dateDiff`; `n × 7` days for `dateAdd`.
-- **`"month"`** — for `dateDiff`, completed calendar months plus a fractional remainder of the current month, where the fraction respects the actual length of that month (28/29/30/31). For `dateAdd`, `n` is rounded to whole months; the day-of-month is clamped to the destination month's length (so `Jan 31 + 1 month → Feb 28/29`).
-- **`"year"`** — for `dateDiff`, completed years plus a fractional remainder against the actual year length (365 or 366). For `dateAdd`, `n` is rounded to whole years; February 29 of a leap year shifts to February 28 in non-leap target years.
+- **`"day"`** – exact integer days.
+- **`"week"`** – exact `days / 7` for `dateDiff`; `n × 7` days for `dateAdd`.
+- **`"month"`** – for `dateDiff`, completed calendar months plus a fractional remainder of the current month, where the fraction respects the actual length of that month (28/29/30/31). For `dateAdd`, `n` is rounded to whole months; the day-of-month is clamped to the destination month's length (so `Jan 31 + 1 month → Feb 28/29`).
+- **`"year"`** – for `dateDiff`, completed years plus a fractional remainder against the actual year length (365 or 366). For `dateAdd`, `n` is rounded to whole years; February 29 of a leap year shifts to February 28 in non-leap target years.
 
 > **Calendar-aware vs average-length:** `dateDiff(d1, d2, "month")` does not divide by an average month length (such as 30.4375 days). Instead, it counts whole calendar months and treats the leftover days as a fraction of the month they fall in, so anniversary dates always come out exact: `dateDiff("2024-01-15", "2025-01-15", "year")` is exactly `1.0`. The same logic anchors February 29 to February 28 in non-leap years.
 
 Examples:
 
 ```
-dateDiff("2024-01-15", "2024-02-15", "month")    // 1.0 — exactly one calendar month
-dateDiff("2024-01-15", "2024-03-01", "month")    // ~1.517 — 1 month + 15 days into 29-day Feb
-dateDiff("2020-02-29", "2021-02-28", "year")     // 1.0 — Feb 29 anchors to Feb 28
+dateDiff("2024-01-15", "2024-02-15", "month")    // 1.0 – exactly one calendar month
+dateDiff("2024-01-15", "2024-03-01", "month")    // ~1.517 – 1 month + 15 days into 29-day Feb
+dateDiff("2020-02-29", "2021-02-28", "year")     // 1.0 – Feb 29 anchors to Feb 28
 dateDiff("2024-01-15", today(), "day")           // days since enrollment, until now
 
-dateAdd("2024-01-15", 60, "month")               // "2029-01-15" — synthetic 5-year cutoff
-dateAdd("2024-01-31", 1, "month")                // "2024-02-29" — clamped to month end
-dateAdd("2024-03-01", -30, "day")                // "2024-01-31" — negative n subtracts
+dateAdd("2024-01-15", 60, "month")               // "2029-01-15" – synthetic 5-year cutoff
+dateAdd("2024-01-31", 1, "month")                // "2024-02-29" – clamped to month end
+dateAdd("2024-03-01", -30, "day")                // "2024-01-31" – negative n subtracts
 ```
 
 ### Practical example: time-to-event for survival analysis
@@ -326,7 +326,7 @@ follow_up = dateDiff(consent_date, cutoff, "month")
 event_occurred = isNotBlank(event_date)
 ```
 
-The first rule picks the event date when present, otherwise treats the participant as still under observation today. The second computes follow-up time in months from enrollment to that cutoff. The third produces the binary event indicator — the role-picker in the analysis module reads `false`/`true` as censored/event automatically.
+The first rule picks the event date when present, otherwise treats the participant as still under observation today. The second computes follow-up time in months from enrollment to that cutoff. The third produces the binary event indicator – the role-picker in the analysis module reads `false`/`true` as censored/event automatically.
 
 For days or years instead of months, swap the third argument: `dateDiff(consent_date, cutoff, "day")` or `... "year"`. If your dataset has a separate last-contact date for participants still alive at the end of follow-up, use that instead of `today()`:
 
@@ -370,18 +370,18 @@ The last line is the result that gets stored. Earlier lines define intermediate 
 
 The formula editor provides several features to help you write formulas:
 
-- **Syntax highlighting** — numbers, strings, operators, and function calls are color-coded
-- **Bracket matching** — matching parentheses are highlighted when the cursor is next to one
-- **Autocomplete** — start typing (2+ characters) and a suggestion list appears with variable references, functions, and constants. Press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open the list manually. Variable suggestions show the display name alongside the reference (e.g. `v1 Age`)
-- **Error checking** — syntax errors are underlined in the editor with a description in the gutter. Errors are detected as you type
-- **Search** — press <kbd>Ctrl</kbd>+<kbd>F</kbd> to find text, <kbd>Ctrl</kbd>+<kbd>H</kbd> to find and replace
+- **Syntax highlighting** – numbers, strings, operators, and function calls are color-coded
+- **Bracket matching** – matching parentheses are highlighted when the cursor is next to one
+- **Autocomplete** – start typing (2+ characters) and a suggestion list appears with variable references, functions, and constants. Press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open the list manually. Variable suggestions show the display name alongside the reference (e.g. `v1 Age`)
+- **Error checking** – syntax errors are underlined in the editor with a description in the gutter. Errors are detected as you type
+- **Search** – press <kbd>Ctrl</kbd>+<kbd>F</kbd> to find text, <kbd>Ctrl</kbd>+<kbd>H</kbd> to find and replace
 
 ## Tips
 
 - **Missing values become `0`** in formulas. If you need different behavior, use `coalesce(v1, someDefault)` to substitute a specific fallback, or a conditional like `v1 == 0 ? NaN : v1` to flag them.
-- **`v1` vs `c1`** — `v1` gives you one value (the current row), `c1` gives you the entire column as an array. Use `c1` for column-wide calculations: `v1 - mean(c1)` centers each value around the column mean.
-- **Errors in formulas** produce a missing value for that row — the rest of the data is unaffected. Check the data preview to spot any unexpected blanks.
+- **`v1` vs `c1`** – `v1` gives you one value (the current row), `c1` gives you the entire column as an array. Use `c1` for column-wide calculations: `v1 - mean(c1)` centers each value around the column mean.
+- **Errors in formulas** produce a missing value for that row – the rest of the data is unaffected. Check the data preview to spot any unexpected blanks.
 - **String concatenation** uses `+`: `v1 + " " + v2` joins two text values with a space.
 - **Parentheses** control evaluation order as expected: `(v1 + v2) * v3`.
 - **Constants** `pi`, `e`, `Infinity`, and `NaN` are available.
-- **Comments** can be added with `//`: `v1 + v2 // total score`. Anything after `//` on the same line is ignored.
+- **Comments** can be added with `#`: `v1 + v2 # total score`. Anything after `#` on the same line is ignored.

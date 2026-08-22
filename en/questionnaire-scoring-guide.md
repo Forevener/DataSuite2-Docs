@@ -1,17 +1,17 @@
 ---
 title: Questionnaire scoring guide
-description: Step-by-step examples of scoring psychological questionnaires in DataSuite 2 — from Google Forms text responses to computed scale scores.
+description: Step-by-step examples of scoring psychological questionnaires in DataSuite 2 – from Google Forms text responses to computed scale scores.
 ---
 
 # Questionnaire scoring guide
 
 This guide walks through three real-world scoring scenarios, from simple to advanced. Each builds on the [data transformation](./data-transformation.md) features, so you may want to read that page first.
 
-The common starting point: you have a spreadsheet (e.g. from Google Forms) where each row is a participant and each column is a questionnaire item. The responses might be text labels ("Strongly agree") or already numeric — either way, you need scale scores for analysis.
+The common starting point: you have a spreadsheet (e.g. from Google Forms) where each row is a participant and each column is a questionnaire item. The responses might be text labels ("Strongly agree") or already numeric – either way, you need scale scores for analysis.
 
 ## Example 1: PHQ-9 (simple sum)
 
-The [PHQ-9](https://en.wikipedia.org/wiki/PHQ-9) is a 9-item depression screening tool. Each item asks how often a symptom occurred over the past two weeks. There are no reverse-scored items — just recode and sum.
+The [PHQ-9](https://en.wikipedia.org/wiki/PHQ-9) is a 9-item depression screening tool. Each item asks how often a symptom occurred over the past two weeks. There are no reverse-scored items – just recode and sum.
 
 **Response options:** Not at all (0), Several days (1), More than half the days (2), Nearly every day (3). Total score range: 0–27.
 
@@ -30,7 +30,7 @@ If your data already has numeric values 0–3, skip this step.
 | More than half the days | 2 |
 | Nearly every day | 3 |
 
-4. Under output options, choose **Replace original values** — the text is no longer needed
+4. Under output options, choose **Replace original values** – the text is no longer needed
 5. Name the rule (e.g. "PHQ-9 recode") and click **Save rule**
 
 ### Step 2: compute the total score
@@ -56,7 +56,7 @@ The [Rosenberg Self-Esteem Scale](https://en.wikipedia.org/wiki/Rosenberg_self-e
 
 ### Approach A: reverse at scoring time (recommended)
 
-This approach keeps the original item values intact — no recode step needed. The reversal happens inside the formula itself using the pattern `(max - item)`, where max is 3 for a 0–3 scale:
+This approach keeps the original item values intact – no recode step needed. The reversal happens inside the formula itself using the pattern `(max - item)`, where max is 3 for a 0–3 scale:
 
 1. Click **+ Formula**
 2. Select all 10 RSE items as input (in order)
@@ -75,14 +75,14 @@ The reversed items (v3, v5, v8, v9, v10) are flipped inline: a response of 0 bec
 
 If you prefer to have the reversed values stored explicitly:
 
-1. **+ Value recode** — select only the 5 reversed items (3, 5, 8, 9, 10). Map: 0→3, 1→2, 2→1, 3→0. Choose **Replace original values**.
-2. **+ Formula** — select all 10 items. Formula: `sum(v1:v10)`. Create a new variable `RSE_Total`.
+1. **+ Value recode** – select only the 5 reversed items (3, 5, 8, 9, 10). Map: 0→3, 1→2, 2→1, 3→0. Choose **Replace original values**.
+2. **+ Formula** – select all 10 items. Formula: `sum(v1:v10)`. Create a new variable `RSE_Total`.
 
 Both approaches produce identical results. Approach A is more compact; approach B leaves the reversed values visible in the data table.
 
-## Example 3: TIPI — Ten-Item Personality Inventory (multiple subscales)
+## Example 3: TIPI – Ten-Item Personality Inventory (multiple subscales)
 
-The [TIPI](https://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/) measures the Big Five personality traits with just 10 items — two per trait, one regular and one reverse-scored. The scale runs from 1 (Disagree strongly) to 7 (Agree strongly), and each subscale is the **average** of its two items.
+The [TIPI](https://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/) measures the Big Five personality traits with just 10 items – two per trait, one regular and one reverse-scored. The scale runs from 1 (Disagree strongly) to 7 (Agree strongly), and each subscale is the **average** of its two items.
 
 Here's the structure:
 
@@ -96,7 +96,7 @@ Here's the structure:
 
 ### Scoring with a multi-variable formula
 
-This is a perfect use case for the `@` syntax — five subscales computed in a single rule.
+This is a perfect use case for the `@` syntax – five subscales computed in a single rule.
 
 1. Click **+ Formula**
 2. Select all 10 TIPI items as input, in item order (1–10)
@@ -120,6 +120,6 @@ The reversal pattern here is `(8 - item)` because the scale runs 1–7 (so max +
 
 - **Check your scale range.** The reversal formula depends on it: `(max + min) - value`. For 1–5 Likert it's `6 - v`, for 0–4 it's `4 - v`, for 1–7 it's `8 - v`. See the [formula reference](./formula-reference.md) for all available functions and syntax.
 - **Keep originals intact when possible.** Using inline reversal (approach A) means you can always go back and inspect individual item responses without confusion about which values were recoded.
-- **Name variables clearly.** Use descriptive names like `PHQ9_Total`, `RSE_Total`, `Extraversion` — you'll see these names in all analysis outputs.
+- **Name variables clearly.** Use descriptive names like `PHQ9_Total`, `RSE_Total`, `Extraversion` – you'll see these names in all analysis outputs.
 - **Rules apply in order.** If you recode text to numbers in rule 1, rule 2's formula will see the numeric values. You can verify intermediate results in the [data preview](./getting-started.md#previewing-your-data) at any point.
 - **Save as a project file.** Your transformation rules are saved inside the project file (.json), so you can reopen the project later with all rules intact. You can also store rules in the [rule library](./data-transformation.md#rule-library) for reuse across projects.

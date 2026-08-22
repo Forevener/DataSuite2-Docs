@@ -5,16 +5,16 @@ description: Pattern syntax, replacement tokens, and practical examples for the 
 
 # Regex reference
 
-The **regex replace** rule in [data transformation](./data-transformation.md) lets you search for patterns in text data and replace them. If you've never used regular expressions before, don't worry — this page covers the essentials and the most common use cases. For a deeper dive, [regexone.com](https://regexone.com/) is a good interactive tutorial.
+The **regex replace** rule in [data transformation](./data-transformation.md) lets you search for patterns in text data and replace them. If you've never used regular expressions before, don't worry – this page covers the essentials and the most common use cases. For a deeper dive, [regexone.com](https://regexone.com/) is a good interactive tutorial.
 
 ## The regex editor
 
 When you create a regex replace rule, the editor shows:
 
-- **Search pattern** — the regular expression to match
-- **Replacement text** — what to substitute in place of each match
-- **Options** — global (replace all matches), case sensitive, multiline mode
-- **Live preview** — shows the first matching value from your data with matches highlighted and capture groups in distinct colors
+- **Search pattern** – the regular expression to match
+- **Replacement text** – what to substitute in place of each match
+- **Options** – global (replace all matches), case sensitive, multiline mode
+- **Live preview** – shows the first matching value from your data with matches highlighted and capture groups in distinct colors
 
 The preview updates as you type, so you can experiment safely before saving the rule.
 
@@ -64,9 +64,9 @@ Square brackets define a set of characters to match:
 
 | Syntax | Meaning |
 |---|---|
-| `(abc)` | capture group — matches "abc" and remembers it for replacement |
-| `(?:abc)` | non-capturing group — groups without remembering |
-| `a\|b` | alternation — matches "a" or "b" |
+| `(abc)` | capture group – matches "abc" and remembers it for replacement |
+| `(?:abc)` | non-capturing group – groups without remembering |
+| `a\|b` | alternation – matches "a" or "b" |
 
 ## Replacement text
 
@@ -80,9 +80,9 @@ The replacement string can reference captured groups:
 
 ## Options
 
-- **Global** — replace all matches in each cell, not just the first. Usually you want this on.
-- **Case sensitive** — when off, `hello` also matches "Hello", "HELLO", etc.
-- **Multiline mode** — makes `^` and `$` match the start/end of each line within a cell, not just the start/end of the entire cell value.
+- **Global** – replace all matches in each cell, not just the first. Usually you want this on.
+- **Case sensitive** – when off, `hello` also matches "Hello", "HELLO", etc.
+- **Multiline mode** – makes `^` and `$` match the start/end of each line within a cell, not just the start/end of the entire cell value.
 
 ## Practical examples
 
@@ -182,8 +182,8 @@ Change `$2` to `$1` or `$3` to extract a different segment.
 
 ## When to use regex vs. other rules
 
-- **Exact value mapping** (e.g. "Male" → "M") — use [value recode](./data-transformation.md#value-recode) instead. It's simpler and less error-prone.
-- **Numeric transformations** — use a [formula](./data-transformation.md#formula). Regex operates on text, not numbers.
-- **Simple find-and-replace** with no pattern logic — regex works, but value recode with a single mapping row is more readable.
+- **Exact value mapping** (e.g. "Male" → "M") – use [value recode](./data-transformation.md#value-recode) instead. It's simpler and less error-prone.
+- **Numeric transformations** – use a [formula](./data-transformation.md#formula). Regex operates on text, not numbers.
+- **Simple find-and-replace** with no pattern logic – regex works, but value recode with a single mapping row is more readable.
 
-Regex shines when the text has structure you need to match flexibly — varying formats, optional parts, or segments to rearrange.
+Regex shines when the text has structure you need to match flexibly – varying formats, optional parts, or segments to rearrange.

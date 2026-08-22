@@ -272,7 +272,7 @@
 	// ── Keyboard shortcuts ───────────────────────────────────
 
 	document.addEventListener("keydown", function (e) {
-		// Escape — close any open overlay/dropdown
+		// Escape – close any open overlay/dropdown
 		if (e.key === "Escape") {
 			closeLangDropdown();
 			if (searchOverlay && searchOverlay.hasAttribute("data-visible")) {
@@ -284,7 +284,7 @@
 			return;
 		}
 
-		// "/" or Ctrl+K — focus search
+		// "/" or Ctrl+K – focus search
 		var isInput = document.activeElement && (
 			document.activeElement.tagName === "INPUT" ||
 			document.activeElement.tagName === "TEXTAREA" ||
