@@ -52,7 +52,9 @@ When opening an XLSX or ODS file with multiple sheets (or a single sheet with am
 
 ### Header detection
 
-The app detects how many rows are headers by counting consecutive string values from the top of each column (skipping nulls), discarding entirely categorical columns, and taking the max. Multi-row headers are concatenated with " > ". You can override the detected value via a spinner in the import modal.
+The app detects how many rows are headers by counting consecutive string values from the top of each column (skipping nulls) and discarding entirely categorical columns. It then takes the deepest count that at least a quarter of the remaining columns agree on – a real header row is text across many columns at once, so a single column whose first data value happens to be free text ("8 h out of 8" in a column that is otherwise numeric) can't push the whole sheet down by a row. Multi-row headers are concatenated with " > ". You can override the detected value via the **Header rows** spinner in the import modal.
+
+**One header depth for stacked sheets:** sheets you append are one table split into parts, so **Append rows** applies the depth most of them report (ties go to the shallower one) rather than letting each sheet split itself. Setting **Header rows** by hand overrides it for every selected sheet at once – reach for it if a sheet was split at the wrong row.
 
 **Merged cells:** Excel/ODS merged cells are filled automatically – the top-left value is propagated across the merge range. This preserves multi-row grouped headers (e.g. a questionnaire name spanning several subscale columns) without bleeding into adjacent columns.
 

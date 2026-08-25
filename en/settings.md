@@ -34,6 +34,8 @@ Three separate precision controls let you set different levels of detail for dif
 - **Statistics & coefficients** (default: 3) – test statistics (t, F, W, χ²), effect sizes (Cohen's d, r, η²), regression coefficients, factor loadings, fit indices, confidence intervals
 - **P-values** (default: 3) – all p-value output when exact format is selected
 
+A value too small to show at the chosen precision is displayed as a threshold rather than a row of zeros: `< 0.001` when it is positive, `> -0.001` when it is negative, so a small negative statistic keeps its direction. Under **Significant figures (fractional only)** the extra precision renders such values in full, and **Exponential notation** shows them in scientific form instead.
+
 ### Other display options
 
 - **Exponential notation** – when enabled, very large or very small numbers are shown in scientific notation (e.g. 1.23e-5).

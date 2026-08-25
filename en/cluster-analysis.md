@@ -19,6 +19,8 @@ The **Cluster analysis** module groups observations, variables, or both into clu
 
 At least 2 numeric variables must be selected. Non-numeric variables are automatically excluded (and listed in the output), as are variables that turn out to be constant across the complete cases – at least two of the selected variables must actually vary.
 
+k must also be smaller than the number of objects being clustered: fewer than the variables in variable mode, and fewer than the complete cases in case mode. Biclustering needs at least two complete cases, and FABIA cannot be asked for more biclusters than there are variables. Numeric fields are clamped to their own minimum and maximum, so a value typed outside the range is repaired rather than passed to R.
+
 ## Step 1: Method & settings
 
 ### Clustering mode
@@ -35,7 +37,7 @@ At least 2 numeric variables must be selected. Non-numeric variables are automat
 
 > **Why standardize?** If one variable ranges 0–100 (exam scores) and another ranges 1–5 (Likert scale), the first would dominate the clustering simply because its numbers are bigger. Standardization puts all variables on the same scale so each contributes equally.
 
-In variable clustering mode the variables are standardized *before* the matrix is transposed, so the dissimilarity between two variables is computed from their standardized profiles – which is what makes Euclidean distance on standardized data equivalent to a correlation-based dissimilarity.
+In variable clustering mode the variables are standardized *before* the matrix is transposed, so the dissimilarity between two variables is computed from their standardized profiles – which is what makes Euclidean distance on standardized data equivalent to a correlation-based dissimilarity. In that mode the checkbox is ticked and locked, and a hint under it says why: a correlation is defined on standardized columns, so variable clustering always runs on them.
 
 ### Algorithms for case and variable clustering
 
@@ -47,7 +49,7 @@ In variable clustering mode the variables are standardized *before* the matrix i
 
 **K-means settings:**
 
-- **Initialization method** – Hartigan-Wong (default), Lloyd, Forgy, or MacQueen
+- **K-means algorithm** – Hartigan-Wong (default), Lloyd, Forgy, or MacQueen
 - **Number of random starts** (default 25) – runs the algorithm multiple times with different starting points and keeps the best result. Higher values reduce the chance of a suboptimal solution.
 - **Maximum iterations** (default 100). If the algorithm hits the limit without converging, the output says so and suggests raising the limit or the number of starts.
 
@@ -65,7 +67,7 @@ In variable clustering mode the variables are standardized *before* the matrix i
 | **Median** | Like centroid but weights clusters equally regardless of size | Similar to centroid |
 | **McQuitty (WPGMA)** | Like average but weights clusters equally | Similar to average |
 
-Two warnings guard the linkage choice. Ward's assumes Euclidean distances, so combining it with another metric is flagged. Centroid and median linkage are defined for *squared* Euclidean distances; given a plain distance matrix they can merge at decreasing heights, and the dendrogram then shows inversions – a note appears above the plot when that happens.
+Two warnings guard the linkage choice. Ward's assumes Euclidean distances, so combining it with another metric is flagged. Centroid and median linkage are not monotone – a merge can sit below the pair it joins – so their dendrograms can show inversions; a note appears above the plot when that happens.
 
 ### Distance metric
 
@@ -79,7 +81,7 @@ Two warnings guard the linkage choice. Ward's assumes Euclidean distances, so co
 | **1 − r (correlation)** | One minus the correlation between two variables | Variable mode – groups variables that rise and fall together |
 | **1 − \|r\| (absolute correlation)** | One minus the absolute correlation | Variable mode – groups variables that measure the same thing regardless of polarity |
 
-The two correlation dissimilarities appear only in **Variable clustering** mode, where they are the established choice. `1 − r` keeps oppositely-signed variables apart; `1 − |r|` groups them together, which is usually what you want for reverse-keyed questionnaire items.
+The two correlation dissimilarities are the established choice in **Variable clustering** mode, but they are offered in case mode too, for K-medoids and Hierarchical: there they compare the *shape* of a case's profile across the variables rather than its level, so they need columns measured on a comparable scale – a hint under the control says so. `1 − r` keeps oppositely-signed variables apart; `1 − |r|` groups them together, which is usually what you want for reverse-keyed questionnaire items.
 
 K-means minimizes Euclidean distance internally and cannot honour another metric, so in case mode the metric selector is shown for **K-medoids (PAM)** and **Hierarchical** only. In variable mode it stays visible under K-means as well, with the entries K-means cannot use disabled – on standardized variables, Euclidean K-means already reproduces the `1 − r` clustering, and the hint under the control says so.
 
@@ -105,7 +107,7 @@ Biclustering finds subgroups of observations that are similar on a *subset* of v
 
 **Plaid settings:**
 
-- **Background model** – Row + column effects (default) or Constant only
+- **Background layer** – **Constant background layer** (default) fits one level shared by every case and variable before the layers, so the biclusters describe departures from it rather than from zero; **No background layer** skips it
 - **Maximum layers (biclusters)** (default 20) – upper limit for the automatic detection
 - **Row release** and **Column release** (default 0.7 each, range 0–1) – control how aggressively rows and columns are pruned from layers
 
@@ -117,6 +119,7 @@ Biclustering finds subgroups of observations that are similar on a *subset* of v
 **FABIA settings:**
 
 - **Sparseness prior (loadings)** and **Sparseness prior (factors)** (defaults 0.6 and 0.5) – higher values produce sparser (more selective) biclusters
+- **Membership threshold** (default 0.5, range 0.1–2) – the cut point that turns FABIA's continuous factors into membership. Raising it admits more cases into each bicluster and fewer variables; set it too low and FABIA returns nothing at all.
 - **Number of iterations** (default 500)
 
 **Cheng & Church settings:**
@@ -126,10 +129,11 @@ Biclustering finds subgroups of observations that are similar on a *subset* of v
 
 **Spectral settings:**
 
+- **Number of row and column groups** (default 3) – rows and variables are each split into this many groups, and the biclusters are the group pairings that survive the size and spread filters below. The maximum offered is derived from your data: both counts and the two minimum-size filters bound it, so on a narrow dataset it is small.
 - **Number of singular vectors** (default 3) – how many SVD dimensions to use; it cannot exceed the smaller of the case and variable counts
 - **Normalization method** – Log (default), IRRC, or Bistochastization
-- **Maximum within-bicluster variance** (default 1) – a candidate is kept only if its variance stays below this. Since Spectral decides k for itself, this control is what really governs how many biclusters come back.
-- **Minimum rows** and **Minimum columns** (default 2 each)
+- **Maximum within-bicluster spread** (default 0.5) – the spread a candidate may carry and still be kept, as a fraction of the matrix's own spread. Raise it to accept more biclusters. Since Spectral decides k for itself, this control is what really governs how many come back.
+- **Minimum rows** and **Minimum columns** (default 2 each) – a candidate is kept only when it has *more* rows (or variables) than this, so 2 keeps nothing smaller than three
 
 > **Which biclustering algorithm?** Plaid is the default because it models continuous data directly and picks the number of biclusters itself – there is no threshold to guess. BiMax and Cheng & Church need a threshold whose usable value depends on your data, so try them once you know what the structure looks like. FABIA handles noisy data well due to its probabilistic model. Spectral is useful for checkerboard-pattern data.
 
@@ -141,12 +145,16 @@ Before running the full analysis, this step compares solutions across a range of
 
 Set the **Cluster range to test** (default 2–10) and click **Analyze & determine k**. In variable mode the maximum must be *fewer* than the number of variables; in case mode, fewer than the number of complete cases.
 
+Under **Validity metrics**, silhouette, Calinski-Harabasz and Davies-Bouldin are on by default and the Dunn index is off. Each one you leave on becomes a column of the comparison table, and every metric is recomputed for each k in the range – switching off the ones you will not read is what makes a wide range affordable.
+
 Four diagnostic plots can be toggled:
 
 - **Show elbow plot (within-cluster SS)** – total within-cluster sum of squares for each k. Look for the "elbow" where the curve bends – adding more clusters past that point gives diminishing returns.
 - **Show silhouette plot** – average silhouette score for each k. The best k (highest score) is highlighted. Reference lines at 0.25, 0.50, and 0.70 help judge quality.
-- **Compute gap statistic (slower)** – compares within-cluster dispersion to what you'd expect from random (uniformly distributed) data. Error bars show uncertainty from the Monte Carlo simulation (100 reference samples). The k picked by the 1-standard-error rule is marked, which is not always the plain maximum.
+- **Compute gap statistic (slower)** – compares within-cluster dispersion to what you'd expect from random (uniformly distributed) data, measured with the same dissimilarity the run clusters on. Error bars show uncertainty from the Monte Carlo simulation (100 reference samples). The k picked by the 1-standard-error rule is marked, which is not always the plain maximum. If the computation fails, the Gap column reads N/A and R's message is printed under the table and in place of the plot.
 - **Show dendrogram** (Hierarchical only) – the full tree with a draggable cut line. Drag it up or down to explore different k values – branches are colored by cluster assignment in real time.
+
+Each of these plots carries a note under it naming what is marked: which k the elbow ring sits on – or that the curve bends too little to pick one – the silhouette bands at 0.25, 0.50 and 0.70, and the ±1 SE bars with the rule that chose the highlighted k. When a rule's k falls outside the range you tested, nothing is highlighted and the note says so.
 
 > **What is a silhouette score?** For each observation, the silhouette measures how similar it is to its own cluster compared to the nearest other cluster. Values range from −1 to +1: near +1 means the observation is well-placed, near 0 means it sits on the boundary between clusters, and negative values mean it's probably in the wrong cluster. The average across all observations summarizes overall cluster quality.
 
@@ -158,7 +166,7 @@ Before comparing solutions, the card reports whether the data looks clustered at
 
 | Test | What it measures | Reading |
 |---|---|---|
-| **Hopkins statistic** | Whether points are packed more tightly than uniform random points over the same range | > 0.75 clustered structure; ≈ 0.5 no cluster tendency (what random data gives); < 0.25 regularly spaced |
+| **Hopkins statistic** | Whether points are packed more tightly than uniform random points over the same range | ≥ 0.75 clustered structure; between 0.25 and 0.75 weak or unclear tendency (0.5 is what random data gives); < 0.25 regularly spaced |
 | **Duda-Hart Je(2)/Je(1)** | Whether splitting the data in two beats leaving it whole, with a p-value | Significant = two clusters beat one; otherwise one cluster is not rejected |
 
 > **Why check tendency first?** Every algorithm returns clusters, including on data that has none. Hopkins and Duda-Hart are the cheap sanity check that comes before the question "how many?" – if they say there is no structure, the rest of the table is describing arbitrary cuts.
@@ -181,7 +189,7 @@ A table with one row per k. When the range starts at 1, the k = 1 row describes 
 
 Green marks the best value in a column, and Hartigan values above 10 are highlighted in yellow. Two columns are deliberately left unmarked: **Within SS** and **Variance explained (%)** both improve monotonically with k, so a "best" mark on either would simply point at the largest k tested. The **Gap** mark sits on the k the 1-standard-error rule picks, matching the suggestion below the table rather than the plain maximum.
 
-Within SS, variance explained, Calinski-Harabasz and Hartigan are computed from centroids under Euclidean geometry whatever metric you selected – when you pick another metric, a note under the table says so.
+Within SS, variance explained, Calinski-Harabasz and Hartigan are computed under Euclidean geometry whatever metric you selected – when you pick another metric, a note under the table says so. The Gap statistic itself is computed on the dissimilarity you chose, but its reference sample is drawn uniformly, which is not a structureless null for `1 − r` or `1 − |r|`; a second note says so under those two metrics.
 
 Each row's **k** cell doubles as a control: click it to carry that cluster count into Step 3's **Number of clusters (k)** field instead of retyping it, with a toast confirming the new value.
 
@@ -214,24 +222,24 @@ Three optional slower diagnostics (off by default):
 - **F-statistic diagnostics (slower)** – tests whether row and column effects within each bicluster are statistically significant. A reference line at 80% helps gauge quality.
 - **Consensus scoring (slower)** – runs the algorithm with different seeds and measures agreement between runs. It is offered only for the stochastic algorithms; a deterministic one agrees with itself perfectly, and the card says so instead of plotting a flat line.
 
-Stability and consensus each refit the biclustering once per bootstrap replicate, for every k in the range, so their cost is the width of the range times the [**Bootstrap replications**](./settings.md#bootstrap-replications) setting. Narrow the range before switching them on.
+Stability and consensus refit the biclustering once per replicate, for every k in the range; the F-statistic diagnostics resample once per bicluster found at every k, so they cost the range width times the biclusters found times the replications. Switching any of the three on reveals a **Bootstrap replications** field (default 100) beside them. Narrow the range before switching them on.
 
 #### Bicluster comparison table
 
 | Metric | What it measures |
 |---|---|
 | **Found** | Actual number of biclusters discovered (may be less than requested) |
-| **Var. Expl. (%)** | How much of the total variance the biclusters capture |
+| **Var. Expl. (%)** | How much of the total variance the biclusters capture. Under FABIA the column is headed **Var. Expl. (model, %)** and scores the factorization FABIA actually fitted rather than the bicluster blocks – a footnote under the table says so. |
 | **Δ var. (%)** | Additional variance explained compared to the previous k |
-| **Avg MSR** | Mean squared residue – how coherent the biclusters are (lower = more coherent) |
+| **Avg MSR** | Mean squared residue – how coherent the biclusters are (lower = more coherent). MSR is undefined below two rows or two columns, so where only some biclusters qualify the cell reads e.g. `0.017 (3/4)`. |
 | **Avg overlap** | Jaccard similarity between biclusters – high overlap (> 0.3, shown in yellow) means biclusters share many members |
 | **Cell cov. (%)** | Percentage of data cells included in at least one bicluster |
 
-If stability, F-statistic, or consensus diagnostics were enabled, additional columns appear: **Stability** (Jaccard), **Avg row F** / **Avg col F** with **Row sig. (%)** / **Col sig. (%)**, and **Consensus** (Jaccard). Green marks the best value in a column; as in the standard table, click a row to carry its k into Step 3.
+If stability, F-statistic, or consensus diagnostics were enabled, additional columns appear: **Stability** (Jaccard), **Avg row F** / **Avg col F** with **Row sig. (%)** / **Col sig. (%)**, and **Consensus** (Jaccard); green marks the best value in the stability and consensus columns. Variance explained carries no best mark – it tracks how much of the matrix the blocks happen to cover, so its extreme names the k the algorithm filled most, not a better fit. Yellow in **Found** marks a k the algorithm could not fill (the row then repeats the largest solution it did find), and a k whose fit failed outright is drawn red with R's message under the table. As in the standard table, click a row to carry its k into Step 3.
 
-A **suggested k** is provided below the table, together with the rule that produced it – the highest bootstrap stability when that diagnostic ran, otherwise elbow detection in the variance explained curve, falling back to the smallest k tested when the curve has no clear elbow.
+A **suggested k** is provided below the table, together with the rule that produced it – the highest bootstrap stability when that diagnostic ran, otherwise elbow detection in the variance explained curve. The elbow rule only applies once the curve has gained at least 5 percentage points across the range: a flat series has no elbow to find, and the suggestion falls back to the smallest k tested.
 
-For auto-k algorithms (Plaid, Spectral), Step 2 shows an informational note instead – the algorithm determines k on its own. For Spectral the note adds that **Maximum within-bicluster variance** from Step 1 is what decides how many biclusters come back.
+For auto-k algorithms (Plaid, Spectral), Step 2 shows an informational note instead – the algorithm determines k on its own. For Spectral the note adds that **Maximum within-bicluster spread** from Step 1 is what decides how many biclusters come back.
 
 ## Step 3: Run full analysis
 
@@ -249,7 +257,8 @@ All diagnostic plots produced here and in step 2 (elbow, silhouette, gap, dendro
 | **Calinski-Harabasz index** | On | Higher is better | Between-cluster vs. within-cluster variance ratio |
 | **Davies-Bouldin index** | On | Lower is better | How similar each cluster is to its closest neighbor (lower = more distinct clusters) |
 | **Dunn index** | Off | Higher is better | Ratio of smallest between-cluster distance to largest within-cluster diameter |
-| **Cluster stability (bootstrap Jaccard, slower)** | Off | ≥ 0.75 recovered, ≥ 0.85 highly stable | Whether each cluster survives resampling |
+| **Cophenetic correlation** | Hierarchical only | ≥ 0.75 is a good fit | How faithfully the tree reproduces the input dissimilarities. Not optional – it grades the tree rather than the cut, so it appears on every hierarchical run. |
+| **Cluster stability (bootstrap Jaccard, slower)** | Off | ≥ 0.75 stable, ≥ 0.85 highly stable, below 0.6 not trustworthy | Whether each cluster survives resampling |
 
 When [interpretation](./settings.md#significance-formatting) is enabled, silhouette values include labels:
 
@@ -262,14 +271,14 @@ When [interpretation](./settings.md#significance-formatting) is enabled, silhoue
 
 #### Cluster stability
 
-Switching on **Cluster stability (bootstrap Jaccard, slower)** reveals a **Bootstrap replicates** field (default 100). Each replicate resamples the observations, reclusters them, and matches every original cluster to its best counterpart by Jaccard similarity. The result is a table with one row per cluster:
+Switching on **Cluster stability (bootstrap Jaccard, slower)** reveals a **Bootstrap replications** field (default 100). Each replicate resamples the observations, reclusters them, and matches every original cluster to its best counterpart by Jaccard similarity. The result is a table with one row per cluster:
 
 - **Mean Jaccard** — the average best-match similarity across replicates
 - **Recovered** — replicates where the cluster came back with a Jaccard of 0.75 or more
 - **Dissolved** — replicates where it scored 0.5 or less
 - **Replicates scored** — how many replicates drew at least one of the cluster's members and could therefore score it
 
-With interpretation enabled, each mean is labelled: ≥ 0.85 highly stable, ≥ 0.75 stable, above 0.5 "measures a pattern, but is not stable", and 0.5 or below dissolved. If any cluster dissolves, a warning names how many.
+With interpretation enabled, each mean is labelled: ≥ 0.85 highly stable, ≥ 0.75 stable, ≥ 0.60 "indicates a pattern, but membership is doubtful", and below 0.60 not trustworthy. A warning names how many clusters fell below 0.60. **Dissolved** keeps its own, stricter meaning – it counts replicates, not the mean.
 
 > **Why stability matters more than fit.** Silhouette, Calinski-Harabasz and the rest all grade the partition on the sample you already have – they cannot tell a real group from a lucky cut. The bootstrap asks a different question: would this cluster show up again in another sample from the same population? A cluster with a high silhouette and a mean Jaccard of 0.4 is a sample artifact with good geometry (Hennig, 2007).
 
@@ -285,12 +294,14 @@ With interpretation enabled, each mean is labelled: ≥ 0.85 highly stable, ≥ 
 | **Silhouette plot** | Off | Bar chart showing every observation's silhouette width, grouped by cluster |
 | **Variable contribution to clustering** | Off | F-statistic, degrees of freedom and eta-squared for each variable – which variables best distinguish the clusters. Not available in variable mode. |
 
-Both sum-of-squares blocks are Euclidean whatever distance metric you chose, and they are computed on the analysis matrix – on the standardized values when standardization is on, not on the original scale of the profile table above them. A note under the tables says which case applies.
+Both sum-of-squares blocks are Euclidean whatever distance metric you chose, and they are computed on the analysis matrix – on the standardized values when standardization is on, not on the original scale of the profile table above them. A note under the tables says which case applies; in variable mode it adds that the squares are taken over the *transposed* matrix, where each variable is a point in case space.
 
 **Hierarchical-specific options:**
 
 - **Dendrogram** (on by default) – tree diagram with branches colored by cluster
-- **Optimize leaf ordering** – reorders leaves for cleaner visualization
+- **Optimize leaf ordering** – rotates branches so neighbouring leaves are as similar as the tree allows (Bar-Joseph et al., 2001). The search is exact rather than a heuristic, so it adds a real wait – around a second at 200 cases and tens of seconds by 800, more under single linkage.
+
+Merge heights are reported on the scale of the dissimilarity you selected, `1 − r` and `1 − |r|` under Ward's D2 included, so the dendrogram's height axis, the cut line and the cophenetic correlation all read in the same units.
 
 > **Reading cluster profiles:** the profile table is often the most useful output. Look at which variables have high or low means in each cluster compared to the overall mean. If Cluster 1 has high anxiety, high stress, and low well-being while Cluster 2 shows the opposite pattern, you've found psychologically distinct groups. Name clusters by their defining characteristics, but remember – the labels are your interpretation, not the data's (same caveat as [factor naming](./factor-analysis.md#common-pitfalls)).
 
@@ -310,18 +321,19 @@ If the dendrogram is enabled, variables that merge at low heights are the most s
 
 | Option | Default | What it shows |
 |---|---|---|
-| **Bicluster summary table** | On | Each bicluster's row count, column count, total size, mean value, and mean squared residue |
+| **Bicluster summary table** | On | Each bicluster's row count, column count, total size, mean value, mean squared residue, and MSR as a ratio of the whole matrix's residue (below 1 the block is more coherent than the matrix). When the run standardized, the mean column reads **Mean value (z)** with a footnote, since the profiles table reports means on the original scale. |
+| **Stability (bootstrap Jaccard, slower)** | Off | A sub-option of the summary table: refits the biclustering on each bootstrap resample of the cases and adds a **Stability** column holding each bicluster's mean best-match Jaccard. Reveals its own **Bootstrap replications** field (default 100). |
 | **Membership tables (rows and columns)** | On | A **Case membership** table (checkmark grid by case number) and a **Variable membership** table, each with a count column |
 | **Bicluster profiles (means per variable)** | On | Mean of each variable within each bicluster (only variables that belong to that bicluster) |
 | **Coherence per bicluster** | On | MSR, variance of row means, and variance of column means for each bicluster |
-| **Overlap analysis** | Off | Jaccard similarity matrices showing how much biclusters share rows and columns |
+| **Overlap analysis** | Off | Jaccard similarity matrices for rows, for columns, and for cells. The cell matrix is the quantity the solution comparison reports as **Avg overlap**: two biclusters can share most of their rows and most of their columns and still barely intersect as blocks. |
 | **Heatmap visualization** | On | Color-coded matrix with bicluster membership shown as colored borders |
 
-The heatmap supports optional **Row dendrogram** and **Column dendrogram** (both on by default), uses a diverging color scale (blue–white–red for standardized data), and carries a legend for the value ramp and the bicluster colors. Hovering a cell shows its row, column, value, and *every* bicluster that owns it. Large matrices are sampled down to a readable number of rows – a note reports how many of the total are shown – and per-cell tooltips are dropped past a cell count the note also names.
+The heatmap supports optional **Row dendrogram** and **Column dendrogram** (both on by default), uses a diverging color scale (blue–white–red for standardized data), and carries a legend for the value ramp and the bicluster colors. Hovering a cell shows its row, column, value, and *every* bicluster that owns it. Large matrices are sampled down to a readable number of rows – a note reports how many of the total are shown – and per-cell tooltips are dropped past a cell count the note also names. While rows are sampled the row dendrogram is suppressed, since its leaves would not line up with the drawn rows, and a note says so.
 
 #### Biclustering overview
 
-Every run includes a summary showing variance explained (%), row coverage, column coverage, cell coverage, and the number of complete cases out of the total.
+Every run includes a summary showing variance explained (%), row coverage, column coverage, cell coverage, and the number of complete cases out of the total. Under FABIA a note adds that variance explained scores its own factorization rather than the bicluster blocks – the same definition the comparison table's **Var. Expl. (model, %)** column uses. A run that finds no biclusters at all still gets its card, with the settings it used and the warning, so you can see what to change next.
 
 > **Biclustering coverage:** coverage tells you how much of your data is "explained" by the biclusters. Low cell coverage means the biclusters capture only a small part of the data – either the structure is sparse (which is fine for some applications) or k is too low. Row and column coverage tell you whether some observations or variables are left out entirely.
 
@@ -332,20 +344,21 @@ The analysis generates warnings for potentially problematic results.
 **Case and variable clustering:**
 
 - **K-means did not converge** – the iteration limit was reached; raise it or the number of random starts
-- **Highly unbalanced clusters** – smallest cluster < 5% of cases
-- **Very small clusters** – fewer than 10 observations
-- **Extreme size imbalance** – largest cluster > 10× the smallest
+- **Unbalanced clusters** – one warning for the three views of the same problem: a smallest cluster under 5% of cases, one holding fewer than 10 observations, or a largest more than 10× the smallest. It names the smallest cluster's size and share and the largest-to-smallest ratio.
 - **Low silhouette** – below 0.25 ("no substantial structure") or 0.25–0.50 ("weak structure")
-- **Many negative silhouettes** – more than 10% of observations have negative silhouette values (likely in the wrong cluster)
-- **Dissolved clusters** – with stability enabled, how many clusters fell to a mean Jaccard of 0.5 or below
+- **Many negative silhouettes** – more than 10% of observations (or of variables, in variable mode) have negative silhouette values (likely in the wrong cluster)
+- **Clusters that did not reproduce** – with stability enabled, how many fell below a mean Jaccard of 0.6 across resamples
 - **Single-variable clusters** (variable mode) – a cluster containing only one variable may not be meaningful
 
 **Biclustering:**
 
 - **Fewer biclusters than requested** – the algorithm returned less than k
 - **Degenerate biclusters** – some have fewer than two rows or two columns, so their MSR is undefined
+- **Heavy overlap** – the biclusters share more than 30% of their cells on average, so they largely repeat the same structure
 - **Coverage too low** – under 25% of cells belong to any bicluster
 - **Coverage too high** – over 90% of cells are covered, so the biclusters describe the matrix as a whole rather than local structure
+
+Step 2's comparison card carries warnings of its own: no biclusters found at any k in the range, every k overlapping above 0.3, or stability requested but unmeasurable everywhere – in which case the suggested k quietly falls back to the variance-explained rule.
 
 ### Inserting results into the dataset
 
@@ -388,13 +401,13 @@ Key things to include when writing up cluster analysis results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) – you can inspect, copy, or re-run the exact commands. Cluster analysis uses base R functions (`kmeans`, `hclust`) and the `cluster` package (for PAM, silhouette, and the gap statistic); biclustering uses the `biclust` and `fabia` packages. Citations appear automatically at the top of the output section. Clustering and biclustering steps are seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) (default 42); the bootstrap diagnostics – cluster stability, bicluster stability, and consensus – are seeded independently by [**Bootstrap seed**](./settings.md#bootstrap-seed) so you can vary one without the other.
+Every analysis prints the underlying R code to the [R console](./r-console.md) – you can inspect, copy, or re-run the exact commands. Cluster analysis uses base R functions (`kmeans`, `hclust`) and the `cluster` package (for PAM and silhouette); the gap statistic and the optimal leaf ordering are computed in R by the module itself, which is what lets them honour the distance metric you chose. Biclustering uses the `biclust` and `fabia` packages. Citations appear automatically at the top of the output section. Clustering and biclustering steps are seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) (default 42); the bootstrap diagnostics – cluster stability, bicluster stability, and consensus – are seeded independently by [**Bootstrap seed**](./settings.md#bootstrap-seed) so you can vary one without the other.
 
 ## Common pitfalls
 
 Cluster analysis is exploratory by nature – it will always produce clusters, whether or not they're meaningful. Keep these points in mind:
 
-**Clusters always exist – even in random data.** K-means will partition random noise into k groups and report cluster centers with a straight face. A low Hopkins statistic, a low silhouette score (< 0.25), or clusters that dissolve under the bootstrap are signs that the "clusters" may not reflect real structure. Always check the tendency and validity output before interpreting.
+**Clusters always exist – even in random data.** K-means will partition random noise into k groups and report cluster centers with a straight face. A Hopkins statistic near 0.5, a low silhouette score (< 0.25), or clusters that fall below a mean Jaccard of 0.6 under the bootstrap are signs that the "clusters" may not reflect real structure. Always check the tendency and validity output before interpreting.
 
 **Results depend on the method.** K-means, PAM, and Hierarchical can produce different clusterings from the same data. Different linkage methods within Hierarchical can produce different clusterings. Different distance metrics can produce different clusterings. If your clusters only appear with one specific combination of settings, they may not be robust. Try multiple approaches and look for consistent patterns.
 
