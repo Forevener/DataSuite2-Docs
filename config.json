@@ -4,7 +4,8 @@
 			"key": "nav_getting_started",
 			"pages": [
 				"getting-started",
-				"settings"
+				"settings",
+				"taking-an-exam"
 			]
 		},
 		{
@@ -29,12 +30,17 @@
 				"regression-analysis",
 				"factor-analysis",
 				"confirmatory-factor-analysis",
+				"structural-equation-modeling",
 				"cluster-analysis",
 				"time-to-event-analysis",
 				"time-series-analysis",
 				"analysis-planner"
 			]
 		}
+	],
+	"unlisted": [
+		"exam-question-reference",
+		"exam-spec-reference"
 	],
 	"languages": {
 		"en": { "name": "English", "flag": "gb" },

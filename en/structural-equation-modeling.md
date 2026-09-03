@@ -19,6 +19,8 @@ The **Structural equation modeling** (SEM) module fits a measurement model, a st
 
 The SEM editor has three matrices stacked vertically: the **measurement model** (factor → indicators), the **structural model** (endogenous → predictors), and the **covariances** list. A lavaan **syntax box** on the right reflects all of them and is itself editable. A live **diagram preview** below the editor shows whatever currently parses cleanly.
 
+Each matrix has its own **Clear** button that resets *that card only* – clearing the measurement matrix leaves your structural equations, covariances and `:=` lines standing. **Clear model**, in the options column beside **Run SEM**, is the one that wipes everything: both matrices, the covariance list and the syntax box. Queued [comparison models](#model-comparison) survive both, since they belong to finished runs rather than to the draft.
+
 ### Measurement model
 
 The measurement matrix works exactly as in CFA – see [Model specification](./confirmatory-factor-analysis.md#model-specification) for cell behavior, factor management, second-order factors, auto-detect from names, and the value/label/start popover. Anything you build there is part of the same model the structural matrix and the syntax box draw from.
@@ -34,7 +36,9 @@ The **Structural model** matrix sits below the measurement matrix. Rows are endo
 - **Self-edges are blocked** – the diagonal cell where row == column is rendered disabled. A variable cannot predict itself.
 - **Cycles are flagged in red.** If your paths form a feedback loop (e.g. A → B → A, or A ↔ B through a chain), the participating cells highlight red. Lavaan supports non-recursive models, so cycles are accepted – but the highlight tells you to think about whether identification holds.
 - **Remove an equation** with the **×** next to its row label.
-- **References outside the variable pool stay visible.** If an equation names a variable that isn't in your current selection, the matrix grows a muted orphan column (or marks an orphan target row) for it rather than dropping the reference. You can clear it from there; reselect the variable to edit it normally.
+- **References outside the variable pool stay visible.** If an equation names a variable that isn't in your current selection, the matrix grows a muted orphan column (or marks an orphan target row) for it rather than dropping the reference. You can clear it from there; reselect the variable to edit it normally. The orphan column keeps its place in the header when the matrix repaints, so the ticks stay under the predictors they belong to.
+- **The model runs on those references too.** A numeric column the dataset holds is resolved whether or not it is currently selected, and the fit is sent the selected columns plus whatever else the model names – which is what the orphan column was always promising. A name the dataset doesn't have at all is still underlined and still closes **Run SEM**.
+- **Cells are keyboard-operable.** Tab reaches each cell, Enter or Space toggles the one that has focus, and every cell announces the path it stands for to a screen reader. Focus stays where you left it when the matrix repaints after a toggle.
 
 > **Path analysis vs. full SEM:** a model with only `~` lines on observed variables is a path analysis (regression with multiple outcomes, possibly mediated). Add latent factors and you have full SEM. The module handles both – there's no separate mode to switch into.
 
@@ -60,6 +64,8 @@ The **Indirect effects** form is the GUI shortcut for the most common case: medi
 2. Optionally rename the parameter (defaults to `indirect`, `indirect2`, … on collision)
 3. Click **Add indirect effect**
 
+A name you type has to be free across the whole parameter namespace – other defined parameters, path labels and variable names alike. Typing one that is already taken is refused with "This name is already in use – choose another." rather than silently constraining two parameters to be equal, or emitting two `:=` lines under one name.
+
 The form ensures the X→M, M→Y **and** X→Y paths exist as labeled structural regressions (assigning `a`, `b`, `c`, … from labels not already used anywhere in the model), then emits three lines: the indirect effect `name := a*b`, the **direct** effect `direct := c`, and the **total** effect `total := c + a*b`. Reporting all three is what a mediation write-up needs, and computing them together means they share the same bootstrap pass. Re-running with the same triple is idempotent – it won't duplicate paths, rename existing labels, or stack a second definition of the same expression. If the direct X→Y path is pinned to a fixed coefficient, the form emits the indirect line alone and says so in the toast.
 
 For contrasts or any other custom expression – type `name := expression` directly into the [syntax box](#lavaan-syntax-box). It appears in the **Indirect effects** list with a remove (×) button, alongside any GUI-generated entries.
@@ -73,15 +79,19 @@ The **lavaan syntax** accordion (right column) holds the canonical model text. I
 Practical implications:
 
 - **Paste a model from a publication** – drop the lavaan syntax in, the matrices reorganize to match. Useful when literature reports their model in lavaan notation.
-- **Type things the matrices don't model** – equality constraints (`a == 2*b`), inequality (`a > 0`), formative measurement (`<~`), intercepts (`x1 ~ 1`), starting values, label names, fixed values, comments. They survive matrix edits because the parsed buffer is the source of truth, not what the matrices know how to render.
+- **Type things the matrices don't model** – equality constraints (`a == 2*b`), inequality against a label (`b > c`) or against a constant (`p > 0.2`, `q < 0.9`), formative measurement (`<~`), intercepts (`x1 ~ 1`), starting values, label names, fixed values, comments. They survive matrix edits because the parsed buffer is the source of truth, not what the matrices know how to render.
+- **Comments survive too** – trailing ones (`F1 =~ x1 + x2 # first factor`) as well as whole-line ones, under both markers (`#` and `!`). A name that appears only inside a comment is not treated as part of the model: it is neither underlined as unknown nor allowed to pull the estimator to WLSMV.
+- **A label that collides with a column name stays a label.** If your dataset has a column `a`, then in `F2 ~ a*F1 / ind := a*2 / a == 0.4` the measurement and structural sides are translated to the internal alias while `a` on the parameter side is left as the parameter it is.
 - **Mid-typing safety** – if a line doesn't parse yet (e.g. you're in the middle of typing `F1 =~ x1 +`), the matrices freeze on the last good state instead of clearing.
-- **The buffer is what gets fitted.** Everything the widgets can't show – `:=` definitions, `==` constraints, variance and covariance modifiers – reaches lavaan exactly as written. A `x1 ~~ 0.2*m1` line you type is fitted as a fixed covariance, not quietly re-freed.
+- **The buffer is what gets fitted.** Everything the widgets can't show – `:=` definitions, `==` constraints, variance and covariance modifiers – reaches lavaan exactly as written. A `x1 ~~ 0.2*m1` line you type is fitted as a fixed covariance, not quietly re-freed. Variance-scaling markers (`F1 ~~ 1*F1`) are preserved as typed rather than regenerated, so an unrelated toggle doesn't hand every other latent a marker you never wrote; switching the **Factor scaling** radio does rewrite them for every latent, which is what that control is for.
 
 The **Copy** button copies the current text to the clipboard. Editing is assisted: syntax highlighting, underlines on names the dataset doesn't have, and completion for variable names, factor names and the five operators (`=~`, `~`, `~~`, `:=`, `==`) with a plain-language reading of each.
 
-Column names that aren't legal lavaan identifiers – a space, a hyphen, a leading digit, an R reserved word – appear under an automatic alias (`Age (years)` → `Age__years_`) everywhere the buffer speaks: the syntax box, the completions, the diagram. The original header still resolves if you type it, so saved models and pasted configurations keep working.
+Column names that aren't legal lavaan identifiers – a space, a hyphen, a leading digit, an R reserved word – appear under an automatic alias (`Age (years)` → `Age__years_`) everywhere the buffer speaks: the syntax box, the completions, the diagram. The original header still resolves if you type it, so saved models and pasted configurations keep working. Rename a column in the data view and the buffer is rewritten to the new name instead of being left with a reference that no longer resolves; the rewrite is skipped while a parse is pending, a syntax error stands, or a fit is running, so it can't discard an edit in progress.
 
 > **What if lavaan reports an error?** The error appears below the box, with the offending token underlined at the position lavaan reported. The matrices stay frozen on the last successful parse – they don't go blank – and a notice above them says the widgets are paused until the syntax parses again. Fix it and they catch up automatically.
+
+> **If the editor's self-test fails, the text box still runs.** On load the module checks that lavaan reads its generated syntax the way it wrote it. If that check fails, the widgets are hidden and a banner says the visual editor can't be trusted – but the syntax box is then the model, and **Run SEM** fits exactly what it holds. Two things are missing in that mode, because both are projections of the spec the self-test rejected: the summary's factor list and the path diagram. Invariance testing is unavailable for the same reason, and a selected group variable is ignored with a warning.
 
 ### Constraints and modifiers
 
@@ -98,7 +108,9 @@ The modifier is a set rather than one value, so a label and a start value coexis
 
 ### Diagram preview
 
-Below the editor, the live diagram renders whatever currently parses. Latents are ellipses, observed variables are rectangles, structural arrows go between them, factor → indicator arrows go from each latent ellipse to its indicators stacked alongside it, and covariance arcs curve out to the side. With no estimates yet, the edges show modifier labels (fixed values, label names) where present and stay unlabelled otherwise. After a fit, the same renderer shows the [post-fit diagram](#path-diagram) with estimates.
+Below the editor, the live diagram renders whatever currently parses. Latents are ellipses, observed variables are rectangles, structural arrows go between them, factor → indicator arrows go from each latent ellipse to its indicators stacked alongside it, and covariance arcs curve out to the side. With no estimates yet, the edges show modifier labels (fixed values, label names) where present and stay unlabelled otherwise – on every edge kind, so a fixed structural path (`F3 ~ 0.5*F2`), a fixed higher-order loading and a fixed covariance (`x1 ~~ 0.2*x2`) are all marked, not just first-order loadings. After a fit, the same renderer shows the [post-fit diagram](#path-diagram) with estimates.
+
+A model wider than the card scrolls horizontally inside the preview rather than pushing the page sideways.
 
 If your buffer doesn't parse yet, the preview blanks out – same logic as the matrices.
 
@@ -124,7 +136,7 @@ The right column hosts every fit option. Most overlap with CFA – see the [CFA 
 
 > **Ordinal indicators substitute the estimator.** If a variable the *model names* is typed Ordinal in the data view, the module switches any estimator that can't take ordered data to WLSMV. The [model summary](#model-summary) shows what was actually used and what you asked for, so the discrepancy is never invisible. It works from the model text, not the whole selection – a typed-ordinal column your model doesn't reference doesn't pull the fit to WLSMV, and picking WLSMV without typing the columns Ordinal fits continuous data.
 
-> **FIML follows the resolved estimator.** Selecting FIML disables MLM, MLMVS and MLMV (lavaan rejects those combinations) and switches you to MLR if one was already selected. Under an ordinal model, where WLSMV is in force, FIML becomes **pairwise** deletion; under the remaining estimators, listwise.
+> **FIML follows the resolved estimator.** Selecting FIML disables MLM, MLMVS and MLMV (lavaan rejects those combinations) and switches you to MLR if one was already selected. Under an ordinal model, where WLSMV is in force, FIML becomes **pairwise** deletion; under the remaining estimators, listwise. The [model summary](#model-summary) reports the mode that actually ran, with *(requested FIML; unavailable with WLSMV)* beside it – and the sample-size line follows the same resolution, so a downgraded run never reports an FIML N.
 
 ### Mean structure
 
@@ -147,18 +159,20 @@ Same dropdown as in CFA – pick a categorical variable to run the sequential in
 
 ## Check data
 
-Same diagnostics as [CFA's Check data](./confirmatory-factor-analysis.md#check-data), in a **Data diagnostics** card. It checks exactly the variables the model names – indicators plus the observed variables in the structural equations – so a path-only model with no latents is covered too. With no model defined it falls back to all selected numeric variables, and the scope line says which happened.
+Same diagnostics as [CFA's Check data](./confirmatory-factor-analysis.md#check-data), in a **Data diagnostics** card. It checks exactly the variables the model names – indicators plus the observed variables in the structural equations – so a path-only model with no latents is covered too. With no model defined it falls back to all selected numeric variables, and the scope line says which happened. Non-numerical columns the model names are left out and reported in a toast, so the battery runs end to end rather than stopping part-way.
+
+The [sampling adequacy](./confirmatory-factor-analysis.md#sampling-adequacy) block is skipped for a pure path model – there are no latent factors to check factorability for – and, when the run is model-based, sample-size adequacy is graded against **complete cases per free parameter** rather than per variable, using the same free-parameter count the [model summary](#model-summary) reports.
 
 ## Validation rules
 
-- Either at least one factor with **2+ indicators**, or at least one structural equation with **1+ predictor**
+- Either at least one factor with **2+ indicators**, or at least one structural equation with **1+ predictor**. A factor column you added but never assigned anything to emits no `=~` line, so it is skipped rather than failing the check or being counted in the df.
 - Each second-order factor needs **2+ first-order factors**
-- Every name in the model must exist in the dataset; unknown names are underlined in the syntax box and named in a toast
+- Every name in the model must exist **in the dataset** – not necessarily in the current selection; unknown names are underlined in the syntax box and named in a toast
 - The buffer must parse – a syntax error blocks the run rather than fitting the last model that parsed
 - Model must be at least just-identified (**df ≥ 0**); df = 0 produces a warning
-- Free observed-variable intercepts together with free latent-variable intercepts (means) are not jointly identified in a single-group model
+- Free observed-variable intercepts together with free latent-variable intercepts (means) are not jointly identified in a single-group model. This applies only when the model *has* latents – a pure path model has no latent means to conflict with, and runs with both boxes ticked.
 
-The **Run SEM** button stays disabled until the model passes validation. The **N : free-parameter ratio** is reported in the summary; below 5 triggers an "underpowered" warning. A factor with two indicators and no free link to another latent raises an advisory warning – the fit still runs.
+The **Run SEM** button stays disabled until the model passes validation, and is closed for the duration of a fit alongside **Check data** and **Compare models**, so a second click can't start a second fit over the first one's workspace. The **N : free-parameter ratio** is reported in the summary; below 5 triggers an "underpowered" warning. A factor with two indicators and no free link to another latent raises an advisory warning – the fit still runs.
 
 ## Reading results
 
@@ -168,6 +182,7 @@ Results appear in a **Structural equation modeling** card (or **Confirmatory fac
 
 - **Factors**, **Second-order factors** (when the model has any) and **Structural equations** count
 - **Estimator** – shows the actual fit estimator; if it was substituted because of ordinal indicators, the requested estimator appears in parentheses
+- **Missing data** – the mode lavaan actually applied (FIML, pairwise or listwise deletion), with the requested one in parentheses when it had to be downgraded
 - **Degrees of freedom**, **Free parameters**, **Sample size**
 - **N : parameter ratio** – flagged if below 5 (rule of thumb: aim for 5–10)
 - Two action buttons: **Restore this model** (reverts the editor to this run's state, buffer text included) and **Add to comparison** / **Remove from comparison**. Restore is offered for failed fits too – a model that didn't converge is exactly the one you want back in the editor.
@@ -180,18 +195,29 @@ Results appear in a **Structural equation modeling** card (or **Confirmatory fac
 
 The fit indices table is identical to CFA's. See [Model fit indices](./confirmatory-factor-analysis.md#model-fit-indices) for thresholds and interpretation. With a robust estimator (MLM, WLSMV, …), the table shows scaled chi-square and the `*.robust` / `*.scaled` versions of CFI / TLI / RMSEA, with a "Robust/scaled indices reported" note at the top.
 
+> **Two degrees-of-freedom numbers under MLMVS.** Satterthwaite-family estimators adjust the df *of the test*, not the df of the model, and the two can differ by a fraction. The summary's **Degrees of freedom** is the model's – the count you report and the one the N : parameter ratio rests on – while the χ² row's `df =` is the adjusted one the scaled test was evaluated against.
+
 ### Path diagram
 
 Latents are blue ellipses, observed variables are grey rectangles, structural paths are arrows between them, measurement paths go from each ellipse to its indicators, and covariances curve out to the side. Edges are colored on the same signed blue/red ramp the CFA diagram uses, with the arrowhead taking its edge's color; thickness is proportional to |estimate|. Non-significant paths are dashed at reduced opacity, using your [significance level](./settings.md#significance-level) rather than a fixed 0.05.
 
 Details worth knowing:
 
-- **Every edge is labelled with its estimate**, including indicator loadings and covariance arcs, on a white backing so the number stays readable over a line. With [significance stars](./settings.md#significance-formatting) enabled the label carries them.
+- **Every edge is labelled with its estimate**, including indicator loadings and covariance arcs, on a white backing so the number stays readable over a line. With [significance stars](./settings.md#significance-formatting) enabled the label carries them. The numbers are printed at the same precision as the estimate tables below, so a loading reads identically in both places.
+- **Columns are spaced by what they actually draw.** Each column's width is measured from its widest content – a long factor name, an indicator block, an R² label hanging off it – and the next column starts a fixed clearance past it. A latent with a long name no longer overlaps the column beside it.
 - **Indicators sit on the side that keeps the structural arrows clear** – a latent with no incoming paths puts its indicators on the left, one with no outgoing paths on the right, and one with both below.
+- **A cross-loading indicator is drawn once.** The box lives in the stack of the first factor that loads it, and any further factor reaches it with its own edge – so neither stack has a hole in it and the cross-loading is visible as what it is.
+- **A covariance between variables that appear nowhere else still gets drawn.** `m1 ~~ m2` with neither name in any other line produces two boxes and the arc between them, rather than being silently dropped.
 - **Feedback loops are drawn.** A non-recursive model's back-edges are lifted into their own lanes above the node band, so both directions of a cycle are visible instead of one being dropped.
-- **Fixed parameters** are drawn with a dotted stroke and a legend key. In an unstandardized view the label shows the fixed value; in a standardized view it shows the standardized estimate, which is the more informative number.
+- **Fixed parameters** are drawn with a dotted stroke and a legend key, on every edge kind – first- and higher-order loadings, structural paths, back-arcs and covariances alike. In an unstandardized view the label shows the fixed value; in a standardized view it shows the standardized estimate, which is the more informative number. A parameter label (`F2 ~ a*F1`) shows as the italic label when values are hidden.
+- **A pair constrained to zero** (`F1 ~~ 0*F2`) draws as a faint dashed arc labelled `0` with its own **Orthogonal (0)** legend key, both before and after the fit. Post-fit it is no longer redrawn as an ordinary free covariance that happens to be estimated at 0.00, and a constraint you have chosen not to display stays hidden rather than reappearing as an estimate.
 - **R²** is labelled on each endogenous node, on whichever side is free.
 - The legend lists only the keys the diagram actually used.
+- The diagram is linked to the tables that describe it via `aria-describedby`, so a screen reader following the SVG is pointed at the structural-regression, loading and covariance tables rather than at an unlabelled image.
+
+> **Significance follows the standardization on screen.** The picker switches which p-value the dashes and stars read, so a standardized path is tested against its own p rather than the unstandardized one. Where the two disagree, the diagram now agrees with the table beside it.
+
+> **An estimate lavaan could not standardize is drawn as no estimate.** It takes a neutral grey line of fixed width and loses its numeric label instead of falling back to the raw coefficient and being coloured on the standardized ramp. Its tooltip quotes the unstandardized value and says so.
 
 A **standardization picker** sits above the diagram – three radio buttons that toggle between unstandardized, latent-only standardized (`std.lv`), and completely standardized (`std.all`). Switching is instant – all three variants are pre-rendered and the picker just swaps which is visible. Each variant is resizable and exports (SVG / PNG / JPG, via the buttons beside the diagram) under its own filename suffix.
 
@@ -225,7 +251,7 @@ Same shape as in CFA – see [Factor loadings](./confirmatory-factor-analysis.md
 
 ### Covariance estimates
 
-A single combined `~~` table covers every off-diagonal covariance – residual-residual, factor-factor, and mixed. Columns are **Variable 1**, **Variable 2**, **Estimate**, the standardized column groups (the `Std. (correlation)` column is the standardized form, equivalent to a correlation), **CI**, **SE**, **p-value**.
+A single combined `~~` table covers every off-diagonal covariance – residual-residual, factor-factor, and mixed. Columns are **Variable 1**, **Variable 2**, **Estimate**, the standardized column groups (the `Std. (correlation)` column is the standardized form, equivalent to a correlation), **CI**, **SE**, **z**, **p-value** – the same inference columns the estimate tables above carry, including the Wald **z** and its significance stars.
 
 > **In CFA results, this single table is split into Factor covariances, Residual covariances and Factor-indicator covariances** – separate sections instead of one. The underlying parameters are the same.
 
@@ -248,14 +274,16 @@ For ordinal indicators, the estimated cut points on each item's underlying conti
 The `~~` diagonal splits three ways rather than two:
 
 - **Factor variances** – exogenous latents, whose diagonal is the variance of the factor itself
-- **Latent residual variances** – latents that some `~` equation predicts. Their diagonal is a *disturbance* – the variance left after their predictors – not the factor's variance, and mislabelling it inflates what looks like unexplained latent variability.
+- **Latent residual variances** – latents that something else in the model predicts: a `~` equation, or a higher-order factor loading on them. Their diagonal is a *disturbance* – the variance left after their predictors – not the factor's variance, and mislabelling it inflates what looks like unexplained latent variability. In a second-order model this is where the first-order factors belong, leaving only the higher-order factor under **Factor variances**.
 - **Residual variances** – observed indicators
 
 **Negative variance estimates (Heywood cases) are highlighted in red**, with a warning above the table – they indicate misspecification, weak indicators, or a sample too small to identify the model.
 
 ### R² (variance explained)
 
-Per-endogenous-variable R². For indicators, the R² is the proportion explained by their factor loadings; for endogenous latents and observed outcomes in a structural equation, it's the proportion explained by their predictors. With WLSMV on ordered indicators, the R² is computed on the latent (continuous) response variable, not the observed categories.
+Per-endogenous-variable R², with a **Type** column separating indicator rows from latent ones. For indicators, the R² is the proportion explained by their factor loadings; for endogenous latents and observed outcomes in a structural equation, it's the proportion explained by their predictors – two different quantities that the Type column keeps from reading as one list.
+
+With ordered indicators the R² is computed on the underlying continuous response, not on the observed categories, and the section is headed **R² (variance explained in the underlying continuous responses)** so the change of scale is on the card rather than only in the manual. The diagram's R² legend says the same.
 
 ### Factor reliability
 
@@ -282,7 +310,7 @@ The note under each section names both conventions (3.84 for a single test, 10 f
 
 ### Residual correlations
 
-Same matrix as in CFA – pairs with |r| > 0.10 highlighted as localized misfit.
+Same matrix as in [CFA](./confirmatory-factor-analysis.md#residual-correlation-matrix) – each cell shows the residual correlation with its standardized residual z below it, and pairs with |z| ≥ 1.96 are highlighted as localized misfit. When the estimator returns no standardized residuals the table falls back to the conventional |r| > 0.10 rule and says so.
 
 ## Mediation walkthrough
 
@@ -304,9 +332,15 @@ In the results:
 
 ## Model comparison
 
-Multiple fits – CFA-shape, SEM-shape, or mixed – can be queued and compared. Same workflow as in [CFA model comparison](./confirmatory-factor-analysis.md#model-comparison): click **Add to comparison** in each result card, then **Compare models** when 2+ are queued. Each model is re-fitted from the exact text that was run, so the comparison reproduces its own card. The table compares fit indices side by side; nested pairs (detected from the fitted parameter tables, so an `==` constraint counts) get a chi-square difference test with ΔCFI and ΔRMSEA; non-nested pairs are evaluated via AIC/BIC/SSA-BIC.
+Multiple fits – CFA-shape, SEM-shape, or mixed – can be queued and compared. Same workflow as in [CFA model comparison](./confirmatory-factor-analysis.md#model-comparison): click **Add to comparison** in each result card, then **Compare models** when 2+ are queued. Each model is re-fitted from the exact text that was run, so the comparison reproduces its own card, and models are numbered by their position in the comparison – always Model 1 … Model *k*, whatever you added and removed to get there. The button is closed while a fit is running.
 
-Pairs whose fits aren't on a common scale – different observed columns, estimator, missing-data handling, mean structure or ordinal set – are refused with the reason stated in the **Note** column, and the "best value" highlighting is withheld from the whole table when it mixes such models. A **Models compared** legend at the top of the card lists each model's syntax, estimator and missing-data setting.
+The fit table opens with **n**, the quantity the card's own rankability verdict turns on, then the indices; under a robust estimator the chi-square row reads **χ² (scaled)**. Nested pairs get a chi-square difference test with ΔCFI and ΔRMSEA, highlighted against Chen's (2007) band with the values and the n quoted underneath; under a robust estimator that Δχ² is the scaled difference test rather than a subtraction, and a note says so. Non-nested pairs are evaluated via AIC/BIC/SSA-BIC.
+
+Nesting is decided from the fitted parameter tables: the constrained model must keep every free parameter of the other free, keep every restriction the other imposes, and have strictly more degrees of freedom – so an `==` constraint counts, and two models that fix or equate *different* things are refused instead of being paired on parameter names alone.
+
+Every pair the card looked at gets a row. Pairs whose fits aren't on a common scale – different observed columns, estimator, missing-data handling, mean structure or ordinal set – state that in the **Note** column, as do pairs that could not be parsed or that turned out not to be nested, and the "best value" highlighting is withheld from the whole table when it mixes such models. When no pair is nested *and* the models aren't on a common scale, the note names what differs rather than pointing you at AIC and BIC, which are the least comparable numbers in the table across different case sets.
+
+A **Models compared** legend at the top of the card lists each model's syntax and the estimator and missing-data handling lavaan actually used, with a *Requested:* line where either was substituted, and lavaan's own error message for a model that failed to fit.
 
 ## Reporting checklist
 
@@ -329,7 +363,7 @@ Pairs whose fits aren't on a common scale – different observed columns, estima
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) – inspect, copy, or re-run. SEM uses the `lavaan` R package; reliability and discriminant validity metrics use `semTools`; robust outlier distances in [Check data](#check-data) use `MASS`. Citations appear at the top of the output card, listing only the packages a given run actually loaded. The lavaan syntax box also lets you export the model specification directly. When bootstrap SEs are enabled, lavaan's resamples are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) – set it to make bootstrap SEs and indirect-effect CIs reproducible across runs; the MCD subsampling in the diagnostics is seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed).
+Every analysis prints the underlying R code to the [R console](./r-console.md) – inspect, copy, or re-run. SEM uses the `lavaan` R package; reliability and discriminant validity metrics use `semTools`; robust outlier distances in [Check data](#check-data) use `MASS`. The citation box at the top of the output card carries both the **software** a run actually loaded (Rosseel's lavaan paper alongside the package release) and the **methods** the card reports – the estimator and its robust correction, FIML, the bootstrap interval type lavaan returned, every fit index printed, the reliability and discriminant-validity coefficients, modification indices and the EPC, the delta method behind an un-bootstrapped `:=` interval, the product-of-coefficients indirect effect, the N : parameter guideline, and the path-diagram convention. Each is gated on the run having produced it. The lavaan syntax box also lets you export the model specification directly. When bootstrap SEs are enabled, lavaan's resamples are seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed) – set it to make bootstrap SEs and indirect-effect CIs reproducible across runs; the MCD subsampling in the diagnostics is seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed).
 
 ## Common pitfalls
 

@@ -72,7 +72,7 @@ The alpha threshold for assumption tests (normality, homogeneity of variance, sp
 
 ### Assumption advisory thresholds
 
-Three judgment cutoffs used by the [correlation assumption checks](./correlation-analysis.md#checking-assumptions) for advisories that aren't formal hypothesis tests:
+Three judgment cutoffs used by the [correlation assumption checks](./correlation-analysis.md#checking-assumptions) for advisories that aren't formal hypothesis tests. The last of them is shared with the [comparison assumption checks](./comparison-analysis.md#test-recommendations), which read it as the sample size below which a normality failure can no longer be waved off by the central limit theorem:
 
 - **Heavy-ties advisory threshold (rank-variance tie correction)** – the value of the tie correction `Σ(t³−t)/(n³−n)` above which a variable trips the *Acceptable ties* verdict (rank methods' p-values become unreliable). This is the tie term that actually enters the rank statistics' variances, not the share of tied observations – which sits near 1 for every ordinal variable and near 0 for every continuous one, and so separates nothing. With `k` roughly equal levels it is ≈ `1/k²`, so the default flags three or fewer effective levels and any strongly piled-up binary or ordinal variable, while a balanced 5-point Likert scale (≈ 0.04) passes. Default: 0.10.
 - **Range-restriction advisory threshold (dominant value share)** – the share of observations held by a single value above which a variable trips the *Adequate spread* verdict (a dominant value attenuates correlations through that variable). Default: 0.5.
@@ -87,8 +87,8 @@ Configurable cutoff values used for interpretation throughout the application. E
 
 **Model fit cutoffs** – used in factor analysis and CFA to interpret fit indices:
 - RMSEA: Excellent (0.05), Acceptable (0.08), Poor (0.10)
-- CFI: Excellent (0.95), Acceptable (0.90)
-- TLI: Excellent (0.95), Acceptable (0.90)
+- CFI: Excellent (0.95), Acceptable (0.90), Poor (0.85)
+- TLI: Excellent (0.95), Acceptable (0.90), Poor (0.85)
 - SRMR: Excellent (0.05), Acceptable (0.08), Poor (0.10)
 
 > Common alternatives: Hu & Bentler (1999) suggest stricter cutoffs (RMSEA < 0.06, CFI/TLI > 0.95, SRMR < 0.08). Some fields use more lenient thresholds (RMSEA < 0.08 as acceptable, CFI > 0.90). Adjust these to match your discipline's conventions.

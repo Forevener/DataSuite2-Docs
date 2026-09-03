@@ -105,6 +105,8 @@ Saved rules appear in the **Transformation rules** list, showing:
 
 Rules are applied in the order they appear. Editing a rule re-opens the editor with its current settings. Deleting a rule removes it and any variables it created (after confirmation).
 
+While a rule exists, the variables it reads or writes are protected in the **Organize** tab of the [Variables](./getting-started.md#choosing-variables) dialog – they can be reordered there, but not renamed or deleted. Remove the rule first.
+
 > **Variable types after a run:** every transformation run recomputes all variable types from the resulting data, without a prompt. A rule that writes non-numeric values (including whitespace-only strings, which always count as valid non-numeric data points) into a numeric column downgrades that column to categorical in the same pass.
 
 ## Rule library

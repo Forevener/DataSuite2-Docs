@@ -70,10 +70,15 @@ Once loaded, your data appears in a paginated table. You can choose to display 1
 
 Click the **Variables** button in the top bar. It shows a count like "5/12" when some variables are excluded.
 
-The modal has two tabs:
+The modal has three tabs:
 
 - **Selection** – click or drag to pick which variables participate in analyses. Use the select all, deselect all, and invert selection buttons for quick adjustments.
 - **Variable types** – assign each variable a measurement scale: continuous, ordinal, or categorical. Click a cell to change a single variable, or drag across a column to set several at once.
+- **Organize** – rename a variable, drag it by its handle into a new position, or delete it outright. Names must be filled in, and you can't give a variable a name another one already uses.
+
+Everything in these tabs is *staged*: your edits live in the dialog until you click **Apply**, and **Cancel** or the **×** discards them. A rename reaches the data table, the variable lists in every analysis module, exported files, and any output card drawn afterwards – cards already on screen keep the names they were drawn with. Reordering sets the column order used by the data table and every export. Deleting removes a column from the dataset for the rest of the session; re-import the file to get it back. All three are saved inside project files, so they persist across sessions.
+
+> **Some variables can't be renamed or deleted here.** A column that a [transformation rule](./data-transformation.md) reads or writes is protected, because editing it would break the rule – the control is disabled and its tooltip names the reason. Change or remove the rule first. Reordering such a column is still allowed.
 
 > **Do you need to manage variables?** Most of the time, no. Analysis modules automatically use whichever variables fit – continuous variables for a Pearson's correlation matrix, for example. You only need to deselect variables when they would add noise to a particular analysis (e.g. excluding an ID column from descriptive statistics).
 

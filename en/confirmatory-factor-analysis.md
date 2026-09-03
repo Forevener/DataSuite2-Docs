@@ -35,13 +35,15 @@ The main panel is an interactive **factor-indicator matrix**. Rows are your nume
 
 > **The modifier is a set, not a single value.** A label, a start value and a fixed value coexist on one loading, so editing the label doesn't discard the start value you typed earlier. What you type is the same text lavaan would accept in the [syntax box](#lavaan-syntax), and it round-trips through both.
 
-If the model references a variable that isn't in your current selection, the matrix keeps a muted **orphan row** for it rather than dropping it silently. You can clear the reference from that row, but not add to it – reselect the variable to edit it normally.
+If the model references a variable that isn't in your current selection, the matrix keeps a muted **orphan row** for it rather than dropping it silently. You can clear the reference from that row, but not add to it – reselect the variable to edit it normally. The model still runs: a numeric column the dataset holds is resolved whether or not it is selected, and the fit is sent the selected columns plus the ones the model names. Only a name the dataset doesn't have at all is underlined and blocks the run.
 
 ### Managing factors
 
 - Factor names are editable in the column headers (defaults: F1, F2, ...)
 - **+** next to a factor name adds a new factor after it
 - **x** removes a factor (the last remaining factor is cleared instead of deleted)
+
+A rename has to survive two checks before it lands: the name must not already belong to another factor (first- or second-order), and it must be something lavaan can parse. A name that fails either is refused with a toast and the field snaps back to what it was. The same checks apply to second-order factor names, and generated defaults skip names a second-order factor already holds.
 
 ### Auto-detect from names
 
@@ -51,11 +53,15 @@ The **Auto-detect from names** button groups variables by the prefix before the 
 
 ### Clear
 
-The **Clear** button resets the model to a single empty factor and removes all second-order factors, residual covariances, and comparison models.
+The **Clear** button in the matrix header resets *that card* – the factor-indicator matrix goes back to a single empty factor and second-order factors are removed. Everything else survives: covariances, `:=` lines, structural equations and whatever else is in the [syntax box](#lavaan-syntax) stay where they are.
+
+To wipe the whole specification, use **Clear model** in the options column beside **Run CFA**. It empties the measurement matrix, the structural matrix, the covariance list and the syntax box in one action. Queued [comparison models](#model-comparison) are left alone either way – they refer to finished runs whose cards are still on the page, not to the draft you are clearing.
 
 ### Second-order factors
 
-When two or more first-order factors are defined, a **Second-order factors** section appears below the main matrix. It works identically to the first-order matrix – rows are first-order factors instead of observed variables, columns are second-order factors (defaults: G1, G2, ...).
+When two or more first-order factors are defined, a **Second-order factors** section appears below the main matrix. It works identically to the first-order matrix – rows are first-order factors instead of observed variables, columns are second-order factors (defaults: G1, G2, ...). Cells are operable from the keyboard as well as the mouse: Tab moves between them, Enter or Space toggles the one that has focus, and each cell announces which loading it stands for to a screen reader.
+
+A loading whose *target* is itself a higher-order factor – a third-order line like `G2 =~ G1 + F3` typed into the [syntax box](#lavaan-syntax) – is kept as written. The matrix doesn't have a row for it, but editing an unrelated cell no longer deletes it.
 
 > **When to use second-order factors:** when your first-order factors are strongly correlated and you believe a higher-level construct explains those correlations. For example, a questionnaire measuring Anxiety, Depression, and Stress might have a second-order "General Distress" factor. If you used the [Schmid-Leiman transformation](./factor-analysis.md#schmid-leiman-transformation) in EFA and found a strong general factor, a second-order CFA model is the natural next step.
 
@@ -112,7 +118,7 @@ Two methods for identifying the model:
 
 > **FIML vs. listwise:** FIML retains all cases and produces less biased estimates when data are missing at random. The only cost is a bit more computation. Unless you have a specific reason to use listwise deletion, FIML is the better choice for most situations.
 
-> **FIML is an ML-family option.** It is available under ML, MLR and MLF. Selecting FIML disables MLM, MLMVS and MLMV in the estimator dropdown (lavaan rejects the combination outright) and switches you to **MLR** if one of them was already picked. With an ordinal model – where WLSMV is in force – FIML degrades to **pairwise** deletion, which is what the categorical estimators accept; with the remaining estimators it degrades to listwise.
+> **FIML is an ML-family option.** It is available under ML, MLR and MLF. Selecting FIML disables MLM, MLMVS and MLMV in the estimator dropdown (lavaan rejects the combination outright) and switches you to **MLR** if one of them was already picked. With an ordinal model – where WLSMV is in force – FIML degrades to **pairwise** deletion, which is what the categorical estimators accept; with the remaining estimators it degrades to listwise. A degraded run says so: the summary's **Missing data** line names what lavaan actually applied, with *(requested FIML; unavailable with WLSMV)* beside it, so a card never reports an FIML sample size for a fit that wasn't FIML.
 
 ### Standardization
 
@@ -146,7 +152,14 @@ Which interval type you get depends on that count: **BCa** (bias-corrected accel
 
 An expandable section in the right column shows the **lavaan syntax** generated from your model. It is *not* a one-way preview – anything you type there flows back into the matrix, just as anything you do in the matrix flows into the text. There's no Apply/Cancel button – the matrix updates automatically as you type. The parser handles `=~` for loadings, `~` for regressions, `~~` for covariances and variances, `~ 1` intercepts, `:=` defined parameters, `==` equality constraints, fixed values like `1*x1`, labels, `NA*` and `start()` modifiers, `#` / `!` comments, and continuation lines ending with `+`. A **Copy** button copies the current text to the clipboard.
 
-Column names that aren't legal lavaan identifiers – anything with a space, a hyphen, a leading digit, or a name R reserves – are shown under an automatic **alias**: `Age (years)` becomes `Age__years_`. The alias is what appears in the syntax box, in the autocomplete list and in the diagram; the original header stays visible everywhere else in the app. Pasting the original header still resolves, so a model copied from a saved file keeps working.
+What you type survives a matrix edit, including the parts the matrix has no cell for:
+
+- **Comments stay.** Both leading and trailing (`F1 =~ x1 + x2 # first factor`), and both markers (`#`, `!`). A name mentioned only inside a comment is ignored – it is neither underlined as unknown nor counted as an ordinal indicator when the estimator is chosen.
+- **Inequality constraints with a constant bound** (`p > 0.2`, `q < 0.9`) round-trip and reach the fit, alongside the label-against-label form (`b > c`).
+- **A parameter label that collides with a column name** stays a parameter. If your dataset has a column called `a` and your model has `F2 ~ a*F1` plus `ind := a*2`, the loading side is translated to the internal column alias while `a` on the parameter side is left alone.
+- **Variance-scaling markers** (`F1 ~~ 1*F1`) are kept as you wrote them rather than regenerated, so toggling an unrelated option doesn't hand every other latent a marker it never had. Switching the **Factor scaling** radio does rewrite them, for every latent, which is the point of that control.
+
+Column names that aren't legal lavaan identifiers – anything with a space, a hyphen, a leading digit, or a name R reserves – are shown under an automatic **alias**: `Age (years)` becomes `Age__years_`. The alias is what appears in the syntax box, in the autocomplete list and in the diagram; the original header stays visible everywhere else in the app. Pasting the original header still resolves, so a model copied from a saved file keeps working. Renaming a column in the data view rewrites the buffer to the new name rather than leaving a stale one behind – it used to block the run with "Not found in the dataset" until you fixed the text by hand. The rewrite is skipped while you are mid-edit (a pending parse, a standing syntax error, or a fit in progress), so it never discards what you were typing.
 
 The editor also highlights lavaan syntax, underlines names that aren't in the dataset, and autocompletes variable and factor names plus the five operators. If a keystroke leaves the buffer unparseable, the matrices below freeze on the last model that parsed and a notice says so – they don't blank out or silently drift from the text.
 
@@ -154,30 +167,55 @@ The editor also highlights lavaan syntax, underlines names that aren't in the da
 
 ## Check data
 
-The **Check data** button runs pre-flight diagnostics without fitting a model, in a **Data diagnostics** card. If a model is defined, it checks exactly the variables the model names – indicators plus any observed variable appearing in a structural equation; otherwise it checks all selected numeric variables. The scope line at the top says which of the two happened and how many variables it covers.
+The **Check data** button runs pre-flight diagnostics without fitting a model, in a **Data diagnostics** card. If a model is defined, it checks exactly the variables the model names – indicators plus any observed variable appearing in a structural equation; otherwise it checks all selected numeric variables. The scope line at the top says which of the two happened and how many variables it covers. Only numerical columns are checked either way: a model naming a categorical column runs the battery on the rest and names what it left out in a toast, rather than failing part-way through.
 
 The report covers:
 
-- **Sample size** – total N, complete cases, complete cases per variable, minimum N for the weight matrix
+- **Sample size** – total N, complete cases, complete cases per variable, minimum N for the weight matrix. When the run is model-based it also reports **Free parameters** and **Complete cases per free parameter**, and grades adequacy against that ratio instead of the per-variable one – the 5–10 cases per free parameter guideline, which is what the literature actually states.
 - **Missing data** – total missing percentage, plus a per-variable table (count and percent, worst first) listing only the affected variables
-- **Covariance matrix** – positive definiteness and minimum eigenvalue on the covariance matrix; the condition number is computed on the **correlation** matrix, so it measures collinearity rather than differences in measurement scale
+- **Sampling adequacy** – whether the correlation matrix is factorable at all (see below)
 - **Multivariate normality** – Mardia's skewness (a χ² with its own df) and kurtosis (a Z statistic), each with its own p-value
 - **Mahalanobis outlier detection** – multivariate outliers at p < .001, with a **Distance estimator** row naming what produced the distances (see below) and expandable case details
-- **High correlations** – pairs with |r| > 0.85
-- **Non-normal variables** – |skewness| > 2 or |kurtosis| > 7
+- **Non-normal variables** – |skewness| > 2 or |excess kurtosis| > 7. Both are the same G1 / G2 estimators the rest of the app uses, so a skewness here matches the one [descriptive statistics](./descriptive-statistics.md) reports for the same column.
 - **Low variance variables** – near-zero-variance columns, flagged by Kuhn's (2008) rule: a constant column, or one whose most-frequent value outnumbers the second-most-frequent by 19:1 *and* has fewer than 10% distinct values. The table shows both numbers, so you can see why a column was flagged.
-- **Ordinal variables** – auto-detected integer variables with 2–10 unique values, with a recommendation to set their variable type to Ordinal (which pulls the fit to WLSMV on its own)
+- **Ordinal variables** – auto-detected integer variables with 2–10 unique values, with a recommendation to set their variable type to Ordinal (which pulls the fit to WLSMV on its own). The recommendation names only the columns that still need retyping – ones you have already marked Ordinal are listed in the table but left out of the advice.
 - **Recommendations** – actionable suggestions (use FIML, switch to a robust estimator, retype ordinal columns, etc.)
 
-> **Robust distances by default.** Multivariate outliers are found with the **minimum covariance determinant** (MCD) estimator, so extreme cases cannot inflate the very covariance matrix used to detect them – the masking problem that makes the classical distance miss clustered outliers. MCD needs more complete cases than twice the number of variables and can refuse on heavily tied columns; when it can't run, the card falls back to the classical mean and covariance and states which of the three reasons applied. Cases are listed largest distance first, capped at 50 with the total in the heading.
+### Sampling adequacy
 
-> **Run diagnostics before fitting.** Five minutes of checking data can save you from convergence errors and uninterpretable results. Pay special attention to the covariance matrix check – a non-positive-definite matrix will prevent estimation. High correlations between indicators that load on different factors may indicate cross-loadings or a misspecified model.
+The same factorability battery [exploratory factor analysis](./factor-analysis.md) runs, applied to the indicators before you fit them:
+
+| Row | What it says |
+|---|---|
+| **Kaiser-Meyer-Olkin (KMO) measure** | How much of the correlation between indicators is common rather than pairwise. Below 0.6 the indicators may share too little common variance to support latent factors at all. |
+| **Bartlett's test of sphericity** | Whether the correlation matrix differs from an identity matrix. A non-significant result means the correlations are too weak for a latent-variable model. |
+| **Correlation matrix determinant** | Approaches 0 as the matrix approaches singularity. |
+| **Smallest eigenvalue (correlation matrix)** | Positive means the matrix is positive-definite; zero or negative means it is not, and the model cannot be fitted as specified. |
+| **Correlation matrix rank** | Printed as *rank / variables*. Anything short of full rank means some column is an exact combination of others. |
+
+Below the table, two supplementary tables appear when they have rows. A **Reproduced by** table names each variable that a combination of the others reproduces exactly – the dependency no pairwise correlation can show, and the usual cause is a total or composite score analysed beside its own items. A pairs table lists perfectly correlated pairs (r ≥ 0.9999) and pairs above |r| > 0.9, which are the two bars the corresponding recommendations use.
+
+> **KMO and Bartlett are withheld when the matrix is singular.** Both are read off the inverse of the correlation matrix, so on a singular matrix one falls back to a placeholder and the other is guaranteed significant for the very reason the model can't be fitted. Rather than print numbers that mean nothing, the card marks them *Unreliable (singular matrix)* and points you at the rank and the **Reproduced by** table instead.
+
+### Diagnostics that can't be computed
+
+A check that cannot run says so rather than disappearing. The section still renders, with a **Not assessed** row naming the reason – too few complete cases for the number of variables, a singular covariance matrix, no more complete cases than variables, a column with no variance, or an error. Previously the section was simply absent, which read like a clean result.
+
+Columns with very little data are covered too. A column with at least one valid value gets whatever its length supports – mean, min and max always; SD and variance from two values; skewness from three; excess kurtosis from four – and is still graded by the near-zero-variance rule. Columns with fewer than three valid values are collected into their own recommendation, since they carry no usable variance or shape and will break the fit.
+
+> **Robust distances by default.** Multivariate outliers are found with the **minimum covariance determinant** (MCD) estimator, so extreme cases cannot inflate the very covariance matrix used to detect them – the masking problem that makes the classical distance miss clustered outliers. MCD needs more complete cases than twice the number of variables and can refuse on heavily tied columns; when it can't run, the card falls back to the classical mean and covariance and states which of the three reasons applied. The threshold row changes with it: MCD distances are graded against a **chi-square threshold**, classical ones against a **scaled beta threshold**, which is the exact null for a distance computed from the same cases it is measuring. Cases are listed largest distance first, capped at 50 with the total in the heading.
+
+> **Ordinal indicators and normality.** Mardia's tests and the univariate skewness / kurtosis bars treat every column as continuous. When the checked set includes ordinal indicators, a note under each section says so: their departure from normality is structural rather than a property of your data, and the remedy is the categorical estimator (WLSMV), not a robust continuous one. The **Non-normal variables** note names which of the flagged columns are the ordinal ones.
+
+> **The status banner counts single variables too.** The card opens green only when nothing was flagged. A missing-data warning fires when the grid as a whole is more than 5% missing **or** any single variable is more than 20% missing – the second bar is the one that catches a single badly-missing indicator in an otherwise complete dataset.
+
+> **Run diagnostics before fitting.** Five minutes of checking data can save you from convergence errors and uninterpretable results. Pay special attention to sampling adequacy – a non-positive-definite or rank-deficient correlation matrix will prevent estimation. High correlations between indicators that load on different factors may indicate cross-loadings or a misspecified model.
 
 ## Validation rules
 
-- Each factor must have at least **2 indicators**
+- Each factor must have at least **2 indicators**. A factor column you added but never assigned anything to emits no `=~` line, so it is skipped rather than failing the check.
 - Each second-order factor must have at least **2 first-order factors**
-- Every name in the model must exist in the dataset – unknown names are underlined in the syntax box and disable **Run CFA** with a toast naming them
+- Every name in the model must exist **in the dataset** – not necessarily in the current selection. Unknown names are underlined in the syntax box and disable **Run CFA** with a toast naming them.
 - The model must be at least just-identified (**df ≥ 0**). A just-identified model (df = 0) produces a warning – fit indices are not meaningful with zero degrees of freedom.
 - Free indicator intercepts together with free latent means are not jointly identified – ticking both blocks the run
 
@@ -185,7 +223,9 @@ A factor with exactly 2 indicators and no free link to any other latent (no regr
 
 ## Single-group results
 
-Results appear in a **Confirmatory factor analysis** output card. A model summary at the top lists factors, second-order factors (when the model has any), number of indicators, estimator, degrees of freedom, sample size, free parameters, and N-to-parameter ratio. If the estimator was substituted (e.g. ML → WLSMV because an indicator is typed ordinal), the summary shows the actual estimator with the requested one in parentheses, so the substitution is never invisible. The sample size is the one lavaan itself used: under FIML that is the full N, and the summary says so alongside the complete-case count; under listwise it is the complete cases out of the total rows.
+Results appear in a **Confirmatory factor analysis** output card. A model summary at the top lists factors, second-order factors (when the model has any), number of indicators, estimator, missing-data handling, degrees of freedom, sample size, free parameters, and N-to-parameter ratio. If the estimator was substituted (e.g. ML → WLSMV because an indicator is typed ordinal), the summary shows the actual estimator with the requested one in parentheses, so the substitution is never invisible; the **Missing data** line does the same for a FIML request that had to degrade. The sample size is the one lavaan itself used: under FIML that is the full N, and the summary says so alongside the complete-case count; under pairwise or listwise deletion it is the complete cases out of the total rows.
+
+> **A fit that didn't converge still shows what it has.** Loadings, R² and the sample size are reported under the non-convergence warning, since those are what you need in order to see *why* it didn't converge. The blocks that are meaningless without a converged solution – modification indices, the residual correlation matrix, the fit indices – are skipped rather than erroring out and taking the rest of the card with them.
 
 > **Free parameters and df come from the fitted model.** Both are read off lavaan's own parameter table rather than estimated from the widgets, so the N-to-parameter ratio and the underpowered-model warning are computed against the number lavaan actually estimated – including the parameters mean structure adds and the ones equality constraints remove.
 
@@ -209,7 +249,13 @@ A table of standard fit indices with traffic-light interpretation (when [interpr
 
 Additional indices: NFI, RFI, IFI, PNFI, PGFI, AIC, BIC, sample-adjusted BIC.
 
-Chi-square includes df and p-value – it tests whether the model fits perfectly, which is almost always rejected with large samples (N > 200). Don't discard a model on chi-square alone. RMSEA includes a 90% confidence interval and p-close (the probability that RMSEA ≤ 0.05). When a robust estimator is used, scaled/robust versions are reported with a note at the top.
+The **Interpretation** column reads four bands – *Excellent fit*, *Good fit*, *Mediocre fit*, *Poor fit* – the same wording and the same band boundaries [exploratory factor analysis](./factor-analysis.md) uses, so an index means the same thing in both cards. CFI, TLI, RMSEA and SRMR are graded against your configured [model fit cutoffs](./settings.md#statistical-thresholds), all three tiers of them, so raising or lowering a bound moves the verdicts here.
+
+> **Only CFI reads the CFI setting.** GFI, AGFI, NFI, RFI and IFI are graded against a fixed 0.95 / 0.90 / 0.85 scale of their own. They were never calibrated on the simulations the CFI cutoffs come from, so tying them to that setting would have made a deliberate change to one index quietly move five others.
+
+Chi-square includes df and p-value – it tests whether the model fits perfectly, which is almost always rejected with large samples (N > 200). Don't discard a model on chi-square alone. Its **Value** cell is a test statistic like any other in the app: it carries [significance stars](./settings.md#significance-formatting) and its exact p in the hover, following the same display settings as a p-value anywhere else. RMSEA includes a 90% confidence interval and p-close (the probability that RMSEA ≤ 0.05). When a robust estimator is used, scaled/robust versions are reported with a note at the top.
+
+> **A saturated model is not graded.** With df ≤ 0 the model reproduces the observed covariance matrix by construction, so every index is at its best possible value whether or not the model is any good. The table drops the Interpretation column entirely and prints a note saying there is no fit left to assess – the numbers lavaan computed are still shown.
 
 > **RMSEA is withheld in small-df models.** In models with fewer than 50 degrees of freedom, RMSEA and the close-fit test are biased upward and unstable, the more so at modest N (Kenny, Kaneko & McCoach, 2015). When df < 50 and N is not above 200, the interpretation column leaves both blank and a caveat explains why – the numbers are still shown, just not graded.
 
@@ -226,8 +272,19 @@ An SVG visualization of the fitted model:
 - **Second-order factors** – ellipses to the left of first-order factors; their loadings are drawn signed, sized and labelled like any other loading
 - **Error terms** – small orange circles to the right of each variable, labelled with the residual variance
 - **Residual covariances** – dashed double-headed arrows to the right of variables
+- **Factor-indicator covariances** – dashed double-headed arcs from the factor ellipse to the indicator box, bowed above the straight line between them so a factor's covariance with one of its own indicators doesn't lie on top of the loading. These have their own [table](#parameter-estimates); now they are in the picture as well.
 
-Loading values are displayed on the paths. A legend at the bottom explains the visual encoding, and only lists keys for things the diagram actually drew.
+The model's constraints are drawn too, each with its own legend key and only when the model carries it:
+
+- **Fixed parameter** – a dotted stroke on any loading pinned to a value (`1*x1`), first- or second-order. The dash wins over the non-significant one, so a fixed path never reads as a weak estimate.
+- **Scaling reference** – a small mark inside the ellipse of a latent whose variance is fixed to 1, so you can see which identification convention the model used without reading the syntax.
+- **Orthogonal (0)** – a faint dashed double-headed arc labelled `0` for a pair constrained to zero (`X ~~ 0*M`), routed between the factors or through the residual gutter depending on which kind of pair it is. Without this the constraint drew as an ordinary free covariance that happened to be estimated at 0.00.
+
+Loading values are displayed on the paths, at the same precision as the [R² and estimate tables](#parameter-estimates) below. A legend at the bottom explains the visual encoding, and only lists keys for things the diagram actually drew.
+
+> **Significance follows the standardization on screen.** Switching the picker switches which p-value the dashes and stars read – a standardized loading is tested against the standardized p, not the unstandardized one. The two can disagree, and when they do the diagram now agrees with the table beside it.
+
+> **An estimate lavaan could not standardize is drawn as no estimate at all.** It takes a neutral grey line of fixed width and loses its numeric label, instead of borrowing the raw coefficient and being coloured as though it were standardized. Hover it and the tooltip quotes the unstandardized value and says which one it is.
 
 A **standardization picker** sits above the diagram – three radio buttons that toggle between unstandardized, latent-only standardized (`std.lv`), and completely standardized (`std.all`). Switching is instant – all three variants are pre-rendered and the picker just swaps which is visible. Each variant is resizable and exports (SVG / PNG / JPG, via the buttons beside the diagram) under its own filename suffix.
 
@@ -255,14 +312,17 @@ The tables are:
 
 - **Factor loadings** – how strongly each indicator relates to its factor. A standardized loading of 0.70 means the factor explains about half (0.70² = 0.49) of the indicator's variance. Loadings below 0.40 suggest weak indicators.
 - **Factor covariances/correlations** – the relationship between each pair of factors. The standardized column gives the correlation directly. High correlations (> 0.85) may indicate the factors aren't distinct – see [discriminant validity](#discriminant-validity).
-- **Residual covariances** – shared variance between indicator pairs beyond what the factors explain (only shown if you [specified residual covariances](#residual-covariances)).
+- **Residual covariances** – shared variance between indicator pairs beyond what the factors explain (only shown if you [specified residual covariances](#residual-covariances)). Like every other estimate family, this one carries both standardized column groups – the completely standardized value is the residual *correlation*, which is usually the number you want here.
 - **Factor-indicator covariances** – `~~` pairs with a latent on one side and an observed variable on the other. They are neither residual nor factor covariances, so they get their own table (and they suppress ω and AVE for the factors involved – see [factor reliability](#factor-reliability)).
 - **Thresholds** – for ordinal indicators, the estimated cut points on each item's underlying continuous variable (k − 1 rows per k-category item).
 - **Factor variances** – the amount of variability in each latent factor. Negative estimates (Heywood cases) are highlighted in red.
+- **Latent residual variances** – appears in a second-order model. A first-order factor that a higher-order factor loads on has a *disturbance*, not a variance: the variability left after its higher-order predictor. Reporting it as a factor variance overstates how much of that factor is unexplained, so the two live in separate tables.
 - **Residual variances** – the leftover variance in each indicator not explained by the factor. Large residual variance relative to the total means the factor isn't capturing that item well.
-- **R² (variance explained)** – each indicator's R² value, summarizing the loading information as a single proportion.
+- **R² (variance explained)** – each row's R² value, summarizing the loading information as a single proportion. A **Type** column tells indicator rows from latent ones, so an item's communality is not read as a structural R².
 
 > **What does R² mean here?** In CFA, an indicator's R² is the proportion of its variance explained by the factor(s) it loads on. R² = 0.60 means the factor accounts for 60% of that item's variability. Low R² (below 0.30) suggests the item is a weak indicator – it carries more noise than signal.
+
+> **With ordinal indicators, R² is on a different scale.** Under WLSMV the model is fitted to the *underlying continuous responses* behind the observed categories, so the proportion explained is a proportion of that latent variance, not of the observed item's. The section heading and the diagram legend both say so – **R² (variance explained in the underlying continuous responses)** – whenever the fit had ordered indicators, so the number is never read as if it were the ordinary one.
 
 > **Heywood cases in CFA:** a negative factor or residual variance is impossible in reality and signals a problem – typically a misspecified model, too few indicators per factor, or a sample that's too small. Don't ignore this – the model needs revision.
 
@@ -291,6 +351,8 @@ Three sub-tables to assess whether your factors measure distinct constructs:
 - **HTMT2 (heterotrait-monotrait ratio)** – a lower-triangle matrix. HTMT compares the correlation *between* indicators of different factors to the correlation *within* each factor. If cross-factor correlations are nearly as strong as within-factor correlations, the factors aren't distinct. The module reports **HTMT2**, the geometric-mean estimator (Roemer, Schuberth & Henseler, 2021), which is consistent for indicators that don't contribute equally – the classic arithmetic-mean HTMT overstates the ratio when loadings are uneven. The good / borderline / problematic bands come from the [HTMT thresholds setting](./settings.md#statistical-thresholds) (0.85 and 0.90 by default), and the legend under the table quotes the values in force.
 - **Fornell-Larcker criterion** – diagonal shows √AVE (how much variance a factor extracts from its own indicators), off-diagonal shows factor correlations. The idea: a factor should explain more variance in its own indicators than it shares with another factor. A violation occurs when a correlation exceeds √AVE for either factor – meaning the factors share more with each other than with their own items.
 
+Each of the three carries a one-line legend naming the cutoff it colours cells on – the ≥ 0.85 correlation bar, the HTMT bands in force, and the √AVE comparison – so the highlighting is never a rule you have to guess at. The legend is printed whether or not [interpretation](./settings.md#significance-formatting) is on; that setting gates the colouring, not the explanation of it.
+
 All three respect the model's data: HTMT2 is computed with the same missing-data handling and the same polychoric correlations for ordinal indicators that the fit used, and second-order factors are excluded (their correlations with their own children are structural, not evidence about discriminant validity).
 
 > **What is discriminant validity?** It answers: "are these really *different* factors, or are they measuring the same thing?" If two factors correlate at 0.92, they might just be one factor split artificially. HTMT is generally considered more reliable than Fornell-Larcker – if HTMT2 is below the borderline threshold, you're in good shape.
@@ -312,7 +374,9 @@ Results are organized in four categories:
 
 ### Residual correlation matrix
 
-A lower-triangle matrix of residual **correlations** between indicators – the difference between each observed correlation and the one the model reproduces. Values with |r| > 0.10 are highlighted in red – these are localized areas where the model doesn't fit well.
+A lower-triangle matrix of residual **correlations** between indicators – the difference between each observed correlation and the one the model reproduces. Each cell shows that correlation and, below it, its **standardized residual z**: the discrepancy divided by its own standard error. Cells with |z| ≥ 1.96 are highlighted in red – the model reproduces that pair's covariance worse than sampling error explains.
+
+> **Why z rather than a flat |r| bar.** A residual of 0.10 is a lot in a sample of 1000 and nothing in a sample of 60, so a fixed cutoff flags noise in small samples and misses real misfit in large ones. The standardized residual scales the discrepancy by its own precision, which is what makes a cutoff mean the same thing at any N. Some estimators return no standardized residuals; when that happens the table falls back to the conventional |r| > 0.10 rule and the legend says so, along with the caveat that it does not adjust for sample size.
 
 > **Reading residuals:** large residual correlations between two indicators suggest the model is missing something about their relationship. If both load on the same factor, the factor may not fully capture their shared variance (consider a residual covariance). If they load on different factors, a cross-loading might be warranted. Patterns of large residuals in a block can signal a missing factor.
 
@@ -332,9 +396,15 @@ The levels, tested in order:
 | **Scalar (strong)** | Loadings + intercepts equal | Can we compare latent means across groups? |
 | **Strict** | Loadings + intercepts + residual variances | Is the measurement error the same across groups? |
 
-Each level is tested only if the previous level succeeded. If the configural model fails, nothing further is attempted.
+Each level is tested only if the previous level succeeded. If the configural model fails, nothing further is attempted. A level that runs to its iteration cap without converging counts as a failure too: it is excluded from the cascade with a message saying so, rather than being compared, score-tested and read for latent means as though it had settled.
 
-> **Ordinal indicators take a different cascade.** With ordered indicators the levels are generated by `semTools::measEq.syntax()` under the Wu & Estabrook (2016) identification, which is what makes them properly nested – a hand-built intercept cascade produces a "scalar" model with *fewer* degrees of freedom than the metric model it is supposed to nest inside, and the chi-square difference test then fails outright. Two consequences follow from letting semTools own the syntax: the **Threshold** level is inserted (skipped for binary items, whose single threshold is already equated for identification), and the **Scalar** level is skipped when nothing has a free intercept. The card renders whatever levels came back rather than a fixed list of four. Because `measEq.syntax` regenerates every parameter, any `:=` or `==` lines in your model can't survive into the generated syntax – they are named in a card notice instead of being dropped silently.
+> **The cascade sets its own mean structure.** Invariance testing needs free indicator intercepts and fixed latent means, which is not what the single-group [mean structure](./structural-equation-modeling.md#mean-structure) options give you. Those options are ignored while a group variable is selected – otherwise a model you had set up for a single-group latent-mean run would come back un-identified at every level, with every Δdf below it shifted.
+
+> **Bootstrapping doesn't touch the cascade.** With [bootstrap](#bootstrap) on, the cascade itself is still fitted with analytic standard errors – at ordinary replication counts a bootstrapped multi-group fit produces a rank-deficient covariance matrix, and every level came back warning that the model was not identified. The one table that reports a standard error, [latent mean differences](#latent-mean-differences), refits its own level with bootstrap SEs, so the setting still does what you asked where it matters.
+
+> **Ordinal indicators take a different cascade.** With ordered indicators the levels are generated by `semTools::measEq.syntax()` under the Wu & Estabrook (2016) identification, which is what makes them properly nested – a hand-built intercept cascade produces a "scalar" model with *fewer* degrees of freedom than the metric model it is supposed to nest inside, and the chi-square difference test then fails outright. Two consequences follow from letting semTools own the syntax: the **Threshold** level is inserted (skipped for binary items, whose single threshold is already equated for identification), and the **Scalar** level is skipped when nothing has a free intercept. The card renders whatever levels came back rather than a fixed list of four, and each level is labelled by what it actually adds to the level below it.
+
+> **All-binary indicators collapse two levels into one.** A binary item has one threshold, which identification already ties to the loading, so semTools equates thresholds and loadings in a single step. That level is named **Thresholds and loadings**, its interpretation sentence says both are equivalent across groups, and its score test nominates parameters of both kinds – so a binary item whose *threshold* differs is reachable from an **Apply** button, not hidden behind a level labelled as loadings-only. A binary item has no free intercept and no free residual variance either, so the **Scalar** and **Strict** levels are both skipped and the latent means come from the metric level, where they are identified. Because `measEq.syntax` regenerates every parameter, any `:=` or `==` lines in your model can't survive into the generated syntax – they are named in a card notice instead of being dropped silently.
 
 > **Second-order models.** Measurement invariance is defined over the indicator-to-factor loadings, so higher-order loadings are left free across groups (the marker loading stays fixed, or the higher-order factor would have no scale in the non-referent group). The card names the loadings it freed.
 
@@ -357,25 +427,25 @@ A table with one row per invariance level. The left side shows absolute fit for 
 
 The baseline (configural) row has nothing to compare against, so its Δ columns read N/A rather than borrowing a value.
 
-> **The criteria are directional and sample-size dependent.** A level is flagged only when the constrained model fits *worse* – a constrained model that happens to fit better is not evidence against invariance. The cutoffs follow Chen (2007), which specifies one band for groups of at least 300 and a stricter band below that; the note under the table states the values actually in force for your smallest group. ΔCFI is the primary criterion, corroborated by ΔRMSEA or ΔSRMR – requiring corroboration rather than flagging on any one of the three keeps ΔSRMR, which is noisy at the intercept and residual levels, from vetoing a genuinely invariant model on its own.
+> **The criteria are directional and sample-size dependent.** A level is flagged only when the constrained model fits *worse* – a constrained model that happens to fit better is not evidence against invariance. The cutoffs follow Chen (2007), which specifies one band for total samples above 300 and a stricter band at or below that; the note under the table states the values actually in force and the N they were selected on. Chen also asks for the stricter band when group sizes are **markedly unequal**, so it is applied whenever the largest group is more than twice the smallest, however large the total. ΔCFI is the primary criterion, corroborated by ΔRMSEA or ΔSRMR – requiring corroboration rather than flagging on any one of the three keeps ΔSRMR, which is noisy at the intercept and residual levels, from vetoing a genuinely invariant model on its own.
 
-> **Chi-square vs. practical criteria:** the chi-square difference test (Cheung & Rensvold, 2002) is sensitive to sample size – with large N, even trivial differences become significant. Practical criteria are more stable. When they disagree (Mixed verdict), the practical criteria are generally preferred, especially with N > 300 per group.
+> **Chi-square vs. practical criteria:** the chi-square difference test is a likelihood-ratio test, and it is sensitive to sample size – with large N, even trivial differences become significant. Practical criteria are more stable. When they disagree (Mixed verdict), the practical criteria are generally preferred, especially with N > 300 per group. Cheung & Rensvold (2002) is cited beside the ΔCFI cutoff it proposed, not beside the χ² test.
 
-The card also reports **per-group χ² contributions** for the configural model and each group's sample size, so you can see whether one group is carrying the misfit. If the configural model shows poor fit (CFI < 0.90 or RMSEA > 0.10), a warning advises improving the model before interpreting invariance results.
+The card also reports **per-group χ² contributions** for the configural model and each group's sample size, so you can see whether one group is carrying the misfit. Under listwise deletion those sizes are the cases complete on the model's indicators – the ones lavaan will actually analyse – rather than every non-empty row, so the free-parameter and n < 50 warnings are held against the n the fit will use. If the configural model shows poor fit (CFI < 0.90 or RMSEA > 0.10), a warning advises improving the model before interpreting invariance results.
 
 ### Partial invariance
 
 When a level fails, a **parameter comparison table** shows each parameter's per-group estimates alongside a **score test** – the χ² and p-value for releasing that one equality constraint. Rows are sorted and coloured on that statistic. An **Apply** button next to each parameter frees that constraint.
 
-After freeing one or more parameters, click **Re-run with freed parameters** to re-test the full sequence with those parameters excluded from the equality constraints. Freed parameters accumulate across levels.
+After freeing one or more parameters, click **Re-run with freed parameters** to re-test the full sequence with those parameters excluded from the equality constraints. Freed parameters accumulate across levels. The re-run refits **the model the parameters were nominated on** – its syntax, its options and its group variable – not whatever the editor happens to hold by then, so editing the buffer while you read the results can't quietly change what you are re-testing.
 
-> **Why the score test rather than the raw difference?** A per-group estimate difference is scale-bound – 0.1 is large for a standardized loading and trivial for an intercept on a 1–7 item – and it is also biased by whatever *else* differs between the groups. The score test asks directly how much the fit would improve if this one constraint were released, which is comparable across loadings, intercepts, thresholds and residual variances alike. (On the ordinal cascade the scalar and strict levels return no score rows, so those two tables fall back to the per-group estimates with the χ² column empty.)
+> **Why the score test rather than the raw difference?** A per-group estimate difference is scale-bound – 0.1 is large for a standardized loading and trivial for an intercept on a 1–7 item – and it is also biased by whatever *else* differs between the groups. The score test asks directly how much the fit would improve if this one constraint were released, which is comparable across loadings, intercepts, thresholds and residual variances alike. (On the ordinal cascade the scalar and strict levels return no score rows, so those two tables fall back to the per-group estimates with the χ² column empty. Those estimates are read from the *less constrained* side of each comparison, which is where they are free to differ – read off the constrained level itself they would be the identification constants, 0 in every intercept cell and 1 in every residual-variance cell.)
 
-> **Partial invariance is exploratory.** If full metric invariance fails because one item has different loadings across groups, you can free that item's loading and re-test. If the remaining items are invariant, you have *partial* metric invariance – still useful for group comparisons, though with the caveat that one item functions differently. But the parameters are nominated by a test run on *this* sample, so any solution built from them needs cross-validation on independent data. The module refuses an Apply that would leave a factor with fewer than two invariant indicators at that level – below that, the factor's scale stops being comparable across groups at all.
+> **Partial invariance is exploratory.** If full metric invariance fails because one item has different loadings across groups, you can free that item's loading and re-test. If the remaining items are invariant, you have *partial* metric invariance – still useful for group comparisons, though with the caveat that one item functions differently. But the parameters are nominated by a test run on *this* sample, so any solution built from them needs cross-validation on independent data. The module refuses an Apply that would leave a factor with fewer than two invariant indicators at that level – below that, the factor's scale stops being comparable across groups at all. The exception is the **Strict** level, which equates residual variances only: a residual variance carries no scale information, so freeing any number of them leaves the factor's metric intact and every strict-level candidate stays applicable.
 
 ### Latent mean differences
 
-When a level that permits mean comparison is reached, a **Latent mean differences** table shows per-factor latent means for each group. One group is the reference, identified from the fit itself (its means are fixed to 0) and named in the note. Each group gets an **Est.**, **SE**, **z**, **p-value**, **Latent SD** and **Std.** column, grouped under a header spanning that group's block.
+When a level that permits mean comparison is reached, a **Latent mean differences** table shows per-factor latent means for each group. The reference group – the one whose means are fixed to 0 – is the group variable's **first level**, in the order the variable itself defines, and it is named in the note. It is not whichever group happens to appear first in the file, so re-sorting your rows can't flip the sign of every difference in the table. Each group gets an **Est.**, **SE**, **z**, **p-value**, **Latent SD** and **Std.** column, grouped under a header spanning that group's block.
 
 An **Effect-size denominator** picker above the table chooses what the **Std.** column divides by:
 
@@ -389,19 +459,25 @@ If any level from the first comparison up to the one the means came from did not
 
 ## Model comparison
 
-Multiple models can be compared side by side. Use the **Add to comparison** button in each result card to queue models, then click **Compare models** (badge shows the count) once you have 2 or more. Each queued model is re-fitted from the exact lavaan text that was run, so the comparison reproduces what the individual cards showed.
+Multiple models can be compared side by side. Use the **Add to comparison** button in each result card to queue models, then click **Compare models** (badge shows the count) once you have 2 or more. Each queued model is re-fitted from the exact lavaan text that was run, so the comparison reproduces what the individual cards showed. Models are numbered by their position in the comparison, so a card always reads Model 1 … Model *k* however many times you have added and removed along the way.
+
+**Compare models** is closed while a fit is running, alongside **Run CFA** and **Check data** – a comparison re-fits every queued model, and letting it start mid-run would pull the workspace out from under the fit in progress.
 
 ### Comparison results
 
-- **Models compared** – a legend heading the card: per model, its lavaan text, estimator and missing-data setting, plus a status line when a fit failed or did not converge
-- **Fit indices comparison** – models as columns, indices as rows (chi-square, df, p, CFI, TLI, RMSEA, SRMR, AIC, BIC, SSA-BIC). Best values are highlighted in green – but only when the models are actually on a common scale (see below).
-- **Chi-square difference tests** – for nested model pairs (detected automatically), shows delta chi-square, delta df, p-value, and ΔCFI / ΔRMSEA signed constrained − free. A significant result means the more constrained model fits significantly worse. A **Note** column carries lavaan's own warnings, or the reason a pair was refused.
+- **Models compared** – a legend heading the card: per model, its lavaan text, the estimator and missing-data handling **lavaan actually used**, and a *Requested:* line whenever either was substituted. A model that failed carries lavaan's own error message under **Did not fit**, and one that hit its iteration cap reads **Did not converge**.
+- **Fit indices comparison** – models as columns, indices as rows. **n** is the first row, since it is the quantity the card's own comparability verdict turns on; then chi-square, df, p, CFI, TLI, RMSEA, SRMR, AIC, BIC, SSA-BIC. Under a robust estimator the row is labelled **χ² (scaled)**. Best values are highlighted in green – but only when the models are actually on a common scale (see below), and never on the n row.
+- **Chi-square difference tests** – one row per pair the card looked at. A nested pair shows delta chi-square, delta df, p-value, and ΔCFI / ΔRMSEA signed constrained − free; a significant result means the more constrained model fits significantly worse. A pair that got no test still gets a row, with the reason in the **Note** column – not on a common scale, could not be parsed, or neither model nested in the other – rather than vanishing from the table.
+
+> **Under a robust estimator, Δχ² is not a subtraction.** It is the estimator's own scaled difference test (Satorra–Bentler), which is why it does not equal the difference of the two scaled χ² values printed above it. A note under the table says so.
+
+> **The ΔCFI / ΔRMSEA highlighting states its rule.** A pair is flagged only when the constrained model is worse on *both*: ΔCFI at or below the cutoff, corroborated by ΔRMSEA at or above it. The band is Chen's (2007), selected on the fits' own sample size, and the note under the table quotes the values and the n it used – the same criterion the [invariance card](#invariance-comparison-table) applies.
 
 > **When models aren't comparable, the card says so instead of guessing.** Two models are paired only when they were fitted on the same observed columns, the same estimator, the same missing-data handling, the same mean-structure settings and the same ordinal set. A model that drops an indicator is fitted on a different set of variables, so its AIC is not smaller because it fits better – it is smaller because there is less to explain. The green "best" highlight is withheld entirely when the table mixes such models, with a note explaining why, and refused pairs get their reason in the Note column rather than a chi-square difference that means nothing.
 
-If no nested pairs are detected, a note advises comparing via information criteria instead.
+If no nested pairs are detected, the note depends on whether the models are on a common scale at all. If they are, it advises comparing via information criteria. If they are not, it names what differs – observed variables, estimator, missing-data treatment, mean structure, ordinal indicators, number of cases – and says AIC and BIC cannot rank them either, because those are the two entries in the table *least* comparable across different case sets.
 
-> **Nested vs. non-nested models:** two models are nested when one is a constrained version of the other (e.g. an orthogonal model is nested within an oblique model – it adds the constraint that correlations = 0). Nesting is decided from the fitted parameter tables – model A nests inside B when every free parameter of A is free in B and A has strictly more degrees of freedom – so an `==` equality constraint counts as a constraint even though it doesn't remove a parameter from the model text. The chi-square difference test only applies to nested pairs. For non-nested models (different factor structures entirely), compare AIC and BIC – lower values indicate better balance of fit and parsimony.
+> **Nested vs. non-nested models:** two models are nested when one is a constrained version of the other (e.g. an orthogonal model is nested within an oblique model – it adds the constraint that correlations = 0). Nesting is decided from the fitted parameter tables. Model A nests inside B when every free parameter of A is free in B, A keeps every restriction B imposes, and A has strictly more degrees of freedom – so an `==` equality constraint counts as a constraint even though it doesn't remove a parameter from the model text, and two models that pin *different* parameters to different fixed values are correctly refused rather than paired on their free-parameter names alone. The chi-square difference test only applies to nested pairs. For non-nested models (different factor structures entirely), compare AIC and BIC – lower values indicate better balance of fit and parsimony.
 
 Loading a different dataset invalidates the queue: **Restore this model**, **Add to comparison** and **Compare models** all refuse with a message rather than silently fitting old syntax against new columns.
 
@@ -440,7 +516,7 @@ Key things to include when writing up CFA results:
 
 ## Reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md) – you can inspect, copy, or re-run the exact commands. CFA uses the `lavaan` R package; reliability metrics use `semTools`, which also generates the ordinal invariance cascade; robust outlier distances use `MASS`. Citations for R packages used in your analysis appear automatically at the top of the output section, and only for the ones a given run actually loaded. The lavaan syntax preview also lets you export the model specification directly. Both randomized steps are seeded: bootstrap resamples (including across the invariance cascade) by [**Bootstrap seed**](./settings.md#bootstrap-seed), and the MCD subsampling behind [outlier detection](#check-data) by the [**Reproducibility seed**](./settings.md#reproducibility-seed) – set them to make those numbers stable across runs.
+Every analysis prints the underlying R code to the [R console](./r-console.md) – you can inspect, copy, or re-run the exact commands. CFA uses the `lavaan` R package; reliability metrics use `semTools`, which also generates the ordinal invariance cascade; robust outlier distances use `MASS`. The citation box at the top of the output card covers both halves of that: the **software** actually loaded (including Rosseel's lavaan paper alongside the package release), and the **methods** the card reports – the estimator that ran and the robust correction layered on it, FIML, the bootstrap interval type lavaan returned, every fit index printed, each reliability and discriminant-validity coefficient, modification indices and the EPC, the invariance criteria, the diagnostics battery, and the path-diagram convention. Each is gated on the run having produced it, so the list describes that analysis rather than everything the module can do. The lavaan syntax preview also lets you export the model specification directly. Both randomized steps are seeded: bootstrap resamples (including across the invariance cascade) by [**Bootstrap seed**](./settings.md#bootstrap-seed), and the MCD subsampling behind [outlier detection](#check-data) by the [**Reproducibility seed**](./settings.md#reproducibility-seed) – set them to make those numbers stable across runs.
 
 ## Common pitfalls
 
