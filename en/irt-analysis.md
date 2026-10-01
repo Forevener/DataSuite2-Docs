@@ -5,686 +5,619 @@ description: Item response theory including multidimensional MIRT – Rasch, 2PL
 
 # IRT analysis
 
-The **Item response theory** tab (inside the Reliability analysis module) fits unidimensional IRT and multidimensional IRT (MIRT) models to questionnaire, test, or survey items. Unlike [classical reliability metrics](./reliability-analysis.md), which summarize the scale as a whole, IRT models each item individually – estimating how difficult it is, how well it discriminates between respondents, and where each person falls on the latent trait.
+Item response theory fits unidimensional IRT and multidimensional IRT (MIRT) models to questionnaire, test, or survey items. Unlike the [classical reliability metrics](./reliability-analysis.md) of the Reliability analysis module, which summarize the scale as a whole, IRT models each item individually – estimating how difficult it is, how well it discriminates between respondents, and where each person falls on the latent trait. {#irt-analysis #item-response-theory}
 
-> **CTT vs. IRT in one sentence:** Classical Test Theory asks "how reliable is the total score?"; Item Response Theory asks "how does each item behave across the full range of ability?"
+> **CTT or IRT?** Classical test theory grades the total score, IRT each item across the whole range of the trait – see [item response theory](./concepts/latent-variables.md#b-item-response-theory) and [classical test theory](./concepts/latent-variables.md#b-classical-test-theory).
 
-> **What is θ?** θ (theta) is the estimated latent trait – ability, attitude, symptom severity, whatever the scale measures. It's on a standardised scale centred at 0 with SD ≈ 1 (positive values above average, negative below). Unlike raw scores, θ is on an interval scale: the distance between θ = 0.5 and 1.0 is the same as between 1.0 and 1.5.
+> **What is θ?** The person's estimated position on the trait, on a scale with mean 0 and SD 1 – see [θ](./concepts/latent-variables.md#b-θ).
 
 ## How to use
 
-1. [Select your items](./getting-started.md#choosing-variables) – at least two numeric variables
-2. Pick a [dimensionality mode](#dimensionality) (unidimensional, exploratory, or confirmatory)
-3. Click **Diagnostics & Mokken** to [check data suitability](#preliminary-analysis) before fitting a model
-4. Choose a [model type](#model-types), [estimation method](#estimation-method), and [scoring method](#scoring-method)
-5. Optionally select a [grouping variable for DIF](#differential-item-functioning-dif)
-6. Adjust [advanced tuning](#advanced-tuning) only if you know why you need to
-7. Toggle [output options and plots](#output-options)
-8. Click **Run IRT analysis**
+1. [Select your items](./getting-started.md#choosing-variables) – at least two that pass the [requirements](#requirements) – and declare any [negatively keyed](#negatively-keyed-items) ones
+2. Click **Diagnostics & Mokken** to [check the items](#preliminary-analysis) before fitting a model
+3. Pick a [dimensionality](#dimensionality), [model type](#model-types), [estimation method](#estimation-method) and [scoring method](#scoring-method)
+4. Optionally select a [grouping variable for DIF](#differential-item-functioning-dif), and choose the [output options](#output-options)
+5. Click **Run IRT analysis**
 
 ## Requirements
 
-- At least two numeric variables must be selected.
-- Items must be dichotomous (two unique values) or polytomous (ordinal, or continuous with 3–10 integer categories). Variables with more than 10 unique values or non-integer values are excluded unless their type is explicitly set to ordinal in the data view.
-- For confirmatory MIRT, each item must be assigned to at least one factor.
-- At least one output option must be enabled.
-
-> **Automatic item classification:** DataSuite inspects each variable before analysis. Binary variables are always treated as dichotomous. Ordinal variables are polytomous. Continuous variables with 3–10 unique integer values are inferred as polytomous – but you'll see a note when this happens. For best results, set variable types explicitly in the data view.
+- At least two items that pass the checks below; with fewer, **Diagnostics & Mokken** and **Run IRT analysis** both stop with a message.
+- An item is numeric, varies, and has at most half its responses missing – a selected variable that fails any of these is excluded, and the card lists it with the reason.
+- An item with two distinct values is dichotomous, whatever its type. One typed Ordinal in the data view is polytomous. A Continuous one is taken as polytomous when its values are 3–10 distinct integers – a note on the card says the classification was inferred – and is excluded otherwise, with non-integer values or more than 10 of them; type it Ordinal to keep it.
+- The grouping variable picked for DIF is never an item, even when it is selected.
+- A confirmatory MIRT fits only the items assigned to a factor – an unassigned item is excluded and listed – see [Confirmatory](#confirmatory).
 
 ## Preliminary analysis
 
-Click **Diagnostics & Mokken** to run a set of quick diagnostics *without* fitting an IRT model. This is a low-cost way to catch problems before committing to a full analysis.
+**IRT preliminary analysis.** The card **Diagnostics & Mokken** opens: quick checks on the selected items, run without fitting an IRT model, so that problems surface before a fit is committed to. A check that fails in R keeps its section and says *Could not compute* with R's message. {#irt-preliminary-analysis}
 
-### Item classification summary
+- **Diagnostics & Mokken** – runs the checks below on the items the [requirements](#requirements) admit, under the global [missing-data setting](./settings.md#missing-data): with listwise deletion every check but the missing-data counts sees only the complete cases. Of the model settings it reads only the model type, for the sample-size grade; the DIF grouping variable is left out of the items here too.
+- **AISP lowerbound (H)** – the scalability bound *c* the [automated item selection](#automated-item-selection-aisp) verdict is read at; default 0.3, anything above 0.99 read as 0.99 and an empty field as 0.3. The table sweeps its own range of *c* whatever the value.
 
-Lists how each selected variable was classified (dichotomous, polytomous, or excluded) and why. Excluded variables show a reason – e.g. too many unique values or non-integer data.
+### Data summary
+
+The card opens on the item count, split into dichotomous and polytomous, and the **Sample size** – every row, with the complete cases beside it under listwise deletion. A note follows when a classification was inferred rather than set, and **Excluded variables** lists each selected variable left out, with its reason: non-numeric, no variance, more than 50% of responses missing, non-integer values, or too many unique values.
 
 ### Sample size adequacy
 
-Warns when the sample is too small for the selected model:
+**Sample size.** The N the diagnostics ran on – the complete cases under listwise deletion, every row otherwise – graded against the selected model type: a warning when it falls short, and a line saying N appears adequate when it does not.
 
-| Model | Recommended minimum N |
+| Selected model | Warning below |
 |---|---|
-| Rasch / 1PL | 100 |
-| 2PL | 200 |
+| Any | 100 |
+| 2PL, Auto (detect from data) | 200 |
 | 3PL, 3PLu | 500 |
 | 4PL | 1000 |
 
-These are rough guidelines – smaller samples can work but produce less stable parameter estimates. Multidimensional models generally need larger samples too; the more factors and parameters, the more respondents you need.
+Every other model type warns only below 100. The grade ignores the dimensionality: a multidimensional model needs more respondents than its unidimensional counterpart, and the more factors the more it needs.
 
-### Item summary table
+### Item summary
 
-A per-item table showing the variable type, number of response categories, and missing data count and percentage.
+**Item summary.** One row per item.
+
+- **Type** – *dichotomous* or *polytomous*, as classified under [Requirements](#requirements) {#item-summary-type}
+- **Categories** – the number of distinct values the item takes {#item-summary-categories}
+- **Missing** – the item's blank responses, and **Missing %** their share of all rows {#item-summary-missing}
 
 ### Unidimensionality check
 
-Reports the first two eigenvalues of the inter-item correlation matrix, their ratio, and the percentage of total variance the first component explains. The verdict applies **Reckase's criterion for essential unidimensionality**, which takes both quantities together:
+**Unidimensionality check.** The two largest eigenvalues of the inter-item correlation matrix, read against Reckase's criterion for essential unidimensionality – see [unidimensionality](./concepts/latent-variables.md#b-unidimensionality) and [eigenvalue](./concepts/latent-variables.md#b-eigenvalue). Its **Metric** and **Value** columns hold the four rows below. {#unidimensionality-check #unidimensionality-check-metric #unidimensionality-check-value}
 
-| Criterion | Threshold |
-|---|---|
-| Variance explained by the 1st component | ≥ 20% |
-| First eigenvalue ÷ second eigenvalue | ≥ 3 |
+- **First eigenvalue** – the variance, in units of one item, that the first component carries; **Second eigenvalue** the same for the second {#first-eigenvalue #second-eigenvalue}
+- **Ratio (1st / 2nd)** – the first eigenvalue over the second; the criterion asks for at least 3. It reads "–" when the second eigenvalue is not positive
+- **Variance explained by 1st component** – the first eigenvalue as a percentage of the item count, which is the matrix's total variance; the criterion asks for at least 20%
 
-- **Both met** – the item set is essentially unidimensional
-- **One met** – the evidence is mixed
-- **Neither met** – consider multidimensional models
+The verdict under the table reads both: **both met** – the item set is essentially unidimensional; **one met** – the evidence is mixed; **neither met** – consider a multidimensional model. When the second eigenvalue is not positive the correlation matrix is not positive definite, the ratio is undefined, and only the variance criterion is judged – the note says so.
 
-If the second eigenvalue is not positive the correlation matrix is not positive definite, the ratio is undefined, and only the variance criterion is applied – the output says so.
+A last note names the correlations the eigenvalues came from: **polychoric** when no item has more than 8 categories, a **mixed** matrix – polychoric between ordinal items, tetrachoric between binary ones, Pearson for any item with more than 8 – when some do, and **Pearson** when every item does – see [polychoric correlation](./concepts/association.md#b-polychoric-correlation). When the categorical estimator fails, the note says Pearson was used instead and gives R's message.
 
-A note under the table names the correlation estimator the eigenvalues came from: **polychoric** when every item is ordinal, a **mixed** matrix (polychoric between ordinal items, tetrachoric between binary ones, Pearson wherever an item has more than 8 categories), or plain **Pearson** when every item has more than 8 categories – which is the appropriate estimator there. If the categorical estimator fails, the output says that Pearson was used instead and shows the error.
-
-> **Why unidimensionality matters:** unidimensional IRT models assume all items measure a single latent trait. If the data is substantially multidimensional, item parameter estimates become distorted and person scores lose meaning. When neither criterion is met, either explore the structure with [factor analysis](./factor-analysis.md) or switch to [exploratory or confirmatory MIRT](#dimensionality).
+> **Neither criterion met?** A unidimensional model's parameters and scores are distorted on a multidimensional item set – explore the structure with [factor analysis](./factor-analysis.md), or fit an [exploratory or confirmatory MIRT](#dimensionality).
 
 ### Subject quality screening
 
-Six flags identify respondents whose data may be unreliable. The table shows each index, the cutoff that was actually used on your data, how many respondents it flagged, and what share of the sample that is:
+**Subject quality.** Six indices that flag respondents whose answers may not be trustworthy – careless, straight-lined or outlying, the patterns [careless responding](./concepts/outliers-missing-data.md#b-careless-responding) describes – each row giving the cutoff actually used on this data. The high-missing and Mahalanobis cutoffs are fixed; the other four are [Tukey's fences](./concepts/outliers-missing-data.md#b-tukeys-fences) on each index's own distribution in this dataset, so a flag means "unusual here". Longstring and IRV read the answers as given, the other indices the items as the [negatively keyed items](#negatively-keyed-items) list reverses them.
 
-| Flag | Issue | Cutoff |
-|---|---|---|
-| **M** | High missing | > 50% of items missing |
-| **L** | Longstring (consecutive identical responses) | Tukey fence |
-| **V** | Low response variability (normalized IRV) | Tukey fence |
-| **C** | Low person-total correlation | Tukey fence |
-| **R** | Low resampled individual reliability | Tukey fence |
-| **D** | Mahalanobis distance outlier | p < .001 |
+- **Flag** – the letter the index writes into the [flag columns](#b-insert-quality-flags-into-dataset): M, L, V, C, R or D, in the order below {#subject-quality-flag}
+- **Issue** – what the index looks for – the six entries below {#subject-quality-issue}
+- **Cutoff** – the bar applied: a respondent past it is flagged. A cutoff shown as "–", or one outside the range the index can take, flags nobody – the index has too wide a spread, or none at all, for any case to fall outside its fence {#subject-quality-cutoff}
+- **Count** – the respondents the index flagged, and **% of sample** their share of the rows screened {#subject-quality-count #of-sample}
 
-> **What are these flags?** Longstring detects straight-lining – people who click the same answer repeatedly. IRV catches near-zero variability across items, normalized by the largest SD the response scale allows so that scales with different numbers of categories are comparable. Person-total correlation compares each person's response pattern to the rest of the sample, and RIR does the same using random subsamples for stability. Mahalanobis distance identifies multivariate outliers whose overall response pattern is unusually far from the sample center.
+The six indices:
 
-> **Why sample-derived cutoffs?** The absolute values these indices are usually quoted with (longstring ≥ 5, IRV < 0.5, r < 0.1 …) have no reference distribution behind them and flag between a quarter and two-fifths of perfectly clean data. Instead, four of the six cutoffs are **Tukey fences** (1.5 × IQR beyond the quartiles) on each index's own distribution *in your dataset*, so a flag means "unusual here" rather than "past a number someone once printed". A cutoff shown as "–", or one outside the range the index can even take, flags nobody: the index has too wide a spread, or none at all, for any case to fall outside its fence.
+- **High missing** – more than 50% of the items left blank (M)
+- **Longstring (consecutive identical responses)** – the longest run of identical answers in consecutive items, blanks skipped: straight-lining, the same answer clicked down the page; flagged above the fence (L) – see [longstring](./concepts/outliers-missing-data.md#b-longstring)
+- **Low response variability (normalized IRV)** – the spread of the person's own answers, as a fraction of the largest spread the response scale allows, so that scales with different numbers of categories compare; flagged below the fence (V) – see [IRV](./concepts/outliers-missing-data.md#b-intra-individual-response-variability-irv). It is not screened when every item is dichotomous, and a note says so
+- **Low person-total correlation** – how closely the person's answers follow the item means of the rest of the sample: a pattern that runs against everyone else's; flagged below the fence (C) – see [person-total correlation](./concepts/outliers-missing-data.md#b-person-total-correlation)
+- **Low resampled individual reliability** – the consistency of the person's own answers between two random halves of the items, averaged over 30 splits; flagged below the fence (R) – see [resampled individual reliability](./concepts/outliers-missing-data.md#b-resampled-individual-reliability). It needs at least six items, and reads "–" with fewer
+- **Mahalanobis distance outlier** – a complete response pattern unusually far from the sample's centre, at p < .001 (D) – see [Mahalanobis distance](./concepts/outliers-missing-data.md#b-mahalanobis-distance). A note names the estimator: the [minimum covariance determinant](./concepts/outliers-missing-data.md#b-minimum-covariance-determinant-mcd) when there are more than twice as many complete cases as items and its covariance is not singular, the sample mean and covariance otherwise, with the reason. With no more complete cases than items plus one, no distance is computed
 
-Three further notes appear when they apply:
+A last note counts the respondents who trip **two or more** indices – the ones worth reviewing before a fit; a single flag on a single index is expected in any sample.
 
-- **All items dichotomous** – response variability is not screened at all. On a binary scale the IRV is a deterministic function of the sum score, so it carries no information the other indices don't already have.
-- **Mahalanobis estimator** – distances use the **minimum covariance determinant** estimator, whose centre and scatter the outliers themselves cannot inflate. It needs more than twice as many complete cases as items and a non-singular robust covariance; when either fails (singularity is the norm on items with few response categories) the classical sample mean and covariance are used, and the note says which limitation applied.
-- **Converging flags** – the summary counts respondents tripping **two or more** indices. That is what's worth reviewing before fitting a model; a single flag on a single index is expected in any sample.
-
-A button below the results lets you **insert quality flags into the dataset** – two new columns are added: `IRT_QC_nFlags` (count of flags per person) and `IRT_QC_Flags` (the flag letters, e.g. "LV").
+- **Insert quality flags into dataset** – adds two columns to the data: `IRT_QC_nFlags`, each respondent's flag count, and `IRT_QC_Flags`, a categorical column of their letters (for example `LV`, `-` for none). Under listwise deletion the rows left out of the screen get no value
 
 ### Mokken scale analysis
 
-A nonparametric IRT approach that doesn't assume a specific functional form for item response curves. Several analyses are reported – read them together to decide whether parametric IRT is worth attempting.
+**Mokken scale analysis.** [Nonparametric IRT](./concepts/latent-variables.md#b-nonparametric-irt): whether the items form a [Mokken scale](./concepts/latent-variables.md#b-mokken-scale), on which the probability of a higher answer only rises with the trait, without assuming the logistic curve a parametric model fits. Read it as a screen – items that do not scale here rarely fit a parametric model. It runs on the complete cases only, and a note gives both counts when that is fewer than the rows the checks above used; with fewer than three complete cases, or an item with no variance among them, the section says so and stops.
 
-> **When to use Mokken vs. parametric IRT:** Mokken has weaker assumptions – it doesn't require items to follow a logistic function, only that item responses increase monotonically with the trait. Use it as a preliminary screen. If Mokken scalability is poor, parametric IRT is unlikely to fare better.
+The scalability table opens the section, one row per item and a **Total scale (H)** row under them, each with its SE.
 
-#### Scalability coefficients (Loevinger's H)
+- **Hi** – the item's scalability coefficient H*i*: how well it orders respondents consistently with the other items – see [Loevinger's H](./concepts/latent-variables.md#b-loevingers-h) {#hi}
+- **Total scale (H)** – [Loevinger's H](./concepts/latent-variables.md#b-loevingers-h) for the whole scale
+- **Interpretation** – shown when [interpretation](./settings.md#significance-formatting) is on: the scale row read in Sijtsma and Molenaar's bands below, an item row *Admissible* at H*i* ≥ 0.3 and *Inadmissible* under it {#mokken-scale-analysis-interpretation}
 
-Per-item H*i* and the total scale H indicate how well items form a Guttman-like scale. Sijtsma and Molenaar's bands apply to the **scale** coefficient:
-
-| H | Interpretation |
+| H | Scale row |
 |---|---|
-| ≥ 0.5 | Strong scalability |
+| ≥ 0.5 | Strong |
 | 0.4–0.5 | Moderate |
 | 0.3–0.4 | Weak |
 | < 0.3 | Unscalable |
 
-For an **individual item** the criterion is different – not strength but admissibility: an item is admissible in the scale when H*i* ≥ 0.3, and inadmissible below it. The per-item rows are labelled accordingly.
+#### Item-pair H matrix
 
-> **Mokken runs on complete cases.** The `mokken` package does not accept missing responses, so every block in this section is computed on the complete rows only. When that is fewer than the full sample, a note gives both counts – the eigenvalue and subject-quality blocks above still use every row, so the two parts of the diagnostics can legitimately report different N.
+**Item-pair scalability (H_ij).** A symmetric matrix of the pairwise scalability coefficients – [Loevinger's H](./concepts/latent-variables.md#b-loevingers-h) for each item pair – its diagonal "–". High values mark item pairs that scale together, values near zero pairs that barely do, and a negative value an item that may need reverse scoring or exclusion.
 
-#### Item-pair H matrix (H_ij)
+#### Violation checks
 
-A symmetric matrix of pairwise scalability coefficients. Useful for spotting item pairs that cluster together (high H_ij) versus pairs that barely scale together (low or negative H_ij). Negative values flag items that may need reverse scoring or exclusion.
+The three checks that follow list only the items with a violation, and print a line saying none was found when no item has one. Their tables share the columns:
 
-#### Monotonicity check
+- **Violations** – the item's violations counted above the package's minimum size
+- **Significant violations** – how many of them are significant
+- **Max violation** – the largest of them
+- **z(max)** – the largest violation's test statistic; **t(max)** under invariant item ordering on polytomous items, which is tested by a t-test {#zmax #tmax}
+- **crit** – the seriousness index that combines the columns before it. The note under the table grades the largest: below 40 no serious violation, 40–80 a minor one, above 80 a serious one
 
-Tests whether the probability of endorsing each item increases (or at least doesn't decrease) with the latent trait. Items with significant violations may not conform to a monotone homogeneity model. Only items with violations are listed.
+**Monotonicity.** Whether the probability of endorsing each item rises, or at least never falls, with the trait; a serious violation means the item does not conform to the [monotone homogeneity](./concepts/latent-variables.md#b-monotone-homogeneity) model.
 
-> **Reading `crit`.** The Mokken checks summarise each item's violations in a single `crit` statistic, and Molenaar and Sijtsma's guidance reads it in bands rather than against one threshold: **below 40** is no serious violation, **40–80** is a minor one worth noting, and **above 80** is a serious violation. The same bands are used for the monotonicity, IIO, and nonintersection verdicts below.
+**Invariant item ordering.** Whether the items keep the same order of difficulty for every respondent – when it holds, "item A is harder than item B" is true of everyone rather than on average, which interpreting the item order requires – see [invariant item ordering](./concepts/latent-variables.md#b-invariant-item-ordering-iio). A note under the table gives the scale's H_T coefficient, and values of 0.3 and above support the ordering.
 
-#### Invariant item ordering (IIO)
-
-Tests whether items maintain the same order of difficulty across respondents. The coefficient **H_T** summarises IIO across the scale:
-
-- **H_T ≥ 0.3** – items order consistently; a single difficulty ranking applies to everyone
-- **H_T < 0.3** – item ordering depends on who's responding
-
-> **Why IIO matters:** when IIO holds you can say "item A is harder than item B" without qualification. When it fails, that statement is only true on average – some respondents find A easier than B. Required for nonparametric person ordering.
-
-#### Local independence (rest-score method)
-
-A nonparametric counterpart to the Q3 / LD-X² checks done in the main analysis. Item pairs whose conditional association exceeds chance (after controlling for rest-score) are flagged. Redundant pairs inflate reliability and should be reviewed.
-
-#### Nonintersection (rest-score method)
-
-Tests the second half of double monotonicity: whether the item step response functions cross. Non-crossing steps are what makes a single item ordering hold at every level of the trait – if they intersect, the double monotonicity assumption fails and the nonparametric person ordering IIO promises is only approximate. Read with the same `crit` bands as monotonicity.
+**Nonintersection (rest-score method).** Whether the item step response functions cross – the second half of [double monotonicity](./concepts/latent-variables.md#b-double-monotonicity). Where they intersect, a single item ordering does not hold at every level of the trait.
 
 #### Nonparametric reliability
 
-Three model-free reliability estimates, reported side by side:
+**Nonparametric reliability.** Three model-free reliability estimates, side by side.
 
-- **Molenaar–Sijtsma (ρ)** – the preferred nonparametric reliability for Mokken scales
-- **α** – Cronbach's alpha, shown for reference
-- **λ₂** – Guttman's lambda₂, typically a slightly higher lower bound than α
+- **Molenaar–Sijtsma (ρ)** – the nonparametric reliability for Mokken scales, the one to report
+- **α** – [Cronbach's alpha](./concepts/reliability.md#b-cronbachs-alpha), for reference {#nonparametric-reliability-α}
+- **λ₂** – [Guttman's λ2](./concepts/reliability.md#b-guttmans-λ2), a lower bound never below α {#nonparametric-reliability-λ₂}
 
 #### Automated item selection (AISP)
 
-Assigns items to scales at a given H lowerbound *c*. Rather than reporting one partition, the table sweeps *c* from 0 to 0.55 in steps of 0.05 (plus your own value) and gives **one column per lowerbound**, so you can see at a glance whether a partition is stable or an artefact of where you set the threshold. A "–" means the item entered no scale at that *c*.
+**Automated item selection (AISP).** Partitions the items into [Mokken scales](./concepts/latent-variables.md#b-mokken-scale) at a scalability lowerbound *c*, swept rather than read once: one column per *c* from 0 to 0.55 in steps of 0.05, plus the **AISP lowerbound (H)** you set, each cell the scale the item joined at that *c* and "–" where it joined none. A partition that holds across several neighbouring columns is a finding; one that changes between them is an artefact of the chosen *c*, since the search can settle on a partition that is good rather than the best available – see [automated item selection](./concepts/latent-variables.md#b-automated-item-selection).
 
-The verdict below the table is read at the **AISP lowerbound** you set in the output panel (default 0.3): all items in a single scale supports unidimensionality, several scales suggests multidimensional structure, and unselected items may not fit the scale at all. If your *c* exceeds the largest item-pair H, `aisp` does not search it – nothing would be scalable – and the output says so instead of showing an empty column.
-
-> **A local optimum, not the best partition.** Items are selected by the sequential search procedure (Hemker, Sijtsma & Molenaar 1995), which is greedy: it can settle on a partition that is good rather than the best available. Treat a partition that changes between neighbouring columns as noise, and one that holds across several as a finding.
+The verdict under the table is read at your *c*: every item in a single scale supports unidimensionality, several scales suggest a multidimensional structure, and items that enter no scale may not fit it at all. A *c* above the largest item-pair H is not searched – nothing would be scalable – and its column is dropped, the note saying so in place of the verdict.
 
 ## Dimensionality
 
-The **Dimensionality** selector at the top of the model settings controls the overall structure of the IRT model. The rest of the UI adapts to the choice.
-
-### Unidimensional
-
-All items measure a single latent trait. This is the standard IRT setting – suitable for well-targeted questionnaires and tests with a single intended construct.
+- **Dimensionality** – how many traits the model has, and whether you or the data say which item measures which. The rest of the panel follows the choice: the [model types](#model-types) a mode cannot fit are greyed out, and a selected one falls back to **Auto (detect from data)**; the [output options](#output-options) that belong to one structure appear only under it.
+- **Unidimensional** – the default: every item measures one trait, θ – see [unidimensionality](./concepts/latent-variables.md#b-unidimensionality). The standard IRT setting, for a scale written to measure a single construct.
+- **Exploratory** – a [multidimensional IRT](./concepts/latent-variables.md#b-multidimensional-irt) (MIRT) model with the number of dimensions you set and every item free to load on every dimension – the IRT counterpart of an [exploratory factor analysis](./concepts/latent-variables.md#b-efa), fitted to the item responses themselves rather than to a correlation matrix. For when several traits are suspected but not which item measures which.
+- **Confirmatory** – a [MIRT](./concepts/latent-variables.md#b-multidimensional-irt) model with the structure you specify: each item loads only on the factors you assign it to – the IRT counterpart of a [confirmatory factor analysis](./concepts/latent-variables.md#b-cfa). For a scale whose subscales are known in advance. Only the assigned items are fitted.
 
 ### Exploratory
 
-Fits an exploratory multidimensional IRT (MIRT) model. You pick:
+- **Number of dimensions** – how many latent traits to extract; default 2, and the run stops with a message below 2. Under **EM** a note under **Estimation method** warns from 3 dimensions on.
+- **Rotation method** – the criterion the loadings are rotated to: orthogonal keeps the dimensions uncorrelated, oblique lets them correlate – see [rotation](./concepts/latent-variables.md#b-rotation). Default **Oblimin**. It orients the loadings solution alone – the factor loadings table, its heatmap and the factor correlations; person scores, reliability, expected scores, the Wright map and the information curves stay in the fitted, unrotated basis, so a rotated loadings table beside an unrotated θ is not an inconsistency. The factor correlations are offered under an oblique rotation only.
+- **None (unrotated)** – the fitted solution as it stands, the first dimension carrying as much as it can; rarely interpretable beyond two dimensions.
 
-- **Number of dimensions** – how many latent factors to extract
-- **Rotation method** – how the factor solution is oriented (see below)
+Orthogonal:
 
-Exploratory MIRT is analogous to exploratory [factor analysis](./factor-analysis.md) but preserves the IRT likelihood. Use it when you suspect multiple traits but don't yet have a specific hypothesis about which item loads on which factor.
+- **Varimax** – each dimension gets a few large loadings and many small ones – see [varimax](./concepts/latent-variables.md#b-varimax). Run without Kaiser normalization.
+- **Quartimax** – each item gets one large loading and small ones elsewhere, which tends to leave a general first dimension – see [quartimax](./concepts/latent-variables.md#b-quartimax).
+- **Minimum entropy** – minimises the entropy of the squared loadings, another route to simple structure.
+- **Tandem I** – Comrey's first tandem criterion: items that correlate are put on the same dimension, which favours a general dimension.
+- **Tandem II** – Comrey's second tandem criterion: items that do not correlate are kept off the same dimension, which spreads the loadings over the dimensions; the usual follow-up when Tandem I leaves a general dimension.
+- **Geomin T** – the orthogonal geomin: asks only that each item have one near-zero loading, so a real cross-loading survives – see [geomin](./concepts/latent-variables.md#b-geomin).
+- **Bentler's Invariant T** – the orthogonal form of Bentler's invariant pattern simplicity criterion, in practice close to varimax – see [Bentler's invariant](./concepts/latent-variables.md#b-bentlers-invariant).
+- **Crawford–Ferguson T** – the orthogonal Crawford–Ferguson family, which weighs item complexity against dimension complexity by [**Crawford–Ferguson κ**](#b-crawford-ferguson-κ); at the default κ = 0 it is quartimax and returns the **Quartimax** solution.
+- **Infomax T** – the orthogonal form of McKeon's infomax criterion, which reads simple structure in information-theoretic terms.
+- **Bifactor** – one general dimension on every item plus group dimensions, all uncorrelated – see [bifactor model](./concepts/latent-variables.md#b-bifactor-model). Set the number of dimensions to one more than the groups you expect.
 
-> **Rotation methods:**
->
-> - **Orthogonal rotations** (Varimax, Quartimax, Equamax, Varimin, Minimum entropy, Tandem I, Tandem II, Geomin T, Bentler T, Crawford–Ferguson T, Infomax T, Bifactor) produce uncorrelated factors. Simpler to interpret; factor correlations are fixed at 0.
-> - **Oblique rotations** (Oblimin, Promax, Oblimax, Quartimin, Simplimax, Cluster, Geomin Q, Bentler Q, Crawford–Ferguson Q, Infomax Q, Biquartimin) allow factors to correlate. More realistic for most psychological constructs – related traits usually *are* correlated. **Oblimin** is a sensible default.
-> - **None (unrotated)** shows the raw solution, dominated by a general factor; rarely directly interpretable.
+Oblique:
 
-**Rotation governs the loadings solution only.** It reorients the factor loadings table, its heatmap, and the factor correlations. Person scores, reliability, expected scores, the Wright map, and the information curves are all reported in the **fitted basis** and do not move when you change the rotation – so a rotated loadings table and an unrotated θ are not an inconsistency.
+- **Oblimin** – the default: simple structure with the dimensions free to correlate – see [oblimin](./concepts/latent-variables.md#b-oblimin). Its weight is [**Oblimin γ**](#b-oblimin-γ); at the default γ = 0 it is quartimin, so **Quartimin** returns the same solution.
+- **Promax** – varimax first, then an oblique rotation toward a target in which the small loadings are squashed (power 4) – see [promax](./concepts/latent-variables.md#b-promax).
+- **Quartimin** – the oblique counterpart of quartimax, and the same solution as **Oblimin** at its default γ – see [quartimin](./concepts/latent-variables.md#b-quartimin).
+- **Oblimax** – maximises the kurtosis of the loadings, pushing each toward zero or toward a large value.
+- **Simplimax** – rotates toward a target in which the smallest loadings are zero – see [simplimax](./concepts/latent-variables.md#b-simplimax).
+- **Geomin Q** – the oblique geomin – see [geomin](./concepts/latent-variables.md#b-geomin).
+- **Bentler's Invariant Q** – the oblique Bentler's invariant, in practice close to oblimin – see [Bentler's invariant](./concepts/latent-variables.md#b-bentlers-invariant).
+- **Crawford–Ferguson Q** – the oblique Crawford–Ferguson family, weighted by [**Crawford–Ferguson κ**](#b-crawford-ferguson-κ); at the default κ = 0 it is quartimin and returns the **Quartimin** solution.
+- **Infomax Q** – the oblique form of the infomax criterion.
+- **Biquartimin** – the oblique counterpart of **Bifactor**: a general dimension plus group dimensions free to correlate – see [bifactor model](./concepts/latent-variables.md#b-bifactor-model).
+
+Two families take a parameter, in a field under the rotation:
+
+- **Oblimin γ** – shown for **Oblimin**: the oblimin family's weight, default 0. At 0 the rotation is quartimin, at 0.5 biquartimin and at 1 covarimin; a higher value lets the dimensions correlate more, a negative one less. A blank field stops the run with a message.
+- **Crawford–Ferguson κ** – shown for **Crawford–Ferguson T** and **Crawford–Ferguson Q**: the weight between item complexity (κ = 0) and dimension complexity (κ = 1), from 0 to 1, default 0. At 0 the rotation is quartimax (T) or quartimin (Q); in the orthogonal form 1/p for p items is varimax and k/(2p) for k dimensions equamax. A blank or out-of-range value stops the run with a message.
 
 ### Confirmatory
 
-Fits a confirmatory MIRT model using a factor structure that you specify. Two ways to define the structure:
-
-- **Factor assignment widget** – a matrix of items (rows) × factors (columns). Click a cell to toggle whether an item loads on a factor. This is the same widget used in [CFA](./confirmatory-factor-analysis.md).
-- **mirt syntax** – a text editor in the accordion. Syntax is `FactorName = item1, item2, ...` (one line per factor; items can be 1-based indices or variable names). Edit freely and click **Apply** to update the widget.
-
-The **Correlated factors** checkbox controls whether factors are allowed to covary (oblique) or constrained to be orthogonal.
-
-> **When to use confirmatory vs. exploratory MIRT:** confirmatory mode is appropriate when you have a theoretical model of which items tap which trait – e.g. an emotion questionnaire with a predefined positive/negative affect structure. Exploratory mode is appropriate when the structure is unknown or tentative.
+- **Variable** – the first column of the model matrix, one row per selected numeric item; each further column is a factor, and a ticked cell makes the item load on it. The matrix, its factor columns and **Auto-detect from names** work as in [confirmatory factor analysis](./structural-equation-modeling.md#cfa-model-specification). A factor name starts with a letter and holds only letters, digits and underscores, and mirt's statement words (COV, MEAN, CONSTRAIN, PRIOR, START, FIXED) are refused. The run needs at least two factors with an item each; an item assigned to no factor is left out and listed.
+- **Correlated factors (oblique)** – on by default: the factors' correlations are estimated; cleared, the factors are held uncorrelated. The factor correlations output is offered only while it is on.
+- **mirt syntax** – the matrix as mirt model syntax, one `Factor = items` line per factor and a `COV` line when the factors correlate; kept in step with the matrix. Edit it and **Apply** writes it back into the matrix, the `COV` line setting **Correlated factors (oblique)**; **Cancel** discards the edit and **Copy** puts the text on the clipboard. Items are named, or numbered from 1 in the order the preview lists them, singly or as ranges (`1-4`). mirt's other statement lines (MEAN, PRIOR, …) are dropped, since the matrix cannot hold them; a line that cannot be read, or fewer than two factors, is named under the box and nothing is applied.
 
 ## Model types
 
-Select a model from the **Model type** dropdown. **Auto** detects the best fit based on item types: 2PL for dichotomous items, Graded Response Model for polytomous items. The dropdown disables options that don't match the current dimensionality mode (e.g. Rasch is only available in unidimensional; PC2PL/PC3PL only in MD).
+- **Model type** – the IRT model fitted to every item. The dropdown greys out what the [dimensionality](#dimensionality) cannot fit: the rating-scale, unfolding and nonparametric models are unidimensional only, and the partially compensatory ones confirmatory only. A model written for one response format on items of the other – a dichotomous model on a 1–5 item – stops the run with a message naming the items.
+- **Auto (detect from data)** – the default: **2PL** for each dichotomous item and **Graded Response Model (GRM)** for each polytomous one, mixed in one model when the scale holds both.
 
 ### Dichotomous items
 
-| Model | Parameters | When to use |
-|---|---|---|
-| **Rasch (1PL / PCM)** | Difficulty only | Equal discrimination assumed; measurement-focused applications, Rasch tradition (UD only) |
-| **2PL** | Difficulty + discrimination | Standard choice for binary items when items may differ in discrimination |
-| **3PL** | Difficulty + discrimination + guessing (lower asymptote) | Multiple-choice tests where guessing is plausible; requires N ≥ 500 (UD only) |
-| **3PLu** | Difficulty + discrimination + upper asymptote | Items where even high-ability respondents sometimes "slip" (careless errors); requires N ≥ 500 (UD only) |
-| **4PL** | All four asymptotes | Combines guessing and slipping; requires N ≥ 1000 (UD only) |
-| **Ideal point (unfolding)** | Item location + latent distance | Attitude items where *both* low and high θ produce rejection (e.g. political scales); UD only |
+For two-category items – right or wrong, yes or no.
+
+- **Rasch (1PL)** – difficulty only, one discrimination shared by all items, so the raw total score carries all the information about θ – see [Rasch model](./concepts/latent-variables.md#b-rasch-model). On polytomous items it fits the [partial credit model](./concepts/latent-variables.md#b-partial-credit-model). Unidimensional only.
+- **2PL** – difficulty and discrimination per item: the standard choice when items may differ in how sharply they separate people – see [2PL](./concepts/latent-variables.md#b-2pl). Dichotomous items only.
+- **3PL** – the 2PL plus a lower asymptote for [guessing](./concepts/latent-variables.md#b-guessing): multiple-choice tests – see [3PL](./concepts/latent-variables.md#b-3pl). The preliminary check warns below 500 respondents.
+- **3PLu (upper asymptote, no guessing)** – the 2PL plus an upper asymptote below 1: even the most able respondent sometimes misses the item ("slipping"). The preliminary check warns below 500.
+- **4PL** – both asymptotes, guessing and slipping. The preliminary check warns below 1000.
+- **Ideal point (unfolding)** – for attitude statements a respondent endorses most when the statement sits near their own position and rejects when it is too extreme in either direction, so the response curve is single-peaked rather than rising with θ – see [unfolding](./concepts/latent-variables.md#b-unfolding). Dichotomous items, unidimensional only.
 
 ### Polytomous items
 
-| Model | Parameters | When to use |
-|---|---|---|
-| **Graded Response Model (GRM)** | Thresholds + discrimination | Ordinal response scales (Likert); most common polytomous choice |
-| **GPCM** | Thresholds + discrimination | Alternative to GRM; models adjacent category logits rather than cumulative |
-| **GPCM (IRT parameterization)** | Same model as GPCM | Use when you want difficulty-style thresholds rather than intercepts |
-| **GRSM** | Shared rating-scale structure + discrimination | All items share a common threshold pattern; differ only in overall location (UD only) |
-| **GRSM (IRT parameterization)** | Same model as GRSM | IRT-style parameters for GRSM (UD only) |
-| **RSM (Andrich)** | Rasch rating scale | Shared thresholds *and* equal discrimination (UD only) |
-| **Nominal** | Category-specific slopes | Categories have no assumed ordering; rarely needed for standard questionnaires |
-| **GGUM** | Polytomous unfolding | Polytomous attitude items with nonmonotonic response curves (UD only) |
-| **Sequential** | Step-wise transitions | Items where reaching category *k* requires passing *k − 1* (e.g. ordered achievements); UD only |
+For ordered categories – a Likert scale, a rating.
+
+- **Graded Response Model (GRM)** – the 2PL for ordered categories: one discrimination per item and one threshold per step, modelling the chance of answering at or above each category – see [graded response model](./concepts/latent-variables.md#b-graded-response-model). The usual choice for rating items.
+- **Generalized Partial Credit Model (GPCM)** – one discrimination per item, modelling each step between adjacent categories rather than the cumulative ones; the alternative to the graded model, and the two rarely disagree in substance – see [generalized partial credit model](./concepts/latent-variables.md#b-generalized-partial-credit-model). Its steps may come out of order – see [disordered steps](./concepts/latent-variables.md#b-disordered-steps).
+- **GPCM (IRT parameterization)** – the same model reported as difficulty-style thresholds rather than intercepts.
+- **Generalized Rating Scale Model (GRSM)** – every item shares one pattern of thresholds, shifted by an item location, with its own discrimination; for items written to one response format – see [generalized rating scale model](./concepts/latent-variables.md#b-generalized-rating-scale-model). Polytomous items, unidimensional only.
+- **GRSM (IRT parameterization)** – the same model reported in IRT-style parameters. Polytomous items, unidimensional only.
+- **Rating Scale Model (Andrich)** – the Rasch model for rating scales: shared thresholds and one discrimination for all – see [rating scale model](./concepts/latent-variables.md#b-rating-scale-model). Unidimensional only.
+- **Nominal Response Model** – a slope for every category, assuming no order among them; for categories whose order is in doubt, and rarely needed for a rating scale – see [nominal response model](./concepts/latent-variables.md#b-nominal-response-model).
+- **GGUM (polytomous unfolding)** – the unfolding model for rating items, whose agreement peaks near the respondent's own position – see **Ideal point (unfolding)** and [unfolding](./concepts/latent-variables.md#b-unfolding). Unidimensional only.
+- **Sequential response model** – each category is reached by passing the one below it, step by step: for ordered achievements rather than degrees of agreement – see [sequential response model](./concepts/latent-variables.md#b-sequential-response-model).
 
 ### Nonparametric items
 
-These don't assume a parametric curve shape – they fit the item response function flexibly. Use when standard parametric models misfit but Mokken scalability is acceptable. Both are UD-only.
+Response curves estimated flexibly rather than assumed logistic – for items a parametric model misfits while the [Mokken](#mokken-scale-analysis) scalability holds. Unidimensional only. Neither reports slopes and difficulties: the item parameter table shows the model's own coefficients.
 
-| Model | When to use |
-|---|---|
-| **Spline-based** | Flexible curves via B-splines; good for idiosyncratic item shapes |
-| **Monotonic polynomial** | Monotone curves without assuming logistic form |
+- **Spline-based** – each item's curve built from B-spline pieces, for idiosyncratic item shapes. Dichotomous items only. It fits without standard errors and defines no item or test information, so marginal reliability, the information curves and the conditional SEM are withheld rather than printed as zero, and the card says why; the characteristic and expected-score curves are estimated as usual, and are what to read the items from.
+- **Spline interior knots** – shown under **Spline-based**: 1, 2 or 3 knots (default 3), spaced evenly across the trait from −2 to +2. Each knot costs a parameter per item, buying a more flexible curve at the price of a harder fit; at least one is always used.
+- **Monotonic polynomial** – a curve that only rises with θ, its shape a polynomial rather than a logistic.
 
-Choosing **Spline-based** reveals a **Spline interior knots** control (1, 2, or 3; default 3). Knots are placed evenly across the trait between −2 and +2, and each one costs a parameter per item – more knots buy a more flexible curve at the price of a harder fit and more to estimate per item. mirt itself places none by default, which fits a flat response curve carrying no information about the trait at all, so DataSuite always uses at least one.
+### Partially compensatory (confirmatory only)
 
-> **What the spline family cannot report.** Because a basis expansion has no closed-form derivative with respect to θ in mirt, the spline model defines no item or test **information**. Marginal reliability, the information curves, and the conditional SEM are therefore withheld rather than printed as zero, and the output explains why. Characteristic and expected-score curves are estimated normally – read the items from those.
+In a standard MIRT model a high value on one dimension can make up for a low value on another; in a [partially compensatory](./concepts/latent-variables.md#b-partially-compensatory-model) one every dimension has to contribute. Confirmatory only, dichotomous items only.
 
-### Partially compensatory (MD only)
-
-In standard MIRT, a high value on one dimension can "compensate" for a low value on another. Partially compensatory models restrict that trade-off – every dimension must contribute.
-
-| Model | Description |
-|---|---|
-| **PC2PL** | Partially compensatory 2PL |
-| **PC3PL** | Partially compensatory 3PL (adds a guessing parameter) |
-
-> **Rasch vs. 2PL:** the Rasch model constrains all items to have equal discrimination – only difficulty varies. This has a practical advantage: raw total scores become sufficient statistics for the latent trait, meaning everyone with the same total score gets the same ability estimate. The 2PL model relaxes this, letting each item discriminate differently, which typically improves fit but means raw scores are no longer sufficient.
-
-> **What is the guessing parameter?** In the 3PL model, the lower asymptote (*c*) represents the probability of answering correctly by chance. For a 4-option multiple-choice item, you'd expect *c* ≈ 0.25. This parameter is notoriously hard to estimate and requires large samples (N > 500). If your test isn't multiple-choice, use 2PL instead.
-
-> **What is unfolding?** In standard (cumulative) IRT the probability of endorsing an item increases monotonically with θ. In unfolding (ideal-point) models it's single-peaked – respondents agree with items closest to their position and reject items too extreme *or* too moderate relative to their own view. Political attitude items often behave this way.
+- **PC2PL** – the partially compensatory 2PL.
+- **PC3PL** – the partially compensatory 3PL, with a guessing parameter.
 
 ## Estimation method
 
-The UI offers all of mirt's estimators. For most unidimensional models, the default **EM** is both fast and reliable. Multidimensional models typically need **MHRM** once you go beyond two dimensions.
-
-| Method | Description |
-|---|---|
-| **EM** (default) | Expectation-Maximization – fast, deterministic. Very slow at 3+ dimensions |
-| **MCEM** | Monte Carlo EM – stochastic E-step; useful when integration is hard |
-| **QMCEM** | Quasi-Monte Carlo EM – more accurate high-dimensional integration than MCEM |
-| **MHRM** | Metropolis-Hastings Robbins-Monro – stochastic; **recommended for 3+ dimensions**. Produces standard errors for item parameters in MIRT |
-| **SEM** | Stochastic EM – faster than MHRM in some settings |
-| **BL** | Bock-Lieberman – classic two-dimensional quadrature; mainly historical |
-
-> **Standard errors in MIRT:** EM and QMCEM do not compute the information matrix for multidimensional models – you'll see a note when SEs are missing. Use MHRM if you need standard errors on item parameters.
+- **Estimation method** – the algorithm mirt fits the model with; default **EM**. Each runs at mirt's own settings for it unless [Advanced tuning](#advanced-tuning) overrides them. Above three dimensions the fit and the scoring integrate by quasi-Monte Carlo points rather than a full grid. Standard errors of the item parameters are computed for every unidimensional model but **Spline-based**; for a multidimensional one only under **MHRM**, or when an **SE calculation** other than the default is chosen, and the card says when they were skipped. **MCEM**, **MHRM** and **SEM** are stochastic and not seeded, so two runs differ slightly.
+- **EM** – the default: expectation–maximization over a fixed grid of quadrature points. Fast and deterministic at one or two dimensions, but the grid grows with every dimension, so from three on the note under the control recommends another method.
+- **MCEM** – Monte Carlo EM: the E-step integrates by random draws instead of a grid.
+- **QMCEM** – quasi-Monte Carlo EM: integrates by a quasi-random point set, more even than MCEM's draws, and stays tractable in high dimensions.
+- **MHRM** – Metropolis–Hastings Robbins–Monro: stochastic, the method for three dimensions and more, and the one that computes standard errors for a multidimensional model by default.
+- **SEM** – stochastic EM: the first stages of MHRM alone, faster in some settings.
+- **BL** – Bock–Lieberman: maximises the full marginal likelihood directly rather than through EM; suited to short tests only.
 
 ## Scoring method
 
-Controls how person ability (θ) is estimated after the model is fit:
-
-| Method | Description |
-|---|---|
-| **EAP** (default) | Expected A Posteriori – Bayesian estimate using the full posterior; stable, slightly shrunk toward the mean |
-| **MAP** | Maximum A Posteriori – Bayesian mode; less shrinkage than EAP but more variable |
-| **MLE** | Maximum Likelihood – no prior; produces extreme (±∞) scores for perfect or zero response patterns, which are filtered from person-level results |
-| **WLE** | Weighted Likelihood (Warm) – MLE with a bias correction; bounded for extreme patterns, no shrinkage toward the prior mean |
-
-> **Which scoring method?** EAP is the safest default – it always produces a finite estimate and handles extreme response patterns gracefully. WLE is a good alternative if you want no Bayesian shrinkage but still want finite estimates. MLE is theoretically "purer" (no prior influence) but fails for people who answer everything correctly or incorrectly.
-
-The choice is disclosed in the output, because it changes how the numbers should be read. Under **EAP** and **MAP** a note warns that Bayesian estimates are shrunk toward the prior mean, so the SD of θ *understates* the SD of the latent trait. Under **MLE** the note says estimates are unshrunk but that all-minimum and all-maximum patterns receive no finite estimate; those respondents are dropped from every person-level statistic and the count is reported. **WLE** scores those patterns and removes MLE's outward bias.
-
-> **This matters for reliability.** Empirical reliability and separation are computed from θ and its standard errors, so a scoring method that shrinks θ also changes them. DataSuite computes the reliability formula appropriate to the scoring method you chose rather than assuming one – a point worth checking if you are comparing against a number from another package.
-
-## Differential item functioning (DIF)
-
-DIF tests whether items function differently across groups (e.g. gender, language). Select a categorical or binary **grouping variable** to enable DIF analysis. DataSuite uses Woods's (2009) **constrained-baseline** approach: a multiple-group model is fit with every item constrained equal across groups, then each non-anchor item's constraint is released one at a time and the resulting likelihood ratio is tested.
-
-### Anchor items
-
-When a DIF grouping variable is selected, an anchor items panel appears. Anchor items stay constrained across groups and are never tested; every other item is released in turn and tested against them. By default all items are anchors, which means each item is effectively anchored on all the others – deselect the ones you want tested, or deselect all to test every item.
-
-> **What is DIF?** An item shows DIF when people from different groups with the *same ability level* have different probabilities of endorsing it. For example, if men and women of equal math ability have different chances of answering a particular math item correctly, that item has DIF. DIF doesn't necessarily mean bias – the item might legitimately measure something that differs between groups – but it warrants investigation.
-
-Which parameters each test contrasts depends on the model, and the output names them: for Rasch and RSM/GRSM families (constrained discrimination) only the location parameters, for other unidimensional models discrimination and location jointly, and for multidimensional models every per-dimension discrimination plus the intercept. Graded families are tested on all of their thresholds, so the degrees of freedom count them.
-
-### Empirical anchor selection (purification)
-
-Checking **Select anchors empirically (purification)** replaces the designated-anchor design with the two-stage empirical one (Woods 2009): a preliminary all-other-items pass runs first, the items showing the *least* DIF become the anchor set, and every remaining item is then tested against that set. It applies only while nothing is selected in the anchor list below it, and it doubles the fitting cost. The output names the procedure and how many anchors it kept.
-
-> **Designated or empirical?** Anchors you *know* to be invariant give the strongest inference and should be preferred when you have them. Purification is the honest fallback when you don't: it is better than anchoring every item on all the others, which lets a genuinely biased item contaminate the baseline it is measured against.
-
-### Pairwise group comparisons
-
-With three or more groups the main test is an **omnibus** one – it says an item differs somewhere, not between which groups. Checking **Add pairwise group comparisons** adds a table testing each item between each pair of groups, on a model refit to those two groups alone, plus per-pair effect sizes. Every item × pair test is corrected as a single family, and each pair's effect sizes are signed against the first of its two groups.
-
-The cost is one model fit per pair and a larger family of simultaneous tests, so enable it when you actually need to localise the difference.
-
-### Non-uniform DIF and effect sizes
-
-When the fitted model has free discriminations, the DIF table adds a **Non-uniform** column group beside the overall test. Those columns release the slopes alone; what the overall test adds on top of them is uniform DIF.
-
-Three effect sizes accompany the tests (Meade 2010):
-
-- **SIDS** – the signed expected-score difference. A positive value means the item favours the focal group at equal levels of the trait.
-- **UIDS** – its unsigned counterpart. A large UIDS beside a SIDS near zero marks DIF that *reverses direction* across the trait – the signed measure cancels out where the unsigned one does not.
-- **ESSD** – the difference scaled by the expected-score standard deviation, so it is comparable across items and scales.
+- **Scoring method** – how each person's θ is estimated from the fitted model; default **EAP**. It changes the person scores and everything computed from them – reliability and separation, person fit, targeting – and a note on the card names the method used.
+- **EAP (expected a posteriori)** – the default: the mean of the person's posterior – see [EAP](./concepts/latent-variables.md#b-eap). Always finite, [extreme patterns](./concepts/latent-variables.md#b-extreme-response-pattern) included; [shrunk](./concepts/latent-variables.md#b-score-shrinkage) toward the mean, so the SD of θ understates the SD of the trait, as the card's note says.
+- **MAP (maximum a posteriori)** – the mode of the posterior: finite for every pattern, and shrunk toward the mean like EAP – see [MAP](./concepts/latent-variables.md#b-maximum-a-posteriori-map).
+- **MLE (maximum likelihood)** – no prior, so no shrinkage; but an all-minimum or all-maximum pattern has no finite estimate, and those respondents are dropped from every person-level statistic, the card counting them – see [MLE](./concepts/latent-variables.md#b-mle).
+- **WLE (Warm's weighted likelihood)** – maximum likelihood with Warm's correction: no shrinkage toward the mean, MLE's outward bias removed, and a finite score for the extreme patterns MLE leaves out – see [WLE](./concepts/latent-variables.md#b-wle).
 
 ## Advanced tuning
 
-These options live in the **Advanced tuning** accordion. Leave defaults unless you know why you're changing them.
+The **Advanced tuning** accordion overrides mirt's own settings for the fit. A control left at its first choice passes nothing, so the [estimation method](#estimation-method)'s own defaults apply; a changed one reaches every model the run fits – the DIF models, the comparison models and the Q3\* bootstrap refits included.
 
-| Setting | Options | When to adjust |
-|---|---|---|
-| **SE calculation** | Default / Sandwich (robust) / Cross-product / Complete-data | Sandwich SEs are robust to model misspecification; useful when you suspect the model is approximate |
-| **Latent distribution** | Gaussian / Empirical histogram | Empirical histogram relaxes the normality assumption on θ; only available for unidimensional + EM |
-| **Optimizer** | Default / Newton–Raphson / Nelder–Mead / L-BFGS-B | Try a different optimizer if estimation fails to converge |
-| **Quadrature points** | Default / Fine (91) / Very fine (121) | Increase for more accurate integration (slower); helpful at the tails of the distribution |
-| **EM accelerator** | Ramsay (default) / SQUAREM / None | SQUAREM can speed up convergence in difficult problems; None for debugging |
-| **Convergence tolerance** | Numeric (mirt default: 1e-4) | Tighten for more precise estimates (slower) |
-| **Max iterations** | Numeric (mirt default: 500) | Increase when you see a convergence warning but estimates look stable |
+- **SE calculation** – how the standard errors of the item parameters are computed. A choice other than **Default** also makes a multidimensional fit compute them, which it otherwise skips outside **MHRM**. mirt refuses the other types on its stochastic methods, so all three are greyed out under **MHRM** and **SEM**, and **Sandwich (robust)** and **Cross-product** under **MCEM**; a greyed-out choice falls back to **Default**.
+- **Default** – the control passes nothing, and mirt applies its own setting for the model and the estimation method; each control's entry says what that is. For **SE calculation** it is the Oakes information matrix under the EM family.
+- **Sandwich (robust)** – the sandwich estimator, which stays valid when the model is only approximately right; for a fit you suspect is misspecified.
+- **Cross-product** – the outer product of each respondent's score vector, the cheapest of the three to compute.
+- **Complete-data** – the information of the complete-data likelihood, as if θ were observed; it ignores the uncertainty in θ, so its standard errors run small.
+- **Latent distribution** – the shape the model assumes for θ in the population. The empirical histogram is offered under **Unidimensional** with **EM** only; elsewhere it is greyed out and the run uses **Gaussian**.
+- **Gaussian** – the default: θ is normal.
+- **Empirical histogram** – θ's distribution is estimated alongside the items, as a histogram over the quadrature points, for a trait that is skewed or bimodal in the population.
+- **Optimizer** – the numerical routine that maximises the likelihood within each cycle. By default mirt picks BFGS when every parameter is unbounded and nlminb when any is bounded, so the default depends on the model type; **GGUM** is fitted with **L-BFGS-B** unless another is picked here, and the card says so. An explicit choice always wins. Try another when the fit fails to converge.
+- **Newton–Raphson** – steps on the second derivatives: fast near the optimum.
+- **Nelder–Mead** – a derivative-free simplex search: slow, and a fallback when the gradient-based routines fail.
+- **L-BFGS-B** – a quasi-Newton routine that respects parameter bounds; the one **GGUM** takes by default.
+- **Quadrature points** – how many points per dimension the EM family integrates θ over. **Default** is mirt's count, 61 on one dimension and fewer as dimensions are added (31 on two); the finer grids are offered under **Unidimensional** only, and greyed out otherwise.
+- **Fine (91)** – 91 points: more accurate integration, the tails of the trait especially, at a proportional cost in time.
+- **Very fine (121)** – 121 points, for the same gain again.
+- **EM accelerator** – the acceleration applied to the EM cycles of **EM**, **QMCEM** and **MCEM**; the other methods ignore it.
+- **Ramsay** – the default: mirt's Ramsay acceleration.
+- **SQUAREM** – the squared iterative method, which can converge in fewer cycles on a slow problem.
+- **None** – plain EM steps: the slowest, and a check that the acceleration is not what keeps a fit from converging.
+- **Convergence tolerance** – the change between cycles below which the fit stops; empty is mirt's default, 0.0001 under the EM family and 0.001 under **MHRM**. Smaller is more precise and slower.
+- **Max iterations** – the cap on cycles; empty is mirt's default, 500 under the EM family and 2000 under **MHRM**. Raise it when the card warns that the fit did not converge but the estimates look stable.
 
-> **What "Default" optimizer means.** mirt picks BFGS when every parameter is unbounded and nlminb when any is bounded, so the default depends on the model type – there is no single one to name. The exception is **GGUM**: its discrimination is bounded, and the bounded default fails on it outright ("NA/NaN gradient evaluation"), so DataSuite fits GGUM with **L-BFGS-B** whenever you have not picked an optimizer yourself. An explicit choice always wins, and the output card names the optimizer when it was forced.
+## Differential item functioning (DIF)
 
-> **Standard-error types are not universally available.** Sandwich and cross-product SEs are refused by MCEM; a requested SE type the fit did not return is reported as such rather than silently dropped. Some model families (the basis expansions) cannot produce an information matrix for their items at all, and the output says so.
+Selecting a grouping variable tests every item for [differential item functioning](./concepts/latent-variables.md#b-differential-item-functioning) across its groups: a multiple-group model is fitted with the latent mean and variance free in every group but the reference, and each tested item is compared between a model holding it equal across the groups and one letting it differ, by a likelihood-ratio χ². The test contrasts the item's free discriminations and intercepts, and the output names them; the results are under [DIF results](#dif-results).
+
+- **Grouping variable** – the column that defines the groups; every categorical and every two-valued column is listed, and the chosen one leaves the item pool. Cases with no value are excluded, and a toast counts them. The run stops when fewer than two groups remain, and warns when the smallest group has fewer than 100 cases, since each group's item parameters rest on its own cases.
+- **None** – the default: no DIF analysis. {#grouping-variable-none}
+- **Anchor items** – shown once a grouping variable is picked: the items held equal across groups and never tested, which put the groups on one θ scale – see [anchor items](./concepts/latent-variables.md#b-anchor-items). None is selected by default, and then every item is tested against all the others; select the items you know to be free of DIF and every other item is tested against them alone. **Select all** and **Deselect all** work the list; a selection covering every item leaves nothing to test and stops the run.
+- **Select anchors empirically (purification)** – with no anchor selected, a preliminary pass tests every item against all the others and the items with the least DIF become the anchor set – a fifth of the items, at least four and never all – against which the rest are then tested. It is ignored while any anchor is selected, it doubles the fitting cost, and the output names the anchors it kept.
+- **Add pairwise group comparisons** – shown when the grouping variable has three or more groups, where the main test is omnibus: it says an item differs somewhere, not between which groups. Adds a table testing each item between each pair of groups, on a model refitted to those two groups alone, with each pair's effect sizes; every item × pair test is corrected as one family. It costs one model fit per pair.
+
+## Negatively keyed items
+
+**Negatively keyed items.** The items worded against the trait, which the view reverses itself: unidimensional fits and the diagnostics read them reversed, while the [careless-responding screen](#subject-quality-screening) reads the answers as given. Fitted as it stands, such an item gets a negative discrimination and reads as misfitting in Mokken's H and the person-total correlation – see [reverse-keyed item](./concepts/reliability.md#b-reverse-keyed-item). Keep the answers in the data as respondents gave them and declare the keying here: the screen needs them unreversed, and detection cannot see a reversal made before import or in [Data transformation](./data-transformation.md#standardize). Nothing is selected by default.
+
+- **Detect** – fills the list from the data as it is, without running the analysis: the items keyed against the majority of the set. An item too weakly related to the rest to place is left unselected and named under the buttons as unclassifiable; when as many items point one way as the other, the line under the buttons names the item whose direction the selection keeps. Detection misses a reversed item when agreeing with everything is as strong a habit in the sample as the trait itself, so the list, not detection, decides – check it against the questionnaire's scoring key. Disabled while **Already reversed in the data** is ticked; **Deselect all** clears the list, and **Invert selection** swaps the ticked items for the unticked ones.
+- **Already reversed in the data** – off by default. Ticked, the fit and the diagnostics read the selected items as they stand, and the careless-responding screen un-reverses them to read the answers as given. Detection cannot tell an item reversed earlier from a positively keyed one, so this is declared by hand; leaving the data unreversed is preferred.
+
+**Response scale range.** The endpoints the reversal mirrors around, `lowest + highest − old` – the same for every selected item.
+
+- **Lowest** – the lowest value the response scale allows (1 on a 1–5 item). Leave it empty to use the lowest response observed across all the items, which the empty field shows greyed.
+- **Highest** – the highest value the response scale allows. Leave it empty to use the highest response observed across all the items, which the empty field shows greyed.
+
+Both cards name the items the run reversed – *Negatively keyed items, reversed for this run: {items}*, or *… already reversed in the data: {items}* – and every run applies detection to the data as the analysis reads it: an item it still reads as keyed against the rest – keying forgotten, reversed twice, or only some items pre-reversed – is named in a note pointing back to this list. An exploratory or confirmatory model reads the data as it is, and a note says so.
 
 ## Output options
 
 ### Tables
 
-| Option | Default | What it shows |
-|---|---|---|
-| **Item parameters** | On | Discrimination (*a*), difficulty (*b*) or thresholds, intercepts (*d*), MDISC/MDIFF (MD), guessing (*c*), upper asymptote (*u*), with standard errors when available |
-| **Model fit summary** | On | AIC, BIC, log-likelihood, M2 statistic with RMSEA, SRMSR, TLI, CFI |
-| **Item fit statistics** | On | S-X² per item with *p*-value; infit/outfit MNSQ |
-| **Person ability estimates (θ)** | On | Summary statistics of θ distribution (per dimension for MD) with option to insert scores into dataset |
-| **Reliability and separation** | On | Marginal reliability, person/item separation, test targeting (per dimension for MD) |
-| **Person fit statistics** | Off | Count of misfitting persons (\|Zh\| > 2, outfit > 1.5) |
-| **Local dependence (Q3 and LD-X²)** | Off | Flagged item pairs violating local independence; reveals the **Bootstrap the Q3\* critical value** sub-option |
-| **Model comparison (LR tests)** | Off | Rasch vs. 2PL (binary) or GRM vs. GPCM (polytomous) with AIC/BIC and likelihood ratio test (UD only) |
-| **Score conversion table (raw → θ)** | Off | Maps every possible raw score to its θ estimate and SE (UD only) |
-| **Factor loadings** | On (MD) | Standardised factor loadings from the rotated solution |
-| **Factor correlations** | On (MD, oblique) | Correlation matrix of factors when an oblique rotation or correlated confirmatory factors are used |
-| **Expected scores by dimension** | On (MD) | Expected total score as a function of each dimension, holding others at θ = 0 |
-| **Compare dimensionalities** | Off (exploratory) | Fits exploratory models at neighbouring dimensionalities and compares AIC, BIC, LR test |
-| **Compare against unconstrained exploratory** | Off (confirmatory) | Tests whether the confirmatory constraints are tenable vs. a matched exploratory fit at the same dimensionality |
+- **Item parameters** – on by default: the item parameter table – discrimination and difficulty or thresholds, intercepts and MDISC/MDIFF for a multidimensional model, the guessing and upper asymptotes where the model has them – with standard errors when they were computed; see [item statistics](#item-statistics).
+- **Model fit summary** – on: the information criteria (AIC, BIC, log-likelihood) and the M2 test with RMSEA, SRMSR, TLI and CFI; see [model fit](#model-fit).
+- **Item fit statistics** – on: S-X² per item with its *p*, and the infit and outfit mean squares with their standardized forms.
+- **Person ability estimates (θ)** – on: a summary of the θ distribution, per dimension for a multidimensional model, with a button that inserts θ and its SE into the dataset – and the person-fit statistics, when those were computed.
+- **Reliability and separation indices** – on: marginal and empirical reliability, person and item separation, and test targeting; for a multidimensional model, empirical reliability, person separation and targeting per dimension.
+- **Person fit statistics** – off: counts the respondents with *Zh* below −2 (misfitting) and above 2 (overfitting), and those with infit or outfit above 1.5.
+- **Local dependence (Q3 and LD-X²)** – off: the item pairs whose Q3\* passes the cutoff, 0.2 unless bootstrapped, and those whose LD-X² is significant at *p* < .05 after the adjustment. Ticking it shows the [Bootstrap the Q3\* critical value](#b-bootstrap-the-q3-critical-value) sub-option; see [local dependence](#local-dependence). {#local-dependence-q3-and-ld-x2-option}
+- **Model comparison (LR tests)** – off; unidimensional only, and hidden for the unfolding, sequential and nonparametric models. Refits the scale's standard pair and compares them: Rasch against 2PL on dichotomous items, with a likelihood-ratio test; the graded model against GPCM on polytomous items, and on a mixed scale with 2PL for the dichotomous items, by AIC and BIC alone, since the two are not nested. A fitted model outside the pair joins as its own row, tested against 2PL when it is 3PL, 3PLu or 4PL.
+- **Score conversion table (raw → θ)** – off; unidimensional only: every possible raw score with its θ and SE by true-score equating, beside the EAPsum θ where the model allows it; see [score conversion table](#score-conversion-table). {#score-conversion-table-option}
+- **Expected scores by dimension** – on; multidimensional only: the expected total score at θ = −3 to 3 on each dimension, the others held at 0; see [expected scores by dimension](#b-expected-scores-by-dimension). {#expected-scores-by-dimension-option}
+- **Compare dimensionalities** – off; exploratory only: refits the model at every dimensionality from 1 up to the one chosen and compares AIC, BIC and log-likelihood, with a likelihood-ratio test between each adjacent pair.
+- **Compare against unconstrained exploratory** – off; confirmatory only: fits an exploratory model with as many dimensions and tests whether the confirmatory constraints cost fit – by a likelihood-ratio test when the confirmatory model nests in it, the card saying when it does not.
+- **Factor loadings** – on; multidimensional only: the standardized loadings, rotated for an exploratory model, with the communalities; see [factor loadings](#b-factor-loadings). {#factor-loadings-option}
+- **Factor correlations** – on; shown only under an oblique rotation or correlated confirmatory factors: the correlation matrix of the factors; see [factor correlations](#b-factor-correlations). {#factor-correlations-option}
 
 ### Plot options
 
-| Plot | Default | What it shows |
-|---|---|---|
-| **Item characteristic curves (ICCs)** | On | Probability of each response as a function of θ – overlay for dichotomous items, separate category response curves + expected score curves for polytomous items |
-| **Information and test characteristic curves** | On | Item and test information functions, standard error curve, Test Characteristic Curve |
-| **Wright map (person-item map)** | On | Side-by-side display of person ability distribution and item difficulty on a shared θ scale |
-| **Conditional reliability curve** | Off | Reliability as a function of θ, with a 0.70 reference line – where on the trait the test measures well (UD only) |
-| **Factor loadings heatmap** | On (MD) | Visual summary of item-by-factor loadings |
+- **Item characteristic curves (ICCs)** – on: each item's response probabilities across θ – one overlay for dichotomous items, category response curves and expected-score curves when any item is polytomous; see [item characteristic curves](#b-item-characteristic-curves). {#item-characteristic-curves-iccs}
+- **Information and test characteristic curves** – on: item and test information, the standard error of θ and the test characteristic curve, in one figure; see [information functions](#b-information-functions).
+- **Wright map (person-item map)** – on: the persons' θ distribution and the item locations side by side on one θ axis; see [Wright map](#b-wright-map-person-item-map). {#wright-map-person-item-map-option}
+- **Conditional reliability curve** – off; unidimensional only: reliability as a function of θ, with a reference line at 0.70, as a section of its own rather than a panel of the information figure; see [conditional reliability](#b-conditional-reliability).
+- **Factor loadings heatmap** – on; multidimensional only: the loadings table as a colour grid; see [factor loadings heatmap](#b-factor-loadings-heatmap). {#factor-loadings-heatmap-option}
 
 ## Reading results
 
+The card opens on the data summary and on any note about how the model was fitted, then shows the sections below in this order, each when its [output option](#output-options) is ticked and the model admits it. A section whose computation failed keeps its heading and gives R's message in place of its table.
+
 ### Model fit
 
-Two tables appear when model fit is enabled:
+**Model fit.** Two tables: the information criteria – **AIC**, **BIC** and **Log-likelihood**, under **Index** and **Value** – and the model's absolute fit, under **Statistic**, **Value** and **Detail**. The information criteria are printed whatever happens to the absolute fit; on their own they say nothing, and they are read against another model's in the [model comparison](#model-comparison) and the [dimensionality comparison](#dimensionality-comparison) – lower is better, see [AIC](./concepts/regression-basics.md#b-aic) and [BIC](./concepts/regression-basics.md#b-bic). {#model-fit #model-fit-index #model-fit-value #model-fit-statistic #model-fit-detail}
 
-**Information criteria** – AIC, BIC, and log-likelihood. Lower AIC/BIC values indicate better fit-complexity trade-offs. These are most useful when [comparing models](#model-comparison) or [dimensionalities](#dimensionality-comparison).
-
-**Absolute fit** (M2 statistic):
-
-| Index | Good fit | Acceptable fit | Poor fit |
-|---|---|---|---|
-| RMSEA | < 0.05 | 0.05–0.08 | ≥ 0.08 |
-| SRMSR | < 0.05 | 0.05–0.08 | ≥ 0.08 |
-| TLI | > 0.95 | 0.90–0.95 | < 0.90 |
-| CFI | > 0.95 | 0.90–0.95 | < 0.90 |
-
-> **What is the M2 statistic?** A limited-information goodness-of-fit test designed for IRT models. Unlike χ² tests that compare all possible response patterns, M2 uses first- and second-order margins, making it practical for tests with many items. A significant *p*-value suggests misfit, but with large samples even trivial misfit becomes significant – focus on RMSEA and CFI instead.
+- **M2** – the limited-information goodness-of-fit χ² of the model, with its df under **Detail** and its p on the **p-value** row; headed **M2\*** when any item is polytomous. Like the [chi-square test of model fit](./concepts/latent-variables.md#b-chi-square-test-of-model-fit), a significant value says the model does not reproduce the data exactly, and in a large sample it nearly always is. When it cannot be computed, a note gives R's message in place of the table and the information criteria stand alone
+- **RMSEA** – the root mean square error of approximation built on M2, with its 90% confidence interval under **Detail** – see [RMSEA](./concepts/latent-variables.md#b-rmsea). The note under the table grades it: good fit below 0.05, acceptable below 0.08, poor from 0.08 {#model-fit-rmsea}
+- **SRMSR** – the standardized root mean square residual: the average gap between the item correlations the model implies and those observed – the [SRMR](./concepts/latent-variables.md#b-srmr) under mirt's spelling. Printed without a grade
+- **TLI** – the Tucker–Lewis index built on M2, against a baseline in which the items are unrelated – see [TLI](./concepts/latent-variables.md#b-tli). Printed without a grade
+- **CFI** – the comparative fit index on the same baseline – see [CFI](./concepts/latent-variables.md#b-cfi). Printed without a grade {#model-fit-cfi}
 
 ### Model comparison
 
-Available for unidimensional models when enabled. DataSuite fits an alternative model and reports AIC, BIC, and (for nested models) a likelihood ratio test:
+**Model comparison.** The item set refitted as the standard pair of unidimensional models for its response format, under the same [estimation method](#estimation-method) and [tuning](#advanced-tuning), one table per pair, compared on **AIC** and **BIC** – lower favours the model. {#model-comparison}
 
-- **Dichotomous items:** Rasch vs. 2PL – tests whether allowing discrimination to vary improves fit
-- **Polytomous items:** GRM vs. GPCM – compares the two common polytomous models
-- **Mixed data:** 2PL + graded vs. 2PL + GPCM – the polytomous parametrisation is swapped; 2PL is kept for binary items in both fits
+- **Model** – the model on the row. The pair is **Rasch** and **2PL** when every item is dichotomous, **GRM** and **GPCM** when every item is polytomous, and **2PL + graded** against **2PL + GPCM** on a mixed scale. A fitted model outside its pair joins the table as a third row under its dropdown name, with a note saying which it is {#model-comparison-model}
+- **2PL + graded** – the mixed scale with the graded response model for its polytomous items; the dichotomous items keep 2PL in both fits
+- **2PL + GPCM** – the mixed scale with the generalized partial credit model for its polytomous items
 
-> **Reading the comparison:** if AIC and BIC both favour the simpler model, there's no reason to add complexity. If the likelihood ratio test is significant *and* AIC/BIC prefer the more complex model, the additional parameters are justified. When AIC and BIC disagree, BIC penalises complexity more heavily – lean toward the simpler model unless you have theoretical reasons for the complex one.
+The likelihood-ratio test – **χ²**, **df** and **p** – is printed where one model nests the other: on the 2PL row of the Rasch pair, where a significant result favours freely estimated discriminations, and on the row of a fitted 3PL, 3PLu or 4PL, tested against 2PL; a row without a test reads "–". GRM and GPCM are not nested, and neither are the two mixed fits, so those tables carry the information criteria alone – see [likelihood-ratio test](./concepts/regression-basics.md#b-likelihood-ratio-test) and [nested models](./concepts/regression-basics.md#b-nested-models).
+
+> **Reading the comparison.** Keep the simpler model unless the test and both criteria favour the richer one; BIC charges more per parameter than AIC, so when the two disagree the data cannot decide – see [BIC](./concepts/regression-basics.md#b-bic).
 
 ### Dimensionality comparison
 
-(Exploratory mode.) Fits models at neighbouring dimensionalities and reports AIC, BIC, log-likelihood, and a likelihood ratio test between adjacent solutions. Answers the question "is the extra dimension worth it?"
+**Dimensionality comparison.** Exploratory only: the model refitted at every dimensionality from 1 up to the one chosen, one row per count, under the same model type, estimation method and tuning – the chosen count's row is the fitted model itself. Each row after the first carries a likelihood-ratio test – **χ²**, **df** and **p** – against the row above it, one dimension fewer; the first row reads "–". The extra dimension earns its place where AIC and BIC fall and the test is significant. {#dimensionality-comparison}
+
+- **Dimensions** – the number of dimensions of the row's fit
 
 ### Confirmatory vs exploratory fit
 
-(Confirmatory mode.) Compares your confirmatory solution against an unconstrained exploratory fit at the same dimensionality. A non-significant *p*-value indicates the constraints are tenable; a significant *p*-value suggests the data prefer a more flexible structure.
+**Confirmatory vs exploratory fit.** Confirmatory only: an unconstrained exploratory model with as many dimensions, fitted to the same items, beside the confirmatory one, compared on the information criteria and a likelihood-ratio test on the confirmatory row. A non-significant *p* says the specified constraints cost no fit that matters; a significant one that the data prefer the more flexible structure. When the specification frees as many parameters as the exploratory model or more – every item on every factor, with correlated factors – it is not a restriction of it: the test is omitted, and the note says to compare the information criteria instead. {#confirmatory-vs-exploratory-fit}
+
+- **Structure** – *Exploratory* for the unconstrained fit, *Confirmatory* for the specified one; **Dimensions** is the same on both rows {#confirmatory-vs-exploratory-fit-structure}
 
 ### Factor loadings
 
-(MD only.) A table of rotated factor loadings – items in rows, factors in columns. Values > 0.3 are generally considered meaningful.
+**Factor loadings.** Multidimensional only: one row per item and one column per dimension, the standardized loadings – rotated by the chosen [rotation](#exploratory) for an exploratory model, unrotated for a confirmatory one – with the communality **h²**, the share of the item's variance the dimensions explain; see [factor loading](./concepts/latent-variables.md#b-factor-loading) and [communality](./concepts/latent-variables.md#b-communality). The note under the table reads a loading above 0.3 as meaningful.
 
 ### Factor correlations
 
-(MD, oblique only.) A correlation matrix showing how strongly the factors covary. High factor correlations (> 0.8) may indicate the factors are not well separated.
+**Factor correlations.** Multidimensional only, and shown only under an oblique rotation or for a confirmatory model with correlated factors: the correlations between the dimensions, one row and one column per **Factor** – the rotated solution's for an exploratory model, the estimated latent covariance for a confirmatory one; see [factor correlation](./concepts/latent-variables.md#b-factor-correlation). {#factor-correlations #factor-correlations-factor}
 
 ### Item statistics
 
-A combined table with one row per item. Columns depend on which output options are enabled and on dimensionality.
+**Item statistics.** One table, one row per item: the item parameters when **Item parameters** is ticked and the item fit when **Item fit statistics** is. Which parameter columns appear depends on the model and the dimensionality, as below. An **SE(…)** column follows each estimate when standard errors were computed, and a note under the table says why they were not: skipped to keep a multidimensional fit affordable, unavailable for the model family, or not computable because mirt could not invert the information matrix – which usually means the data do not identify the model.
 
 **Unidimensional parameter columns:**
-- **Discrimination (*a*)** – how sharply the item distinguishes between ability levels. Colour-coded: red for low (< 0.65), amber for moderate (0.65–1.0), no colour for high (> 1.0)
-- **Difficulty (*b*)** – the θ level at which a person has a 50% probability of endorsing the item (dichotomous) or the expected response is at the midpoint (polytomous). Higher = harder
-- **Threshold (*b1*, *b2*, ...)** – for polytomous items, the θ values where adjacent category probabilities cross
-- **Guessing (*c*)** – lower asymptote (3PL, 4PL)
-- **Upper asymptote (*u*)** – upper bound on endorsement probability (3PLu, 4PL)
-- **SE columns** – standard error for each parameter
+
+- **Discrimination (a)** – how sharply the item separates respondents either side of its location – see [discrimination](./concepts/latent-variables.md#b-discrimination). The cell is red below 0.65 and amber from 0.65 to below 1.35, Baker's bands, and the note under the table reads 1.35 and above as high; a negative value is an item running against the trait, usually one missing from the [negatively keyed items](#negatively-keyed-items)
+- **SE(a)** – the standard error of the discrimination; **SE(b)** and **SE(b{n})** the same for the difficulty and each threshold {#sea #seb #sebn}
+- **Difficulty (b)** – dichotomous items: the θ at which the keyed answer becomes more likely than not; higher is harder – see [difficulty](./concepts/latent-variables.md#b-difficulty)
+- **Threshold {n}** – polytomous items: one column per step between adjacent categories, each the location on θ of that step – see [threshold](./concepts/latent-variables.md#b-threshold). Under the generalized rating scale model every row holds one shared set of thresholds shifted to the item's location, so the gaps between them are equal across items, and a note under the table says so
+- **Guessing (c)** – the lower asymptote, where the model frees it (3PL, 4PL): the chance of the keyed answer at the bottom of the trait – see [guessing](./concepts/latent-variables.md#b-guessing). Its standard error, **SE(logit c)**, is on the logit scale the asymptote is estimated on, not the probability scale of the estimate {#guessing-c #selogit-c}
+- **Upper asymptote (u)** – the upper asymptote, where the model frees it (3PLu, 4PL): the ceiling on the chance of the keyed answer at the top of the trait; **SE(logit u)** likewise on the logit scale {#upper-asymptote-u #selogit-u}
 
 **Multidimensional parameter columns:**
-- **a1, a2, ...** – discrimination on each dimension (slope vector)
-- **d** or **d1, d2, ...** – intercept (or per-category intercepts for polytomous items); replaces the unidimensional *b*
-- **MDISC** – multidimensional discrimination; vector length of the *a* parameters across dimensions
-- **MDIFF** – multidimensional difficulty; −intercept / MDISC. Reported as "Mean location" and noted as approximate for polytomous items
 
-**Family-specific parameter columns.** Several model families do not estimate a discrimination and a difficulty at all, so the table lays out what they *do* estimate and carries its own note in place of the discrimination/difficulty bands:
+- **a1, a2, …** – the slope on each dimension, headed by mirt's parameter names, with **SE(a1)**, … beside them {#slope-per-dimension}
+- **Intercept (d)** – the item's intercept, which replaces the difficulty once there are several slopes; **Intercept {n}**, one per step, on a polytomous item – see [intercept](./concepts/latent-variables.md#b-intercept-d). Their standard errors are **SE(d)** and **SE(d{n})**. The ideal-point model prints the same column {#intercept-d #intercept-n #sed #sedn}
+- **MDISC** – multidimensional discrimination: the length of the item's slope vector, $\sqrt{\sum_k a_k^2}$ – how sharply the item discriminates in the direction it measures best
+- **MDIFF** – multidimensional difficulty, $-d/\text{MDISC}$: the item's location along that direction. On a polytomous item, with an intercept per step, the column is headed **Mean location** and holds $-\bar d/\text{MDISC}$ – an approximate summary rather than a standard IRT quantity, as the note under the table says {#mdiff #mean-location}
+
+**Family-specific parameter columns.** Several model families do not estimate a discrimination and a difficulty at all, so on a scale fitted with one of them throughout the table lays out what they *do* estimate, and a note on the family replaces the discrimination and difficulty bands; a scale that mixes families falls back to the generic columns above.
 
 | Family | Columns | Note |
 |---|---|---|
-| **Nominal** | Category slope 1…*K*, category intercept 1…*K* | No assumed category order and no item location. SEs are omitted – mirt reports them in a different parameterisation from the estimates shown |
-| **GGUM** | Discrimination (*a*), ideal point (*b*), latitude 1…*n* | An unfolding model: *b* is a position on the trait, not a difficulty; the latitudes are the subjective category thresholds either side of it |
-| **Ideal point** | Slope (*a*), intercept (*d*), ideal point (θ) | The ideal point shown is −*d*/*a*, the θ at which the response probability peaks |
-| **Spline / Monotonic polynomial** | The raw basis coefficients as estimated | A basis expansion has no discrimination or difficulty reading – read the item from its characteristic and expected-score curves |
-| **Sequential** | Slope and thresholds, as the generic layout | – |
+| **Nominal** | Category slope 1…*K*, category intercept 1…*K* | No assumed category order and no item location; no standard errors |
+| **GGUM** | Discrimination (*a*), ideal point (*b*), latitude 1…*n* | An unfolding model: *b* is a position on the trait, not a difficulty |
+| **Ideal point** | Slope (*a*), intercept (*d*), ideal point (θ) | The ideal point is −*d*/*a* |
+| **Spline / Monotonic polynomial** | The basis coefficients as estimated | No discrimination or difficulty reading |
+| **Sequential** | Discrimination (*a*), intercept 1…*n* | The generic layout |
 
-> **Unfolding families read as positions.** For GGUM and the ideal-point model the item location is a *position on the trait*, not a difficulty, and DataSuite treats it that way throughout: the Wright map axis is labelled **Trait / Ideal point (θ)** and the targeting verdict says whether items are centred on, near, below, or above the sample rather than "too easy" or "too hard".
+- **Category slope {n}** – nominal model: the slope of category *n*, one per category in place of a single discrimination. No standard errors are shown, since mirt reports them in a different parameterisation from the estimates
+- **Category intercept {n}** – nominal model: the intercept of category *n*
+- **Ideal point (b)** – GGUM: the item's position on the trait, where agreement peaks and falls away on both sides; its discrimination is **Discrimination (a)**, as above
+- **Latitude {n}** – GGUM: the subjective category thresholds, placed either side of the ideal point
+- **Slope (a)** – ideal-point model: the item's slope, beside its **Intercept (d)**
+- **Ideal point (θ)** – ideal-point model: the θ at which the response probability peaks, −*d*/*a*
+- **Basis coefficients** – spline and monotonic polynomial models: every coefficient under mirt's own name (**s1**, **s2**, … on a spline), as estimated, with its **SE(…)** beside it when one was computed. They have no discrimination or difficulty reading: read those items from their characteristic and expected-score curves
+
+An unfolding item's location is a position on the trait wherever the card uses it – the targeting verdict below reads as positions, not as a test too easy or too hard.
 
 **Fit columns:**
-- **S-X²** – Orlando and Thissen's item-level fit statistic with degrees of freedom and *p*-value. A significant *p*-value suggests misfit
-- **Infit MNSQ** / **Infit ZSTD** and **Outfit MNSQ** / **Outfit ZSTD** – Rasch-family mean-square fit statistics and their standardized forms, tested against ±2
 
-> **Infit vs. outfit:** infit is information-weighted – it emphasises responses from people whose ability is near the item's difficulty level (where the item is most informative). Outfit is unweighted and sensitive to unexpected responses far from the item's difficulty. Values between 0.5 and 1.5 are considered productive for measurement. Values above 2.0 suggest the item is degrading rather than contributing to measurement. **For non-Rasch models,** the 0.5–1.5 band is shown for reference; with varying slopes these statistics have different distributional properties.
+- **S-X²** – Orlando and Thissen's item-fit χ², with its **df** and **p**, the items adjusted as one family under [multiple comparison adjustment](./settings.md#multiple-comparison-adjustment) – see [S-χ²](./concepts/latent-variables.md#b-s-χ²). A significant value marks an item whose answers stray from its curve
+- **Infit MNSQ** – the information-weighted mean-square fit, expected 1, which weighs the respondents near the item's location – see [infit](./concepts/latent-variables.md#b-infit)
+- **Infit ZSTD** – the infit mean square standardized, read as a z against ±2
+- **Outfit MNSQ** – the unweighted mean square, expected 1, more sensitive to unexpected answers far from the item's location – see [outfit](./concepts/latent-variables.md#b-outfit)
+- **Outfit ZSTD** – the outfit mean square standardized, read as a z against ±2
 
-> **Interpreting discrimination:**
-> - **> 1.0** – high discrimination; the item differentiates well between ability levels
-> - **0.65–1.0** – moderate; adequate but less sharp
-> - **< 0.65** – low; the item provides little information about the trait
-> - **Negative** – the item is inversely related to the trait; check whether it needs reverse scoring
-
-> **MDISC and MDIFF:** in a MIRT model an item has a *vector* of discriminations, one per dimension. MDISC collapses this vector into a single length, and MDIFF gives a corresponding overall difficulty. Think of them as "where does this item sit overall" summaries – useful for quick ranking, but you still need the per-dimension loadings to understand what the item actually measures.
+The note under the table reads the mean squares for a Rasch-family model: 0.5–1.5 productive for measurement, above 2.0 degrading it. For any other model it shows the band for reference only.
 
 ### Local dependence
 
-Flagged item pairs and their statistics:
+**Local dependence (Q3 and LD-X²).** The item pairs that either statistic flags, one row each; a pair flagged by one statistic only has no value under the other. When no pair is flagged, the section says so and that the local independence assumption is supported – see [local dependence](./concepts/latent-variables.md#b-local-dependence).
 
-- **Q3** – Yen's Q3, the correlation between item residuals after controlling for the latent trait
-- **Q3\*** – mean-corrected Q3 (Marais 2013); the average off-diagonal Q3 is subtracted, making the threshold interpretable even when global residuals are slightly biased. \|Q3\*\| above the cutoff is flagged
-- **LD-X²** – a chi-squared test of local dependence. *p* < .05 is flagged
+- **Item 1** – the first item of the pair; **Item 2** the second {#item-1 #item-2}
+- **Q3** – Yen's Q3: the correlation between the two items' residuals once θ is accounted for – see [Yen's Q3](./concepts/latent-variables.md#b-yens-q3). Printed for reference; the flag reads Q3\*
+- **Q3\*** – Q3 minus the mean of every off-diagonal Q3, a note under the table giving that mean. A pair is flagged when |Q3\*| exceeds the cutoff: 0.2, or the bootstrapped value below {#q3-star}
+- **LD-X²** – Chen and Thissen's local-dependence χ² for the pair, with its **p**. A pair is flagged when its p, adjusted over every item pair as one family under [multiple comparison adjustment](./settings.md#multiple-comparison-adjustment), is below .05 – a fixed bar, not the significance level
 
-If no pairs are flagged by either method, the local independence assumption is supported.
+**Bootstrap the Q3\* critical value.** The sub-option under **Local dependence (Q3 and LD-X²)**: in place of the 0.2 cutoff, the (1 − α) percentile – α the [significance level](./settings.md#significance-level) – of the largest |Q3\*| across datasets simulated from the fitted model, each refitted, one per [bootstrap replication](./settings.md#bootstrap-replications) and drawn under the [bootstrap seed](./settings.md#bootstrap-seed). A note gives the percentile and the replication count; if the bootstrap fails, the note gives the reason and the 0.2 cutoff is used.
 
-**Bootstrap the Q3\* critical value.** By default the cutoff is the 0.2 rule of thumb, which is a rule of thumb – it takes no account of how many items you have or how they are distributed. Ticking the sub-option instead simulates datasets from the fitted model, takes the largest \|Q3\*\| in each, and uses a high percentile of that distribution as the cutoff. It costs one model refit per replication (the [bootstrap replications setting](./settings.md)), and the output states the percentile and the replication count. On short scales the empirical cutoff is often *much* higher than 0.2, so pairs the rule of thumb flags can legitimately drop out. If the bootstrap fails, the output says so and falls back to 0.2.
-
-> **What causes local dependence?** Two items may share variance beyond what the latent trait explains – for example, items with overlapping content ("I feel anxious" and "I feel nervous"), items sharing a common stimulus (a reading passage), or items that form a testlet. Local dependence inflates item parameter estimates and biases reliability upward. Consider combining dependent items into a testlet or removing one from each flagged pair.
+> **Flagged pairs?** Two items that share wording, a stimulus or a second dimension – combine them into one item, drop one of the pair, or fit the dimension they share – see [local independence](./concepts/latent-variables.md#b-local-independence).
 
 ### Person ability estimates
 
-A summary table of the θ distribution:
+**Person ability estimates.** A summary of the θ the [scoring method](#scoring-method) estimated – one column of **Statistic** and **Value** for a unidimensional model, one row per **Dimension** for a multidimensional one – with a note naming the scoring method and what it implies for the spread. Respondents with no finite θ – all-minimum or all-maximum patterns under MLE – are left out of every person-level statistic, and a note at the top of the card counts them. {#person-ability-estimates #person-ability-estimates-statistic #person-ability-estimates-value}
 
-- **Mean θ** – average ability in the sample (centred near 0 for well-targeted tests)
-- **SD θ** – spread of ability estimates
-- **Min / Max θ** – range of estimated abilities
-- **Mean SE** – average standard error across all persons; smaller is more precise
-
-In multidimensional mode, a row is shown per dimension (F1, F2, ...).
-
-A button below the table **inserts θ and SE into the dataset**. If person fit is also enabled, the Zh statistic is inserted as well. Column names reflect the scoring method – e.g. `IRT_Theta_EAP`, `IRT_SE_EAP`, `IRT_Zh` (unidimensional) or `IRT_Theta1_EAP`, `IRT_SE1_EAP`, `IRT_Theta2_EAP`, ... (multidimensional).
-
-If extreme response patterns were filtered (all-minimum or all-maximum responses under MLE), a note reports how many persons were excluded from person-level statistics.
+- **Mean θ** – the mean estimate; close to 0, where the model fixes the trait's mean
+- **SD θ** – the spread of the estimates; under EAP and MAP it understates the trait's SD, since those estimates are shrunk toward the mean
+- **Min θ** – the lowest estimate; **Max θ** the highest {#min-θ #max-θ}
+- **Mean SE** – the average standard error of θ across the respondents; smaller is more precise – see [SE(θ)](./concepts/latent-variables.md#b-seθ)
+- **Insert θ and SE into dataset** – adds each respondent's θ and its standard error to the data, named for the scoring method: `IRT_Theta_EAP` and `IRT_SE_EAP` for a unidimensional model, `IRT_Theta1_EAP`, `IRT_SE1_EAP`, `IRT_Theta2_EAP`, … for a multidimensional one. When person fit was computed the button reads **Insert θ, SE, and person fit into dataset** and adds `IRT_Zh`, `IRT_Infit` and `IRT_Outfit` as well. A row left out of the run gets no value {#insert-θ-and-se-into-dataset #insert-θ-se-and-person-fit-into-dataset}
 
 ### Person fit
 
-Reports the count of misfitting persons using three criteria:
+**Person fit.** How many respondents answered in a pattern the model fits poorly, under **Criterion** and **Count**, each count out of the respondents scored – see [person fit](./concepts/latent-variables.md#b-person-fit). The note under the table says how many respondents fall past each Zh cutoff by chance alone – a count near it is no finding – and, for a model outside the Rasch family, that the 1.5 mean-square cutoffs are a Rasch convention and Zh the more reliable indicator. {#person-fit #person-fit-criterion #person-fit-count}
 
-- **Zh < −2** – standardized log-likelihood; patterns the model fits poorly
-- **Zh > 2** – patterns *more* consistent than the model expects (overfitting – often a sign of a too-regular response style)
-- **Infit > 1.5** – unexpected responses on items near the person's ability level (Rasch convention)
-
-The note beneath states how many respondents are expected past each Zh cutoff **by chance alone**, so a count in that neighbourhood is not a finding. Zh is computed on estimated θ rather than the true value, which makes it conservative: it under-detects misfit rather than over-reporting it.
-
-> **What does person misfit mean?** A person whose responses don't match the model's expectations might be guessing randomly, responding carelessly, or have knowledge that doesn't align with the trait dimension (e.g. a specialist who aces hard items but misses easy ones). A small percentage of misfit (< 5%) is normal. Systematic patterns (e.g. all high-ability persons misfit) warrant investigation. For non-Rasch models, Zh is the more reliable person-fit indicator – the outfit > 1.5 threshold is a Rasch convention.
+- **Persons with Zh < −2 (misfitting)** – Zh is the standardized log-likelihood of the respondent's answers: below −2 the pattern is less likely than the model expects – guessing, careless or idiosyncratic answering
+- **Persons with Zh > 2 (overfitting)** – above 2 the pattern is more consistent than the model expects, as a rigidly regular response style is
+- **Persons with infit > 1.5** – the respondent's information-weighted mean square above 1.5: unexpected answers on items near their own θ
+- **Persons with outfit > 1.5** – the unweighted mean square above 1.5: unexpected answers on items far from their θ
 
 ### Reliability and separation
 
-| Index | What it measures |
-|---|---|
-| **Empirical reliability** | A *sample* quantity: computed from the estimated θ and their standard errors |
-| **Marginal reliability** | A *model-based* quantity: the test information function integrated over the population distribution |
-| **Person separation** | How many distinct ability strata the test can distinguish |
-| **Number of strata** | The count of statistically distinct ability levels the test separates |
-| **Item reliability** | Consistency of item difficulty estimates (whether items are stably ordered) |
-| **Item separation** | How many distinct difficulty strata exist among items |
-| **Test targeting** | Difference between mean person ability and mean item location |
+**Reliability and separation.** How precisely the test measures the sample and how finely it separates it, under **Index** and **Value**; on a multidimensional model one row per **Dimension**, with the person-side indices only and a note on how targeting is read there. With [interpretation](./settings.md#significance-formatting) on, an **Interpretation** column grades each index. {#reliability-and-separation #reliability-and-separation-index #reliability-and-separation-value}
 
-> **Empirical vs. marginal.** They answer the same question from opposite directions and rarely agree exactly – the empirical one is what your sample achieved, the marginal one is what the model says the test achieves in the population it assumes. A large gap between them usually means the sample is not distributed the way the model's latent distribution assumes. Marginal reliability is blank for families with no test information (see [nonparametric items](#nonparametric-items)).
+- **Empirical reliability** – the reliability the sample's θ estimates achieved, from their variance and standard errors, in the form the [scoring method](#scoring-method) needs – see [empirical reliability](./concepts/latent-variables.md#b-empirical-reliability)
+- **Marginal reliability** – the reliability the model implies for the population it assumes: the test information averaged over the latent distribution – see [marginal reliability](./concepts/latent-variables.md#b-marginal-reliability). Unidimensional only, and N/A for a model with no test information, the [spline family](#nonparametric-items)
+- **Person separation** – the spread of the persons' θ in units of their measurement error, from the empirical reliability – see [person separation](./concepts/latent-variables.md#b-person-separation)
+- **Number of strata** – how many statistically distinct levels of the trait the separation implies, $(4G + 1)/3$ for a separation *G*; graded by no verdict
+- **Item reliability** – the same question asked of the items: how reproducibly their locations are ordered, from the spread of the locations against their standard errors. Unidimensional only; it needs the item parameters' standard errors and reads N/A without them. Headed **Item reliability (Rasch-style)** when the model is outside the Rasch family, whose index it is {#item-reliability #item-reliability-rasch-style}
+- **Item separation** – the items' counterpart of person separation, from the item reliability; **Item separation (Rasch-style)** likewise outside the Rasch family {#item-separation #item-separation-rasch-style}
+- **Test targeting (person − item mean)** – the mean θ minus the mean item location, in θ units: positive when the sample sits above the items, so the test is easy for it, negative when below – see [test targeting](./concepts/latent-variables.md#b-test-targeting). An item's location is its difficulty, the mean of its thresholds on a polytomous item, and its ideal point under the unfolding models; a family with no location parameter – nominal, spline – leaves the targeting N/A
+- **Separation** – multidimensional: the person separation on the dimension {#reliability-and-separation-separation}
+- **Strata** – multidimensional: the number of strata on the dimension {#reliability-and-separation-strata}
+- **Targeting** – multidimensional: the dimension's person mean minus the mean location, on that dimension, of the items that load highest on it; a dimension no item loads highest on has none {#reliability-and-separation-targeting}
+- **Interpretation** – the reliabilities on the shared reliability bands: *Unacceptable* below 0.50, *Poor* to 0.60, *Questionable* to 0.70, *Acceptable* to 0.80, *Good* to 0.90, *Excellent* from 0.90 and *Excellent (possible redundancy)* from 0.95; the separations and the targeting on the bands below. A multidimensional row joins its three verdicts {#reliability-and-separation-interpretation #high-ge-4-strata #adequate-ge-3-strata #low-2-strata #very-low-lt-2-strata #well-targeted #moderately-targeted #test-too-easy-for-sample #test-too-hard-for-sample #items-centred-on-sample #items-near-sample #items-below-the-samples-trait-level #items-above-the-samples-trait-level}
 
-In MIRT, reliability, separation, and targeting are reported per dimension. Item reliability and item separation are Rasch-style indices; they appear with a "(Rasch-style)" label when the fitted model isn't Rasch.
-
-Interpretation thresholds for reliability:
-
-| Value | Label |
-|---|---|
-| ≥ 0.90 | Excellent |
-| 0.80–0.90 | Good |
-| 0.70–0.80 | Acceptable |
-| 0.60–0.70 | Questionable |
-| < 0.60 | Poor |
-
-Person separation interpretation:
-
-| Value | Label |
+| Separation | Verdict |
 |---|---|
 | ≥ 3 | High (≥ 4 strata) |
 | 2–3 | Adequate (≥ 3 strata) |
 | 1–2 | Low (2 strata) |
 | < 1 | Very low (< 2 strata) |
 
-Test targeting interpretation:
+| Targeting | Verdict | Unfolding families |
+|---|---|---|
+| \|*t*\| < 0.5 | Well targeted | Items centred on sample |
+| 0.5 ≤ \|*t*\| < 1.0 | Moderately targeted | Items near sample |
+| *t* ≥ 1.0 | Test too easy for sample | Items below the sample's trait level |
+| *t* ≤ −1.0 | Test too hard for sample | Items above the sample's trait level |
 
-| Value | Label |
-|---|---|
-| \|diff\| < 0.5 | Well targeted |
-| \|diff\| 0.5–1.0 | Moderately targeted |
-| diff > 1.0 | Test too easy for sample |
-| diff < −1.0 | Test too hard for sample |
-
-For **unfolding families** (GGUM, ideal point) the same bands are read as positions rather than difficulty – *items centred on sample*, *items near sample*, *items below* or *above the sample's trait level* – because an ideal-point item has no difficulty to be too easy or too hard.
-
-In multidimensional mode, targeting compares a dimension's person mean against the mean location of the items whose *highest* loading is on that dimension. A dimension that no item loads highest on therefore has no targeting value.
-
-If respondents were dropped because θ or SE was non-finite (typically MLE on extreme patterns), a note reports the count and points out that EAP and MAP scoring keep those respondents by bounding the estimate.
-
-> **What is person separation?** If person separation is 3, the test can distinguish about 4 distinct ability groups (strata ≈ (4 × separation + 1) / 3). A test that can only separate people into "high" and "low" (separation < 2) isn't very useful for individual-level decisions.
-
-> **Test targeting:** when person mean and item mean are close (difference near 0), the test is well matched to the sample. A large positive difference means the test is too easy – most people are above the item difficulty range. A large negative difference means it's too hard.
+The unfolding verdicts apply when every item is fitted with GGUM or the ideal-point model, whose items have no difficulty to be too easy or too hard.
 
 ### Score conversion table
 
-(Unidimensional only.) Maps every possible raw (sum) score to a θ estimate and its standard error, using the test's expected score function (equating). When an EAPsum conversion is available, it appears in additional columns alongside the equating result.
+**Score conversion table (raw → θ).** Unidimensional only: every possible raw score, from the sum of the items' lowest observed values to the sum of their highest, with the θ it corresponds to and that θ's standard error.
 
-> **The raw score is only sufficient under Rasch.** Under the Rasch family (Rasch, PCM, RSM) everyone with the same raw score gets the same θ, so the mapping is exact. Under 2PL, 3PL, or graded models two respondents sharing a raw score can legitimately receive different θ estimates – there the **EAPsum** column is the principled mapping and the equating column is an approximation. True-score equating is undefined at the extreme raw scores in either case.
+- **Raw score** – the sum of a respondent's item scores – see [raw score](./concepts/latent-variables.md#b-raw-score)
+- **θ (equating)** – the θ at which the model's expected total score equals the raw score – true-score equating – and **SE(θ) (equating)** its standard error, from the test information there. A raw score the expected-score curve never reaches, the lowest and the highest in practice, reads N/A {#θ-equating #seθ-equating}
+- **θ (EAPsum)** – the mean of θ given the raw score, and **SE(θ) (EAPsum)** its standard error; shown when the model admits it {#θ-eapsum #seθ-eapsum}
 
-> **Why convert raw to θ?** Raw scores are ordinal – the difference between 10 and 15 isn't necessarily the same as between 25 and 30. IRT θ scores are on an interval scale, meaning equal differences in θ represent equal differences in ability. The conversion table lets you translate familiar raw scores into this measurement-quality scale.
+> **Which column?** Under the Rasch family (Rasch, PCM, RSM) a raw score carries all the information about θ and the two agree in substance; under 2PL, 3PL or graded models two respondents with one raw score can differ in θ, and **θ (EAPsum)** is the mapping to read – see [raw score](./concepts/latent-variables.md#b-raw-score).
 
 ### Expected scores by dimension
 
-(MD only.) Shows the expected total score as a function of each dimension while holding the other dimensions at θ = 0. Useful for understanding how each dimension contributes to observed scores.
+**Expected scores by dimension.** Multidimensional only: the expected total score at θ = −3, −2, …, 3 on each dimension in turn, the others held at 0 – one row per **θ**, one column per dimension – so a column that climbs steeply is a dimension the total score is sensitive to; see [expected score](./concepts/latent-variables.md#b-expected-score).
 
 ### DIF results
 
-A table with one row per tested item showing the χ² statistic, degrees of freedom, and *p*-value, with adjusted *p*-values when [multiple comparison adjustment](./settings.md#multiple-comparison-adjustment) is on. When the model has free discriminations, a **Non-uniform** column group sits beside the overall test, and an **Effect size** group carries SIDS, UIDS, and ESSD.
+**Differential item functioning (DIF).** One row per tested item, under a line naming the grouping variable, its groups with their sizes and the reference group, whose latent mean and variance are fixed – every difference is expressed relative to that group; see [differential item functioning](./concepts/latent-variables.md#b-differential-item-functioning). When the grouping variable leaves fewer than two groups, or the model has no slope or threshold to test, the section says so in place of the table.
 
-Above the table, a header line names the grouping variable, its groups, and the reference group whose latent mean and variance are fixed – every difference is expressed relative to that group. Below it, the output states which parameters each test contrasted (so you can read the degrees of freedom), and which anchor design was used: no anchors designated, anchors you selected, or anchors chosen empirically by [purification](#empirical-anchor-selection-purification) with their count.
+- **Item** – the tested item; a † marks one whose model did not converge, so its test rests on an unconverged fit {#differential-item-functioning-dif-item}
+- **Overall** – the likelihood-ratio test of every tested parameter of the item: **χ²**, **df** – the number of parameters contrasted – and **p**, with **p (adj)** beside it under [multiple comparison adjustment](./settings.md#multiple-comparison-adjustment) in addition mode {#differential-item-functioning-dif-overall}
+- **Non-uniform** – the same test with the slopes alone released – see [non-uniform DIF](./concepts/latent-variables.md#b-non-uniform-dif); what the overall test adds on top of it is [uniform DIF](./concepts/latent-variables.md#b-uniform-dif). Printed when the model estimates slopes and something besides: one whose slopes are fixed (Rasch, the Andrich rating scale model) has no such split, and one whose only item parameters are slopes has nothing left over {#differential-item-functioning-dif-non-uniform}
+- **Effect size** – with two groups only, the three expected-score effect sizes of Meade (2010) below; with three or more they are in the pairwise table instead {#differential-item-functioning-dif-effect-size}
+- **SIDS** – the signed expected-score difference. A positive value means the item favours the focal group at equal levels of the trait
+- **UIDS** – its unsigned counterpart. A large UIDS beside a SIDS near zero marks DIF that *reverses direction* across the trait – the signed measure cancels out where the unsigned one does not
+- **ESSD** – the difference scaled by the expected-score standard deviation, so it is comparable across items and scales
 
-When [pairwise comparisons](#pairwise-group-comparisons) are enabled, a second table follows – one row per item × group pair, corrected as a single family.
+The notes under the table name the parameters each test contrasted, which the df counts, and the anchor design: no anchors designated, so each item is anchored on all the others; the anchors you selected; or the anchors chosen by [purification](#b-select-anchors-empirically-purification), with their count.
 
-An item whose sub-model failed to converge keeps its row with a note saying its test rests on an unconverged fit, rather than being reported as if nothing had happened.
+When [pairwise comparisons](#b-add-pairwise-group-comparisons) are enabled, a second table follows: one row per item and pair of groups, each on a model refitted to those two groups alone, every item × pair test corrected as a single family, with the pair's effect sizes.
+
+- **Groups** – the pair the row tests; its effect sizes are signed against the first of the two {#differential-item-functioning-dif-groups}
 
 ## Plots
 
-All plots below are resizable and can be saved individually as SVG, PNG, or JPG using the export buttons beside each chart – see [resizing and exporting charts](./getting-started.md#resizing-and-exporting-charts). Multi-panel figures (the information curves) resize together from one handle.
+Each plot is its own section of the card, in the order below, when its [plot option](#plot-options) is ticked and the model admits it. Every chart can be resized and saved as SVG, PNG or JPG from the buttons beside it – see [resizing and exporting charts](./getting-started.md#resizing-and-exporting-charts); a figure of several panels resizes from one handle. The curves are drawn over θ from −4 to 4, widened to one unit past the lowest and highest item location, and a multidimensional figure draws each curve along one dimension with the others held at 0, as the note under it says.
 
-### Item characteristic curves (ICCs)
+### Item characteristic curves
 
-**Dichotomous items:** a single overlay chart showing the probability of correct response (y-axis) across the ability range (x-axis) for all items. Each curve is a logistic function shaped by the item's parameters. Steeper curves indicate higher discrimination; curves shifted right indicate harder items.
+**Item characteristic curves.** The response probabilities of every item across θ – see [item characteristic curve](./concepts/latent-variables.md#b-item-characteristic-curve). When every item is dichotomous, one chart overlays the items: the probability of the higher of the two responses on the vertical axis, with a dashed line marking P = 0.5; a steeper curve is a more discriminating item, a curve further right a harder one. When any item is polytomous, every item is drawn in two panels instead: the *category response curves*, a small chart per item with one curve per response value – coloured by the value, so a category keeps its colour across items – and the *expected score curves*, one overlay of each item's expected score on its own response scale, which add up to the [test characteristic curve](#b-information-functions). On a multidimensional model each item's legend entry names the dimension its curve varies. {#item-characteristic-curves}
 
-**Polytomous items:** two chart types are drawn:
+### Information functions
 
-- **Category Response Curves** – one chart per item, showing the probability of each response category as a function of θ. The curves cross at the threshold parameters
-- **Expected Score Curves** – one overlay chart showing the expected item score as a function of θ for all items. Useful for comparing item difficulty and discrimination at a glance
+**Information functions.** A figure of up to three panels – see [item information](./concepts/latent-variables.md#b-item-information) and [test information](./concepts/latent-variables.md#b-test-information):
 
-### Information curves
+- *Information curves* – each item's information as a thin line and the test information as a thick one, one per dimension on a multidimensional model, with the [standard error of θ](./concepts/latent-variables.md#b-seθ), $1/\sqrt{I(\theta)}$, dashed against the right-hand axis
+- *Test characteristic curve* – the expected total score across θ, on the items' own response scales; one curve per dimension on a multidimensional model
+- *Conditional reliability* – the [conditional reliability](#b-conditional-reliability) curve: drawn here on a unidimensional model only while **Conditional reliability curve** is unticked, and always on a multidimensional one, one curve per dimension
 
-Several panels are drawn:
+A model fitted with the [spline family](#nonparametric-items) has no information function, so the section keeps its heading and a note says why in place of the figure; its characteristic curves are drawn as usual.
 
-1. **Item information curves** – each item's contribution to measurement precision across the θ range. Peaked curves show where each item is most informative
-2. **Test information curve** – the sum of all item information functions. Shows where the test as a whole measures most precisely
-3. **Standard error curve** – the inverse square root of test information. Lower SE = more precise measurement
-4. **Test Characteristic Curve** – expected total score as a function of θ. Shows the nonlinear relationship between ability and raw scores
-5. **Conditional reliability** – drawn here as a panel when the standalone plot below is not enabled
-
-For model families with no θ-derivative (the [basis expansions](#nonparametric-items)) information is undefined rather than zero, so these panels are withheld and a note explains why.
-
-> **Reading the information curve:** the peak of the test information curve tells you *where* the test is most precise. A test designed for clinical screening (distinguishing disordered from non-disordered) should peak near the clinical cutoff. A test designed for general ability measurement should have a broad, flat information curve. Narrow peaks mean the test is precise for a small ability range but imprecise elsewhere.
-
-### Conditional reliability curve
-
-Reliability as a function of θ – `I(θ) / (I(θ) + 1/σ²θ)` – with a dashed reference line at 0.70. Enabling it in the plot options promotes it from a panel of the information figure to its own chart. In multidimensional mode one curve is drawn per dimension, each against that dimension's own latent variance.
-
-> **Why this and not the information curve?** They carry the same information on different scales, but reliability is the scale most readers already have intuitions about. Reading it tells you the *range of the trait* over which the test measures acceptably – a test can have high marginal reliability overall and still be near-useless at the extremes where you happen to be making decisions.
+> **Reading the information curve.** The test measures most precisely where information peaks and the standard error dips – a screening test wants that peak at its cutoff, a general-purpose one a broad plateau; see [test information](./concepts/latent-variables.md#b-test-information).
 
 ### Wright map
 
-A two-panel display with a shared θ axis:
+**Wright map (person-item map).** The persons and the items on one θ axis – see [Wright map](./concepts/latent-variables.md#b-wright-map). On the left, *Persons*: a horizontal histogram of the θ estimates; on the right, *Items*: each item as a point at its location – its difficulty, the mean of its thresholds on a polytomous item, its ideal point under the unfolding models, where the axis reads *Trait / Ideal point (θ)* instead of *Ability / Difficulty (θ)* – with labels spread apart and tied to their points where they would overlap. A polytomous item's thresholds are ticks beside its point, and the note under the map says so. A multidimensional model draws one pair of panels per dimension, stacked, each holding the items whose largest slope is on that dimension; there are no threshold ticks, and a note says that a polytomous item's location averages its intercepts. A model with no item location parameter – on a unidimensional fit, the nominal and spline families – draws no map, and a note says why. {#wright-map-person-item-map}
 
-- **Left panel** – a horizontal histogram of person ability estimates
-- **Right panel** – item location markers with labels (de-clumped to avoid overlap). For polytomous items, ticks beside each marker show the item's category thresholds and the marker itself is their mean – a polytomous item is *summarised* on this axis rather than located exactly
+> **Reading the map.** Items level with a cluster of persons measure those persons best, and persons with no item beside them are measured coarsely – see [test targeting](./concepts/latent-variables.md#b-test-targeting).
 
-For multidimensional models, separate person histograms and item locations are drawn for each dimension. For unfolding families the axis reads **Trait / Ideal point (θ)**, since the markers are positions rather than difficulties. Model families with no item location parameter draw no right panel at all, and the output says so instead of placing items arbitrarily.
+### Conditional reliability
 
-> **Reading the Wright map:** items and persons are plotted on the same scale. Items at the same height as a cluster of persons are optimally targeted for those people – they provide maximum information. Items far above the person distribution are too hard (almost everyone gets them wrong); items far below are too easy (almost everyone gets them right). A well-targeted test has items spread across the person distribution.
+**Conditional reliability.** Unidimensional only: the reliability of θ at each point of the trait, $I(\theta)/(I(\theta) + 1/\sigma^2_\theta)$, with a dashed reference line at 0.70 – where on the trait the test measures acceptably; a test with a high [marginal reliability](#b-marginal-reliability) can still measure poorly at the extremes. Ticking **Conditional reliability curve** draws it as its own section and drops it from the [information figure](#b-information-functions). A model with no information function (spline) keeps the heading with a note in its place, and a computation that failed gives R's message.
 
 ### Factor loadings heatmap
 
-(MD only.) Items on one axis, factors on the other, cell colour encoding loading magnitude. A quick visual summary of which items load on which factors – especially useful for exploratory MIRT after rotation.
+**Factor loadings heatmap.** Multidimensional only: the [factor loadings](#b-factor-loadings) table as a grid, one row per item and one column per dimension – rotated for an exploratory model, as in the table – each cell printing its loading and coloured by sign and size, blue positive and red negative, fading to white near 0.
 
 ## Assumptions
 
-- **Unidimensionality** (UD mode) – all items measure a single latent trait. Use the [preliminary analysis](#preliminary-analysis) to check this before fitting a UD model. In MD mode this is replaced by the weaker assumption that items measure the specified number of traits.
-- **Local independence** – after controlling for the latent trait(s), item responses are independent. Violated when items share content, share a stimulus, or form testlets. Check with the [local dependence](#local-dependence) output.
-- **Monotonicity** – the probability of endorsing higher categories increases with ability. Checked via [Mokken analysis](#mokken-scale-analysis) in the preliminary analysis.
-- **Correct model specification** – the chosen model (Rasch, 2PL, etc.) adequately describes the data. Check [model fit](#model-fit) and consider [model comparison](#model-comparison).
-- **Sufficient sample size** – IRT parameters are estimated less precisely with small samples. See [sample size guidelines](#sample-size-adequacy).
-- **Items should be scored in the same direction.** Negatively worded items need reverse scoring before IRT analysis – use the [questionnaire scoring guide](./questionnaire-scoring-guide.md) or the internal consistency tab's [reverse scoring feature](./reliability-analysis.md#reverse-scored-items).
+- **Unidimensionality** – a unidimensional model assumes the items measure one trait; check it with the [preliminary analysis](#unidimensionality-check) before fitting one. A multidimensional model assumes instead that they measure the dimensions it was given – see [unidimensionality](./concepts/latent-variables.md#b-unidimensionality)
+- **Local independence** – once the trait is accounted for, the item responses are unrelated; items that share a stimulus, wording or content break it. Check it with the [local dependence](#local-dependence) output – see [local independence](./concepts/latent-variables.md#b-local-independence)
+- **Monotonicity** – a higher trait makes the higher categories more likely; the unfolding models (GGUM, ideal point) assume a single-peaked curve instead. Checked by the preliminary analysis's [Monotonicity](#b-monotonicity) check {#assumptions-monotonicity}
+- **Correct model specification** – the chosen model describes the data; check [model fit](#model-fit) and [item fit](#item-statistics), and weigh the [model comparison](#model-comparison)
+- **Sufficient sample size** – parameters are estimated less precisely in small samples, and the richer models need more respondents; see [sample size adequacy](#sample-size-adequacy)
+- **Items keyed in one direction** – a negatively worded item is reversed for a unidimensional fit, unless an unfolding model is used: select it under [negatively keyed items](#negatively-keyed-items) and leave the data as answered. **Detect** proposes the list, and the run names any item it still reads as reversed
 
 ## Missing data
 
-Missing values are handled by the global [missing data setting](./settings.md#missing-data). With listwise deletion, any case missing a value on any item is excluded. The number of complete cases is reported in the output.
+The global [missing data setting](./settings.md#missing-data) decides which rows the model is fitted to. Under pairwise deletion, the default, every row is fitted, each person's θ estimated from the items they answered; under listwise deletion only the rows that answered every item are; under imputation the items are filled in before the fit and fitted as if observed. The card's data summary gives the sample size with the complete cases beside it.
 
-Within the [preliminary diagnostics](#preliminary-analysis) the two halves behave differently, and the output says which is which: the eigenvalue and subject-quality blocks keep every row, while the Mokken blocks run on complete cases only because the `mokken` package does not accept missing responses.
-
-> **Missing data and IRT:** IRT handles missing data more gracefully than classical methods – person ability can still be estimated from the items a person did answer. However, DataSuite's current implementation uses listwise deletion for model fitting. If you're losing many cases, consider whether imputation is appropriate, but be aware that imputing item responses can distort IRT parameter estimates more than it would affect classical reliability.
+In the [preliminary analysis](#preliminary-analysis) the eigenvalue and subject-quality blocks follow the same setting, while the Mokken blocks always run on the complete cases, since the `mokken` package does not accept missing responses; the output says which is which.
 
 ## Reporting checklist
 
 **Method:**
-- Dimensionality (unidimensional, exploratory MIRT with *k* dimensions and rotation, or confirmatory MIRT with specified factor structure)
-- IRT model used (e.g. "A graded response model was fit using the `mirt` R package")
-- Estimation method (EM, QMCEM, MHRM, ...)
-- Scoring method for person ability (EAP, MAP, MLE, WLE)
-- Number of items and sample size (total and complete cases)
-- Item types (dichotomous, polytomous, or mixed)
+- Dimensionality – unidimensional, exploratory with *k* dimensions and the rotation, or confirmatory with the factor structure and whether the factors correlate
+- IRT model (e.g. "a graded response model was fitted with the `mirt` R package")
+- Estimation method and scoring method for θ
+- Number of items, their types (dichotomous, polytomous or mixed), and the sample size with its complete cases
 - How missing data were handled
-- Any advanced tuning choices that deviate from defaults
+- The p-value adjustment applied to item fit, LD-X² and DIF
+- Any advanced tuning that departs from the defaults
 - Software and R packages used
 
 **Results:**
-- Model fit indices (at minimum RMSEA, CFI; include AIC/BIC when comparing models or dimensionalities)
-- Item parameter estimates with standard errors (per dimension for MD, plus MDISC/MDIFF)
-- Item fit statistics (S-X², infit/outfit where applicable)
-- Person ability distribution (mean, SD, range), per dimension for MD
-- Marginal reliability and person separation, per dimension for MD
-- Factor loadings (and correlations for oblique solutions) for MIRT
-- Any problematic items (poor discrimination, misfit, local dependence)
-- DIF results if applicable, including grouping variable and anchor strategy
-- Wright map or other visualisations as figures
+- Model fit – M2 (M2\* with polytomous items) with its df and p, RMSEA with its 90% CI, SRMSR, TLI and CFI; AIC and BIC when comparing models or dimensionalities
+- Item parameters with standard errors – per dimension for a multidimensional model, with MDISC and MDIFF
+- Item fit – S-X² with its adjusted p, and infit and outfit where they apply
+- The θ distribution (mean, SD, range), per dimension for a multidimensional model
+- Reliability and separation – marginal reliability for a unidimensional model, empirical reliability and person separation per dimension for a multidimensional one
+- Factor loadings, and factor correlations under an oblique rotation or correlated factors, for a multidimensional model
+- Problem items – low discrimination, misfit, local dependence
+- DIF, if tested – the grouping variable, the anchor design, the adjusted p and the effect sizes
+- The Wright map or other plots as figures
 
 ## R reproducibility
 
-Every analysis prints the underlying R code to the [R console](./r-console.md). IRT analysis uses the `mirt` R package for model fitting, rotations, item and person parameters, fit statistics, DIF, and score conversion. Preliminary analysis additionally uses `mokken` for scalability, monotonicity, IIO, rest-score local independence, and nonparametric reliability. The robust Mahalanobis screen uses the minimum covariance determinant estimator from `MASS`. Citations for R packages appear automatically at the top of the output. The [Q3\* bootstrap](#local-dependence) is seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed); the resampled individual reliability (RIR) sub-sample step and the MCD subsampling are seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) – set them for values that repeat across runs.
+Every analysis prints the underlying R code to the [R console](./r-console.md). IRT analysis uses the `mirt` R package for model fitting, rotations, item and person parameters, fit statistics, DIF, score conversion and the plotted curves. Preliminary analysis additionally uses `mokken` for scalability, monotonicity, IIO, nonintersection, nonparametric reliability and item selection, and `psych` for the polychoric and mixed correlations of the unidimensionality check. The robust Mahalanobis screen uses the minimum covariance determinant estimator from `MASS`. Citations for R packages appear automatically at the top of the output. The [Q3\* bootstrap](#local-dependence) is seeded by [**Bootstrap seed**](./settings.md#bootstrap-seed); the resampled individual reliability (RIR) sub-sample step and the MCD subsampling are seeded by [**Reproducibility seed**](./settings.md#reproducibility-seed) – set them for values that repeat across runs. The reasoning behind the thresholds, estimators, fallbacks and plots is in the [method notes](./methods/irt-analysis.md).
 
 ## Common pitfalls
 
-**Running IRT without checking data first.** The preliminary analysis is there for a reason – it catches unidimensionality violations, careless responders, and items that don't fit a monotone model. Fitting an IRT model to unsuitable data produces parameters that look precise but mean nothing. Always run **Diagnostics & Mokken** first.
+**Running IRT without checking the data first.** The preliminary analysis catches unidimensionality violations, careless responders and items that do not fit a monotone model – problems that leave a fitted model's parameters looking precise and meaning nothing. Run **Diagnostics & Mokken** before the first fit.
 
-**Choosing 3PL by default.** The guessing parameter is appealing ("my test has multiple-choice items!") but extremely difficult to estimate. With fewer than 500 respondents, guessing parameters are often poorly identified and can destabilise the entire model. Start with 2PL; only add the guessing parameter if you have a large sample *and* the 2PL shows systematic misfit at low ability levels.
+**Choosing 3PL by default.** The guessing parameter is appealing for multiple-choice items but hard to estimate: below 500 respondents it is often poorly identified and can destabilise the whole model, which is why the [sample size check](#sample-size-adequacy) warns there. Start with 2PL, and add guessing only with a large sample *and* a 2PL that misfits systematically at low θ.
 
-**Using EM at high dimensionality.** EM scales badly beyond two dimensions – it may be very slow or fail to converge. Switch to **MHRM** for 3+ dimensions; it's much faster and also gives you standard errors for item parameters.
+**Using EM at high dimensionality.** EM evaluates a full quadrature grid over every dimension, so from three dimensions on it may be very slow or fail to converge. Switch to QMCEM or MCEM, which integrate by sampling, or to **MHRM**, which is faster still and computes the item parameters' standard errors on a multidimensional model without being asked.
 
-**Reading MIRT loadings without rotation.** An unrotated MIRT solution is dominated by a general factor and isn't directly interpretable. Pick an oblique rotation (Oblimin is a sensible default) unless you have a specific reason to prefer orthogonal or unrotated output.
+**Reading unrotated loadings.** An unrotated exploratory solution tends to put every item on the first dimension, so its loadings rarely show which items belong together. Keep the default **Oblimin**, or another rotation, unless you have a reason to read the fitted basis; the rotation reaches the loadings, their heatmap and the factor correlations alone.
 
-**Ignoring item fit.** A well-fitting model overall (good RMSEA) can still have individual items that misfit badly. Always check item-level S-X² and infit/outfit statistics. A single misfitting item can distort person scores for everyone near that item's difficulty level.
+**Ignoring item fit.** A model that fits well overall can still hold items that misfit badly, and one misfitting item distorts the θ of everyone near its location. Check S-X² and the infit and outfit statistics in the [item statistics](#item-statistics), not only the model fit.
 
-**Over-interpreting DIF.** A statistically significant DIF result doesn't automatically mean the item is biased. Small DIF effects become significant with large samples. Look at the magnitude of parameter differences between groups, not just the *p*-value. Items with DIF may legitimately measure a real group difference rather than a testing artifact.
+**Over-interpreting DIF.** A significant DIF test does not by itself make an item biased: small differences become significant in large samples, and an item may reflect a real group difference rather than a testing artefact. Read the effect sizes in the [DIF results](#dif-results) beside the *p*-value.
 
-**Treating IRT scores as "better" raw scores.** θ estimates have standard errors – they're not exact. Two people with θ = 0.5 and θ = 0.7 may not be meaningfully different if both have SE = 0.3. Always consider the SE when interpreting individual scores, and use the [conditional reliability curve](#information-curves) to understand where the test measures precisely and where it doesn't.
+**Treating θ as an exact score.** Every θ carries a standard error: two people at θ = 0.5 and θ = 0.7 are not meaningfully different when both have SE = 0.3. Read each θ with the SE [inserted](#b-insert-θ-and-se-into-dataset) beside it, and the [conditional reliability](#b-conditional-reliability) or the standard error curve of the [information functions](#b-information-functions) for where on the trait the test measures precisely.
 
-**Forcing a parametric model when Mokken fails.** If items don't form a scalable Mokken scale (H < 0.3), they're unlikely to fit a parametric IRT model either. Poor Mokken scalability usually indicates the items aren't measuring a single construct – consider [factor analysis](./factor-analysis.md) or switch to multidimensional IRT before attempting a single unidimensional parametric fit.
+**Forcing a parametric model when Mokken fails.** Items that do not form a scalable Mokken scale (H < 0.3) are unlikely to fit a parametric IRT model either; poor scalability usually means the items do not measure a single construct. Consider [factor analysis](./factor-analysis.md) or a multidimensional model before a unidimensional parametric fit.

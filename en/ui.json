@@ -9,11 +9,14 @@
 	"aria_search": "Search",
 	"aria_back_to_top": "Back to top",
 	"nav_getting_started": "Getting started",
+	"nav_concepts": "Concepts",
 	"nav_reference": "Reference",
 	"nav_analysis": "Analysis",
+	"nav_methodology": "Methodology",
 	"page_not_found": "Page not found",
 	"page_not_found_message": "This page does not exist.",
 	"page_not_found_link": "Back to documentation",
 	"redirecting": "Redirecting...",
-	"redirecting_to_docs": "Redirecting to documentation"
+	"redirecting_to_docs": "Redirecting to documentation",
+	"untranslated_notice": "This page has not been translated yet and is shown in English."
 }

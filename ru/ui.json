@@ -9,11 +9,14 @@
 	"aria_search": "Поиск",
 	"aria_back_to_top": "Наверх",
 	"nav_getting_started": "Начало работы",
+	"nav_concepts": "Основы",
 	"nav_reference": "Справочник",
 	"nav_analysis": "Анализ",
+	"nav_methodology": "Методология",
 	"page_not_found": "Страница не найдена",
 	"page_not_found_message": "Такой страницы не существует.",
 	"page_not_found_link": "Вернуться к документации",
 	"redirecting": "Перенаправление...",
-	"redirecting_to_docs": "Перенаправление к документации"
+	"redirecting_to_docs": "Перенаправление к документации",
+	"untranslated_notice": "Эта страница ещё не переведена и показана на английском."
 }

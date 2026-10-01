@@ -37,7 +37,7 @@ When you select variables in the input panel, they are numbered in the order you
 | `c1`, `c2`, `c3`, ... | full column array of the 1st, 2nd, 3rd, ... input variable (all rows) |
 | `v1:v7` | expands to all variables from `v1` through `v7` – use inside functions like `sum(v1:v7)` |
 
-Missing values are treated as `0` when accessed via `v1`, `v2`, etc.
+A blank cell is missing, never `0` – see [Missing values](#missing-values) for what each kind of expression does with one.
 
 ### Special variables
 
@@ -48,6 +48,24 @@ Missing values are treated as `0` when accessed via `v1`, `v2`, etc.
 | `c` | full column array of the variable being processed (see below) |
 
 `v` and `c` are available when a rule has multiple input variables and the output is set to [replace original values](./data-transformation.md#output-options). In that case, the formula runs once per variable per row – `v` is the current cell value and `c` is the full column. This is useful for applying the same transformation to many variables at once, e.g. `v * 100` to convert all selected variables to percentages.
+
+## Missing values
+
+A blank cell reaches the formula as missing – it is never read as `0`. What happens next depends on where it is used:
+
+- **Arithmetic, comparisons and string functions** – the row's result is missing. `(v1 + v2) / 2` with a blank `v2` is blank, and so is `v1 > 3 ? 1 : 0` – a comparison on a blank cannot decide either way.
+- **Aggregate functions over a range or a column** – the blank is skipped. `mean(v1:v7)` with one blank item is the mean of the other six, `sum(c1)` is the sum of the column's non-blank cells, and `count(v1:v7)` is how many were answered. When every value is blank, the result is missing (`count` gives 0). An optional last argument sets the minimum number of valid values: `mean(v1:v7, 5)` is missing whenever fewer than five items were answered. (`quantileSeq` is the exception – its second argument is the probability.)
+- **`==`** – a blank equals nothing, so `v1 == 0` is `false` on a blank cell. Test for one with the guards below, or compare against `null`: `v1 == null`.
+
+To branch on a blank or substitute a value:
+
+| Function | Description | Example |
+|---|---|---|
+| `isBlank(x)` / `isMissing(x)` | true for a blank cell, and for an empty or whitespace-only string | `isBlank(v1) ? 0 : v1 * 2` |
+| `isNotBlank(x)` | the opposite | `isNotBlank(v1) ? v1 : 0` |
+| `coalesce(a, b)` | `a` if it has a value, otherwise `b` | `coalesce(v1, 0)` |
+
+> **Sum scores and skipped items:** `sum(v1:v9)` skips a blank item, so a participant who left one question unanswered gets the sum of the other eight – a lower total, not a missing one. To require complete answers, set the minimum: `sum(v1:v9, 9)`. To prorate instead, score by the mean of the answered items and scale it back: `mean(v1:v9, 7) * 9` is missing below seven answers and otherwise the sum a fully answered scale would have given at that average.
 
 ## Values and syntax
 
@@ -171,7 +189,7 @@ These are the most commonly used built-in Math.js functions. For the complete li
 
 ### Aggregate
 
-These work with multiple values or arrays (e.g. via the `v1:v7` range syntax):
+These work with multiple values or arrays (e.g. via the `v1:v7` range syntax). Over a range or a column they skip blank cells, and an optional last argument is the minimum number of valid values – see [Missing values](#missing-values):
 
 | Function | Description | Example |
 |---|---|---|
@@ -182,6 +200,11 @@ These work with multiple values or arrays (e.g. via the `v1:v7` range syntax):
 | `max(...)` | maximum value | `max(v1:v5)` |
 | `std(...)` | standard deviation | `std(v1:v5)` |
 | `variance(...)` | variance | `variance(v1:v5)` |
+| `prod(...)` | product of values | `prod(v1:v3)` |
+| `mode(...)` | most frequent value(s), as an array | `mode(c1)` |
+| `mad(...)` | median absolute deviation | `mad(c1)` |
+| `quantileSeq(array, p)` | quantile at probability `p` (0–1), or several for an array of them | `quantileSeq(c1, 0.75)` |
+| `count(...)` | number of non-blank values | `count(v1:v9)` |
 
 ### Trigonometric
 
@@ -221,10 +244,10 @@ Use whichever reads more naturally. Dot syntax can be especially convenient for 
 | Function | Description | Returns |
 |---|---|---|
 | `length(s)` | number of characters | number |
-| `isBlank(s)` | true if empty or whitespace only | boolean |
-| `isNotBlank(s)` | true if contains non-whitespace | boolean |
+| `isBlank(x)` | true if empty or whitespace only – or a [blank cell](#missing-values) | boolean |
+| `isNotBlank(x)` | true if contains non-whitespace | boolean |
 | `isString(x)` | true if value is a string | boolean |
-| `contains(s, search)` | true if `s` contains `search` | boolean |
+| `contains(s, search)` | true if `s` contains `search`; `includes(s, search)` is the same function | boolean |
 | `startsWith(s, prefix)` | true if `s` starts with `prefix` | boolean |
 | `endsWith(s, suffix)` | true if `s` ends with `suffix` | boolean |
 | `indexOf(s, search)` | position of first match (-1 if not found) | number |
@@ -271,6 +294,7 @@ Use whichever reads more naturally. Dot syntax can be especially convenient for 
 | `test(s, pattern)` | true if regex matches | `test(v1, "^[A-Z]")` |
 | `match(s, pattern)` | returns the match (or null) | `match(v1, "\\d+")` |
 | `test(s, pattern, flags)` | regex with flags | `test(v1, "hello", "i")` |
+| `match(s, pattern, flags)` | regex with flags – with `"g"`, an array of every match rather than the first | `match(v1, "\\d+", "g")` |
 
 ### Formatting
 
@@ -278,7 +302,7 @@ Use whichever reads more naturally. Dot syntax can be especially convenient for 
 format(template, arg0, arg1, ...)
 ```
 
-Replaces `{0}`, `{1}`, etc. with the corresponding arguments:
+Replaces `{0}`, `{1}`, etc. with the corresponding arguments, up to five (`{0}` to `{4}`):
 
 ```
 format("Subject {0}, Group {1}", v1, v2)
@@ -348,10 +372,12 @@ Use `@Name = expression` to create multiple output variables in a single rule:
 ```
 @Total = v1 + v2 + v3
 @Average = @Total / 3
-@ZScore = (@Total - mean(c1 + c2 + c3)) / std(c1 + c2 + c3)
+@Centered = @Total - (mean(c1) + mean(c2) + mean(c3))
 ```
 
 Each `@Name` creates a new variable (or overwrites an existing one with the same name). Later declarations can reference earlier ones with the `@` prefix. The [output options](./data-transformation.md#output-options) panel is disabled for multi-variable formulas since output targets are explicit.
+
+Column arrays are per input variable: `mean(c1)` is the mean of the first item, and there is no column for a declared variable, so centre a total on the sum of the item means as above rather than on `mean(c1 + c2 + c3)` – adding columns element-wise fails on the first blank cell in any of them.
 
 ## Intermediate variables
 
@@ -378,7 +404,7 @@ The formula editor provides several features to help you write formulas:
 
 ## Tips
 
-- **Missing values become `0`** in formulas. If you need different behavior, use `coalesce(v1, someDefault)` to substitute a specific fallback, or a conditional like `v1 == 0 ? NaN : v1` to flag them.
+- **A blank is never `0`.** Arithmetic on a blank cell gives a blank, aggregates skip it – see [Missing values](#missing-values). To fill one, `coalesce(v1, 0)`.
 - **`v1` vs `c1`** – `v1` gives you one value (the current row), `c1` gives you the entire column as an array. Use `c1` for column-wide calculations: `v1 - mean(c1)` centers each value around the column mean.
 - **Errors in formulas** produce a missing value for that row – the rest of the data is unaffected. Check the data preview to spot any unexpected blanks.
 - **String concatenation** uses `+`: `v1 + " " + v2` joins two text values with a space.

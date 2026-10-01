@@ -22,10 +22,10 @@ You don't need to know R to use DataSuite – but if you're curious, the console
 
 ## Running commands
 
-Type R code in the input field and press **Enter** to execute (or click the **Run** button). Results appear in the console output area above.
+Type R code in the input field and press **Ctrl+Enter** (**Cmd+Enter** on a Mac) to execute, or click the **Run** button. Results appear in the console output area above.
 
-- **Shift+Enter** – insert a newline for multi-line input
-- **Up/Down arrows** – navigate through command history (up to 50 commands, persistent across sessions)
+- **Enter** or **Shift+Enter** – insert a newline for multi-line input
+- **Up/Down arrows** – on the first line (up) or the last line (down), step through command history (up to 50 commands, persistent across sessions)
 
 ```r
 mean(c(1, 2, 3, 4, 5))
@@ -62,7 +62,7 @@ Different types are rendered differently:
 - **Data frames and matrices** – formatted tables
 - **Named vectors** – key-value tables
 - **Short unnamed vectors** – comma-separated values
-- **Long vectors** (20+ elements) – truncated with a count
+- **Long unnamed vectors** (more than 20 elements) – truncated with a count
 - **Lists** – rendered recursively, with each named element in its own subsection
 
 ### `/upload` – bring in external files
@@ -115,7 +115,7 @@ Displays all slash commands and links to R documentation resources:
 
 The console modal has two tabs: **Console** and **Plots**. Running an R plot command (e.g. `plot(1:10)`, `hist(df$Score)`) renders the result in the **Plots** tab gallery. Each plot is numbered (#1, #2, …). A notification dot appears on the **Plots** tab when a new plot arrives while you're viewing the console.
 
-Use [`/outputplot`](#outputplot-n--send-a-plot-to-results) to send plots to the main output section, or [`/clearplots`](#clearplots--clear-the-plot-gallery) to clear the gallery.
+Use [`/outputplot`](#outputplot-n-send-a-plot-to-results) to send plots to the main output section, or [`/clearplots`](#clearplots-clear-the-plot-gallery) to clear the gallery.
 
 ## R formula notation
 
@@ -189,8 +189,8 @@ Y ~ .
 
 ```r
 /data
-summary(df)          # descriptive overview of all variables
-table(df$Gender)     # frequency table for a categorical variable
+summary(df)           # descriptive overview of all variables
+table(df$Gender)      # frequency table for a categorical variable
 cor(df$Age, df$Score) # quick correlation between two variables
 ```
 

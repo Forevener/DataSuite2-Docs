@@ -13,7 +13,7 @@ The common starting point: you have a spreadsheet (e.g. from Google Forms) where
 
 The [PHQ-9](https://en.wikipedia.org/wiki/PHQ-9) is a 9-item depression screening tool. Each item asks how often a symptom occurred over the past two weeks. There are no reverse-scored items – just recode and sum.
 
-**Response options:** Not at all (0), Several days (1), More than half the days (2), Nearly every day (3). Total score range: 0–27.
+**Response options:** Not at all (0), Several days (1), More than half the days (2), Nearly every day (3). Total score range: 0–27. {#-}
 
 ### Step 1: recode text to numbers
 
@@ -43,7 +43,7 @@ If your data already has numeric values 0–3, skip this step.
 sum(v1:v9)
 ```
 
-4. Under output options, choose **Create new variable** and name it `PHQ9_Total`
+4. Under output options, choose **Create new variable(s)** and name it `PHQ9_Total`
 5. Save the rule
 
 Done. You now have a `PHQ9_Total` column with scores from 0 to 27.
@@ -52,7 +52,7 @@ Done. You now have a `PHQ9_Total` column with scores from 0 to 27.
 
 The [Rosenberg Self-Esteem Scale](https://en.wikipedia.org/wiki/Rosenberg_self-esteem_scale) has 10 items on a 4-point scale. Items 3, 5, 8, 9, and 10 are negatively worded and need to be reversed before summing.
 
-**Response options:** Strongly agree (3), Agree (2), Disagree (1), Strongly disagree (0). Total score range: 0–30.
+**Response options:** Strongly agree (3), Agree (2), Disagree (1), Strongly disagree (0). Total score range: 0–30. {#-}
 
 ### Approach A: reverse at scoring time (recommended)
 
@@ -69,16 +69,16 @@ v1 + v2 + (3-v3) + v4 + (3-v5) + v6 + v7 + (3-v8) + (3-v9) + (3-v10)
 4. Create a new variable called `RSE_Total`
 5. Save
 
-The reversed items (v3, v5, v8, v9, v10) are flipped inline: a response of 0 becomes 3, 1 becomes 2, and so on. The original data stays unchanged, which makes it easier to verify individual items later.
+The reversed items (v3, v5, v8, v9, v10) are flipped inline: a response of 0 becomes 3, 1 becomes 2, and so on. The original data stays unchanged, which makes it easier to verify individual items later – and it is what an [IRT analysis](./irt-analysis.md#negatively-keyed-items) of the same items needs: that module reverses the negatively keyed items itself, its careless-responding screen reads the answers as respondents gave them, and its keying detection cannot see a reversal made earlier.
 
 ### Approach B: recode first, then sum
 
 If you prefer to have the reversed values stored explicitly:
 
-1. **+ Value recode** – select only the 5 reversed items (3, 5, 8, 9, 10). Map: 0→3, 1→2, 2→1, 3→0. Choose **Replace original values**.
-2. **+ Formula** – select all 10 items. Formula: `sum(v1:v10)`. Create a new variable `RSE_Total`.
+1. **+ Standardize** – select only the 5 reversed items (3, 5, 8, 9, 10), method **Reverse scoring**, scale range **Min** 0 and **Max** 3. Choose **Create new variable(s)** with a prefix such as `r`, so the reversed copies sit beside the originals. (A **+ Value recode** mapping 0→3, 1→2, 2→1, 3→0 does the same by hand.)
+2. **+ Formula** – select the 5 regular items and the 5 reversed copies. Formula: `sum(v1:v10)`. Create a new variable `RSE_Total`.
 
-Both approaches produce identical results. Approach A is more compact; approach B leaves the reversed values visible in the data table.
+Both approaches produce identical results. Approach A is more compact; approach B leaves the reversed values visible in the data table. Don't use **Replace original values** for items an IRT analysis may read – see [keep originals intact](#b-keep-originals-intact-when-possible).
 
 ## Example 3: TIPI – Ten-Item Personality Inventory (multiple subscales)
 
@@ -118,8 +118,8 @@ The reversal pattern here is `(8 - item)` because the scale runs 1–7 (so max +
 
 ## General tips
 
-- **Check your scale range.** The reversal formula depends on it: `(max + min) - value`. For 1–5 Likert it's `6 - v`, for 0–4 it's `4 - v`, for 1–7 it's `8 - v`. See the [formula reference](./formula-reference.md) for all available functions and syntax.
-- **Keep originals intact when possible.** Using inline reversal (approach A) means you can always go back and inspect individual item responses without confusion about which values were recoded.
+- **Check your scale range.** The reversal formula depends on it: `(max + min) - value`. For 1–5 Likert it's `6 - v`, for 0–4 it's `4 - v`, for 1–7 it's `8 - v`. See the [formula reference](./formula-reference.md) for all available functions and syntax. The [Standardize rule's reverse scoring](./data-transformation.md#standardize) applies the same formula from a declared range, one rule for any number of items.
+- **Keep originals intact when possible.** Using inline reversal (approach A) means you can always go back and inspect individual item responses without confusion about which values were recoded. Keep them intact whenever an IRT analysis is planned or may follow: the [IRT module](./irt-analysis.md#negatively-keyed-items) reverses the negatively keyed items itself, its careless-responding screen needs the answers as given, and its keying detection cannot see a reversal made in the data. The [Reliability module](./reliability-analysis.md#reverse-scored-items) likewise reverses items for the analysis alone.
 - **Name variables clearly.** Use descriptive names like `PHQ9_Total`, `RSE_Total`, `Extraversion` – you'll see these names in all analysis outputs.
 - **Rules apply in order.** If you recode text to numbers in rule 1, rule 2's formula will see the numeric values. You can verify intermediate results in the [data preview](./getting-started.md#previewing-your-data) at any point.
 - **Save as a project file.** Your transformation rules are saved inside the project file (.json), so you can reopen the project later with all rules intact. You can also store rules in the [rule library](./data-transformation.md#rule-library) for reuse across projects.

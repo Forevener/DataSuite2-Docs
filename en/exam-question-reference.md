@@ -248,6 +248,49 @@ The within trio needs a condition and a subject id, which only a `design` spec p
 
 > **Never ask for a factor number.** Factor 1 on your screen is factor 2 on someone else's – the ordering is arbitrary. Anchor the factor by an item instead (*which items load on the same factor as item 3?*) and ask loadings as absolute values. `sameFactor` and `loading` exist for exactly this.
 
+### Regression
+
+| Primitive | Where | Returns |
+|---|---|---|
+| `regress(outcome, predictors, type)` | R | The model-fit row – `.n`, `.p`, `.stat`, `.df`, `.dfResidual`, plus the family's own measures |
+| `coef(outcome, predictors, type, predictor, level?)` | R | One coefficient row – `.b`, `.beta`, `.se`, `.stat`, `.p`, `.or` |
+| `vif(outcome, predictors, type, predictor)` | R | That predictor's variance inflation factor |
+
+All three read the same fit, and the fit is memoised on the **model** – so a question that asks about a model and then about each of its predictors costs one round trip, not one per predictor.
+
+`type` names the family, and it is one of `linear`, `binomial`, `ordinal`, `poisson`, `negbinomial` – a deliberate **subset** of the regression view's own dropdown. The families left out are the ones with no single coefficient row to read: a multinomial fit prints one coefficient table per outcome contrast, and a two-part count fit prints a count table beside a zero one.
+
+**Which fit fields exist depends on the family, and one the family did not compute is simply missing.**
+
+| Field | Family | Meaning |
+|---|---|---|
+| `.n` | every | Cases the model was fitted on |
+| `.p` `.stat` `.df` `.dfResidual` | every | The omnibus test and its degrees of freedom |
+| `.aic` `.bic` | every | Information criteria |
+| `.r2` `.adjR2` `.f2` `.rootMSE` | `linear` | R², adjusted R², Cohen's f², root mean squared error |
+| `.mcfaddenR2` `.adjMcfaddenR2` `.nagelkerkeR2` `.coxSnellR2` | the other four | Pseudo-R²s |
+| `.deviance` `.nullDeviance` `.logLik` | the other four | Residual deviance, null deviance, log-likelihood |
+
+`.stat` and `.df` name whichever omnibus the family runs – the F and its numerator df for a linear model, the likelihood-ratio χ² and its df for the rest – so one expression reads the right statistic under either. `.r2` is the opposite case: it stays linear-only, so a pseudo-R² can never arrive under a name that means something else.
+
+> **No confidence intervals.** Neither the R² interval nor the coefficient CIs are exposed. They are the only regression numbers that move with the **Confidence level** setting, which the answer sheet does not carry – so a question built on one would grade differently after a student changed a setting. `cor` and `reliability` draw the same line at their own CI options.
+
+On a coefficient row, `.b` is the raw coefficient and `.beta` the standardized one. `.or` is the exponentiated coefficient – an odds ratio for `binomial` and `ordinal`, a rate ratio for `poisson` and `negbinomial`, and absent for `linear`, which has no ratio scale.
+
+**A categorical predictor has no coefficient of its own,** because R codes it as one contrast column per level and the card prints a line for each. That is what `coef`'s fifth argument is for – name the level exactly as the card prints it:
+
+```json5
+truth: { b: "coef(income, vars('age','sex'), 'linear', sex, 'male').b" }
+```
+
+Those are also the names `levels()` yields, so a `table` can run `coef` down a factor's levels with `$row` in the level position – as long as the reference level is not among the rows. Three rules go with the argument, and each reports its own cause rather than answering with nothing:
+
+- **A numeric predictor must omit it** – it has one row already, and naming a level is an error.
+- **A categorical predictor needs it** – without a level there is no single row to read.
+- **The reference level has no coefficient at all** – R folds it into the intercept. It is the first level in **sorted order**, not the order your spec authored them in, so confirm which one it is before building questions around the others.
+
+`vif` is the exception to all of that: four arguments, never a level. `car` folds a categorical predictor's contrast columns back into a single GVIF row, so the same predictor that needs a level for `coef` answers `vif` as a whole variable.
+
 ### Method ids
 
 Test, method, extraction and rotation names are the app's own ids, so a question names precisely what the student selects. The editor's autocomplete offers the valid set **in each argument position**, read from the same directories the analysis uses – so `compare2` offers only two-sample tests, `compareK` only omnibus tests, and `posthoc` only the methods its omnibus declares. Common ones: `mannWhitneyU`, `welchTTest`, `independentTTest`, `kruskalWallis`, `oneWayANOVA`, `wilcoxonSignedRank`, `pairedTTest`, `friedmanTest`, `repeatedMeasuresANOVA`, `tukey`, `dunn`, `pearson`, `spearman`, `shapiroWilk`.
@@ -281,3 +324,5 @@ Press **Reroll** on the preview and recompute to see how much the answers move f
 **A p-value scalar, or a yes/no `value`?** If the student works with p-values displayed as categories rather than exact numbers, a p scalar is unanswerable. A `value` question over `['yes','no']` asking whether the result is significant at α works under every display setting, and is usually what you actually want to assess.
 
 **Pin the choice, or let the student pick?** Pin it unless the choice is itself the skill. A `pick` is worth its cost when later questions build on it – it makes each student's chain their own, and it lets you grade a student on the scale *they* constructed rather than one you chose for them.
+
+**What is the score worth?** That is yours to decide, and the block spans the range without being authored differently for it. The panel's `passed / total` counts graded questions only, and `gate` is a separate axis from grading, so the same block serves three quite different courses: the numbers *are* the assessment – grade every question, write no prose, and set `gate: "export"` with `threshold: 1` so nothing leaves the app until they are all right; the numbers are a precondition and the interpretation is the assessment – prose carries the weight, and the panel only certifies that the analysis was run correctly; or a mix, where `gate: "warn"` lets a student submit an incomplete attempt and the weighting is yours. What changes between them is what you tell your students the panel means, not what you write in the spec – [taking an exam](./taking-an-exam.md) gives them the mechanics and leaves that part to you.

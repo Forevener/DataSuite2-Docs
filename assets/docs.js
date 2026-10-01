@@ -107,9 +107,14 @@
 
 	// ── Scroll active nav item into view ─────────────────────
 
-	var activeLink = document.querySelector("[data-element='nav'] a[aria-current='page']");
-	if (activeLink && sidebar) {
-		activeLink.scrollIntoView({ block: "center" });
+	// The nav alone – scrollIntoView would also scroll the window to centre the link, and the sticky
+	// sidebar doesn't move with the window, so the page would open a couple of hundred px down.
+	var navEl = document.querySelector("[data-element='nav']");
+	var activeLink = navEl && navEl.querySelector("a[aria-current='page']");
+	if (activeLink) {
+		var navRect = navEl.getBoundingClientRect();
+		var linkRect = activeLink.getBoundingClientRect();
+		navEl.scrollTop += linkRect.top - navRect.top - (navEl.clientHeight - linkRect.height) / 2;
 	}
 
 	// ── Language dropdown ─────────────────────────────────────

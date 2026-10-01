@@ -80,6 +80,9 @@ html {
 	color: var(--text);
 	background: var(--bg);
 	-webkit-text-size-adjust: 100%;
+	/* The sticky header covers the top of the scrollport – every anchor, a heading's or a block's
+	   #b-<key> permalink, lands 16px below it */
+	scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
 body {
@@ -89,10 +92,8 @@ body {
 /* ── Header ───────────────────────────────────────────────── */
 
 .site-header {
-	position: fixed;
+	position: sticky;
 	top: 0;
-	left: 0;
-	right: 0;
 	z-index: 100;
 	display: flex;
 	align-items: center;
@@ -287,23 +288,31 @@ a.lang-option:hover {
 
 .layout {
 	display: flex;
-	margin-top: var(--header-height);
-	min-height: calc(100vh - var(--header-height));
 }
 
 /* ── Sidebar ──────────────────────────────────────────────── */
 
+/* Sticky under the header, one viewport tall; the filter stays put and the nav scrolls beneath it.
+   align-self: flex-start – stretched to the row's height it would have no room to stick. */
 .sidebar {
-	position: fixed;
+	position: sticky;
 	top: var(--header-height);
-	left: 0;
-	bottom: 0;
+	align-self: flex-start;
+	display: flex;
+	flex-direction: column;
+	flex: none;
 	width: var(--sidebar-width);
-	overflow-y: auto;
+	height: calc(100vh - var(--header-height));
 	padding: 16px 0;
 	border-right: 1px solid var(--border);
 	background: var(--bg);
 	z-index: 50;
+}
+
+.sidebar nav {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
 }
 
 .sidebar-backdrop {
@@ -313,6 +322,7 @@ a.lang-option:hover {
 /* ── Nav filter ───────────────────────────────────────────── */
 
 .nav-filter {
+	flex: none;
 	padding: 0 12px 12px;
 }
 
@@ -405,7 +415,6 @@ a.lang-option:hover {
 	display: flex;
 	flex: 1;
 	justify-content: center;
-	margin-left: var(--sidebar-width);
 	min-width: 0;
 }
 
@@ -575,7 +584,6 @@ a.lang-option:hover {
 .content h5[id],
 .content h6[id] {
 	position: relative;
-	scroll-margin-top: calc(var(--header-height) + 16px);
 }
 
 .heading-anchor {
@@ -683,7 +691,50 @@ a.lang-option:hover {
 	margin-bottom: 0;
 }
 
+/* ── Formulas – MathML from the build, rendered natively ─── */
+
+.content math {
+	font-size: 1.05em;
+}
+
+.content math[display="block"] {
+	margin: 0 0 16px;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.content blockquote math[display="block"]:last-child,
+.content li math[display="block"]:last-child {
+	margin-bottom: 0;
+}
+
+/* ── Fallback notice – a page served in English for want of a translation ── */
+
+.content .fallback-notice {
+	margin-bottom: 24px;
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg-tertiary);
+	color: var(--text-secondary);
+	font-size: 0.9em;
+}
+
 /* ── Tables ───────────────────────────────────────────────── */
+
+.content .table-scroll {
+	margin-bottom: 16px;
+	overflow-x: auto;
+}
+
+.content .table-scroll table {
+	margin-bottom: 0;
+}
+
+.content .table-wide th,
+.content .table-wide td {
+	white-space: nowrap;
+}
 
 .content table {
 	width: 100%;
@@ -817,7 +868,12 @@ a.lang-option:hover {
 		display: none;
 	}
 
+	/* Off-canvas drawer: out of the row, spanning the viewport below the header */
 	.sidebar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		height: auto;
 		transform: translateX(-100%);
 		transition: transform 0.25s ease;
 		box-shadow: none;
@@ -835,10 +891,6 @@ a.lang-option:hover {
 		top: var(--header-height);
 		z-index: 40;
 		background: rgba(0, 0, 0, 0.3);
-	}
-
-	.content-area {
-		margin-left: 0;
 	}
 
 	.content {

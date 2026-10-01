@@ -9,6 +9,32 @@
 			]
 		},
 		{
+			"key": "nav_concepts",
+			"pages": [
+				"concepts/guide-data",
+				"concepts/guide-analysis",
+				"concepts/guide-report",
+				"concepts/hypothesis-testing",
+				"concepts/effect-sizes",
+				"concepts/confidence-intervals",
+				"concepts/distributions",
+				"concepts/parametric-nonparametric",
+				"concepts/assumptions",
+				"concepts/outliers-missing-data",
+				"concepts/association",
+				"concepts/comparison-designs",
+				"concepts/regression-basics",
+				"concepts/latent-variables",
+				"concepts/reliability",
+				"concepts/agreement",
+				"concepts/power-sample-size",
+				"concepts/meta-analysis",
+				"concepts/survival",
+				"concepts/time-series",
+				"concepts/clustering"
+			]
+		},
+		{
 			"key": "nav_reference",
 			"pages": [
 				"data-transformation",
@@ -26,15 +52,38 @@
 				"correlation-analysis",
 				"comparison-analysis",
 				"reliability-analysis",
+				"reproducibility-analysis",
 				"irt-analysis",
 				"regression-analysis",
 				"factor-analysis",
-				"confirmatory-factor-analysis",
 				"structural-equation-modeling",
 				"cluster-analysis",
 				"time-to-event-analysis",
 				"time-series-analysis",
+				"meta-analysis",
 				"analysis-planner"
+			]
+		},
+		{
+			"key": "nav_methodology",
+			"open": false,
+			"pages": [
+				"methods/reliability-analysis",
+				"methods/reproducibility-analysis",
+				"methods/irt-analysis",
+				"methods/structural-equation-modeling",
+				"methods/regression-analysis",
+				"methods/correlation-analysis",
+				"methods/factor-analysis",
+				"methods/comparison-analysis",
+				"methods/descriptive-statistics",
+				"methods/distribution-analysis",
+				"methods/data-transformation",
+				"methods/meta-analysis",
+				"methods/analysis-planner",
+				"methods/time-to-event-analysis",
+				"methods/time-series-analysis",
+				"methods/cluster-analysis"
 			]
 		}
 	],

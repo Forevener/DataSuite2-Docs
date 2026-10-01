@@ -11,10 +11,10 @@ The **regex replace** rule in [data transformation](./data-transformation.md) le
 
 When you create a regex replace rule, the editor shows:
 
-- **Search pattern** – the regular expression to match
+- **Search pattern (RegEx)** – the regular expression to match
 - **Replacement text** – what to substitute in place of each match
 - **Options** – global (replace all matches), case sensitive, multiline mode
-- **Live preview** – shows the first matching value from your data with matches highlighted and capture groups in distinct colors
+- **Preview** – shows the first non-missing value of the first selected variable, with matches highlighted and capture groups in distinct colors
 
 The preview updates as you type, so you can experiment safely before saving the rule.
 
@@ -26,8 +26,8 @@ The preview updates as you type, so you can experiment safely before saving the 
 | `.` | any single character | "`a`bc" |
 | `\d` | any digit (0–9) | "age `4`2" |
 | `\D` | any non-digit | "42`!`" |
-| `\w` | any word character (letter, digit, underscore) | "`h`ello" |
-| `\W` | any non-word character | "hello `!`" |
+| `\w` | any word character (Latin letter, digit, underscore) | "`h`ello" |
+| `\W` | any non-word character (a non-Latin letter included) | "hello `!`" |
 | `\s` | any whitespace (space, tab, newline) | "hello` `world" |
 | `\S` | any non-whitespace | "`h`ello" |
 
@@ -55,8 +55,8 @@ Square brackets define a set of characters to match:
 | Class | Matches |
 |---|---|
 | `[abc]` | "a", "b", or "c" |
-| `[a-z]` | any lowercase letter |
-| `[A-Za-z]` | any letter |
+| `[a-z]` | any lowercase Latin letter |
+| `[A-Za-z]` | any Latin letter |
 | `[0-9]` | any digit (same as `\d`) |
 | `[^abc]` | any character except "a", "b", or "c" |
 
@@ -88,7 +88,7 @@ The replacement string can reference captured groups:
 
 ### Remove extra whitespace
 
-Collapse multiple spaces into one and trim the result.
+Collapse each run of whitespace into a single space.
 
 | | |
 |---|---|
@@ -102,17 +102,17 @@ Collapse multiple spaces into one and trim the result.
 
 ### Extract numbers from text
 
-Pull the first number out of a mixed-text cell.
+Keep only the first number of a mixed-text cell.
 
 | | |
 |---|---|
-| **Pattern** | `(\d+)` |
+| **Pattern** | `^\D*(\d+).*$` |
 | **Replacement** | `$1` |
-| **Options** | not global (first match only) |
+| **Options** | global |
 | **Before** | `"Age: 42 years"` |
 | **After** | `"42"` |
 
-For decimal numbers, use `(\d+\.?\d*)` instead.
+The pattern spans the whole cell, so the replacement keeps the captured number alone – a bare `(\d+)` would replace the number with itself and leave the text around it. For decimal numbers, use `^\D*(\d+\.?\d*).*$`; a cell with no digits is left as it was.
 
 ### Standardize date formats
 
@@ -130,7 +130,7 @@ The three capture groups `(\d{2})`, `(\d{2})`, `(\d{4})` grab day, month, and ye
 
 ### Remove everything after a delimiter
 
-Keep only the part before a dash, comma, or other separator.
+Keep only the part before a dash – put a comma or another separator in the dash's place for those.
 
 | | |
 |---|---|

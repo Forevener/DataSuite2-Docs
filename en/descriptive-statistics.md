@@ -5,249 +5,178 @@ description: Compute means, medians, standard deviations, confidence intervals, 
 
 # Descriptive statistics
 
-The **Descriptive statistics** module computes summary statistics for your selected variables. Pick the statistics you need, click the button, and get a results table – one row per variable.
+The **Descriptive statistics** module summarises each selected variable in one row of a table: the measures of location, spread, shape, counts, quantiles and diversity you tick, with standard errors and confidence intervals where they exist, for numeric and categorical variables alike. {#descriptive-statistics}
 
 ## How to use
 
 1. [Select your variables](./getting-started.md#choosing-variables)
 2. Open **Descriptive statistics** from the menu
-3. Check the statistics you want (or apply a [preset](#presets))
-4. Click **Generate descriptive statistics**
-
-Results appear in up to two tables: one for numeric variables, one for categorical variables.
+3. Tick the statistics you want under [Configuration](#configuration), or apply a [preset](#presets)
+4. Click **Generate descriptive statistics** and read the [results](#reading-results)
 
 ## Presets
 
-Two presets configure the checkboxes for common use cases:
+- **Apply preset** – two presets set the checkboxes for the common cases; applying one clears every other statistic first.
+	- **Parametric** – sample size, mean, standard deviation, minimum, maximum
+	- **Nonparametric** – sample size, median, minimum, maximum, quartiles (25%, 75%)
 
-- **Parametric** – sample size, mean, standard deviation, minimum, maximum
-- **Nonparametric** – sample size, median, minimum, maximum, quartiles (25%, 75%)
+Both presets keep **Sample size**. The **Use sample statistics (n-1 denominator)** and **Report as excess kurtosis** toggles are presentation settings rather than statistics, and a preset leaves them as they are.
 
-Applying a preset clears all other checkboxes first. **Sample size (N)** is part of both presets – it is a count, not a distributional choice, so no preset leaves you with a table that has no *N*. The **Use sample statistics (n-1 denominator)** and **Report as excess kurtosis** toggles are presentation settings rather than statistic choices, and are left untouched by presets.
+## Configuration
 
-## Available statistics
+Every statistic is a checkbox, grouped as the panel groups them, and a box that needs a setting reveals it beneath. A statistic a variable cannot have – a geometric mean where a value is zero, a proportion where there are three levels – prints **N/A** in its cell, and hovering the cell says why.
 
 ### Central tendency
 
-Measures of where the "center" of your data lies.
+- **Mean** – the arithmetic average: the right summary of a roughly symmetric variable, and the quantity most tests compare – see [mean](./concepts/distributions.md#b-mean).
+- **Sum** – the total of the values; meaningful for additive quantities such as counts or revenue, not for rates, ratios or indices.
+- **Median** – the middle value of the sorted data, unmoved by outliers or skew – see [median](./concepts/distributions.md#b-median).
 
-- **Mean** – the arithmetic average. Most useful when data is roughly symmetric without extreme outliers.
+> **Mean vs. median?** When the two diverge, a tail or an outlier is pulling the mean – see [when the mean and the median disagree](./concepts/distributions.md#when-the-mean-and-the-median-disagree).
 
-- **Sum** – the total of all values. Useful for additive quantities such as counts, revenue, or totals; less meaningful for rates, ratios, or indices.
+- **Mode** – the most frequent value; several values sharing the highest count are all listed, and a variable in which no value repeats reads **No mode** – see [mode](./concepts/distributions.md#b-mode). Adds a [Mode frequency](#b-mode-frequency) column.
+- **Trimmed mean** – the mean of what remains after the **Trim percentage** is cut from each end of the sorted values, a compromise between the mean and the median; at a 50% trim it is the median – see [trimmed mean](./concepts/parametric-nonparametric.md#b-trimmed-mean). The column header carries the percentage. {#trimmed-mean #trimmed-mean-pct}
+- **Trim percentage** – the share cut from each end, 0–50%, 10% by default; one value serves the trimmed mean, its standard error and its confidence interval, and the box shows whenever any of the three is ticked. A cleared or unreadable box counts as 10%.
+- **Geometric mean** – the *n*th root of the product of the values, for multiplicative quantities such as growth rates or ratios; **N/A** when any value is zero or negative.
+- **Harmonic mean** – the reciprocal of the mean of the reciprocals, for averaging rates such as speeds; **N/A** when any value is zero or negative.
+- **Hodges-Lehmann pseudomedian** – the median of all pairwise averages $(x_i + x_j)/2$: nearly as resistant to outliers as the median and nearly as efficient as the mean when the data is symmetric, reported together with its confidence interval from the signed-rank distribution – see [Hodges–Lehmann estimate](./concepts/parametric-nonparametric.md#b-hodges-lehmann-estimate). The one statistic here computed in R. {#hodges-lehmann-pseudomedian #hl-pseudomedian}
 
-- **Median** – the middle value when data is sorted. More robust than the mean when data is skewed or contains outliers.
-
-> **Mean vs. median:** when these two are close, your data is roughly symmetric. When they diverge, something is pulling the mean away – usually outliers or skew. For example, if the mean salary is \$75,000 but the median is \$55,000, a few very high salaries are inflating the average. In such cases, the median better represents the "typical" value.
-
-- **Mode** – the most frequently occurring value. Can be meaningful for any variable type, but especially for categorical data. A variable can have multiple modes if several values share the highest frequency. If every value is unique (no value repeats), the cell shows **No mode** – i.e. no value repeats, rather than "every value is a mode".
-
-- **Trimmed mean** – the mean after removing a percentage of extreme values from both ends. The **Trim percentage** box (0–50%, default 10%) controls how much is cut; it appears whenever the trimmed mean, [its standard error](#standard-errors) or [its confidence interval](#confidence-intervals) is selected, and one value drives all three. A 10% trim removes the lowest 10% and the highest 10% of values before averaging. This gives a compromise between the mean (sensitive to outliers) and the median (ignores all but the middle value). At the maximum 50% trim everything outside the centre is removed, so the result equals the median (matching R's `mean(x, trim = 0.5)`).
-
-- **Geometric mean** – the nth root of the product of values. Appropriate for data that is multiplicative in nature, such as growth rates or ratios. Reported as **N/A** when any value is zero or negative.
-
-- **Harmonic mean** – the reciprocal of the mean of reciprocals. Useful for averaging rates (e.g. speed, efficiency). Reported as **N/A** when any value is zero or negative.
-
-- **Hodges-Lehmann pseudomedian** – the median of all pairwise averages *(xᵢ + xⱼ)/2*. A robust location estimator that combines two desirable properties: it ignores outliers almost as well as the median, while being nearly as efficient as the mean when the data really is symmetric. Reported alongside its [confidence interval](#confidence-intervals), which inverts the Wilcoxon signed-rank distribution. The estimator and CI are computed via R's `stats::wilcox.test(x, conf.int = TRUE)` – see [Reproducibility](#reproducibility).
-
-> **When to prefer HL:** when your data is roughly symmetric but you don't trust it to be normal, or when you want a robust location estimate that's more informative than a plain median. For very skewed data, the median is still more interpretable.
+> **Median or pseudomedian?** The pseudomedian suits data that is roughly symmetric but not trusted to be normal; for a strongly skewed variable the median is still the more interpretable – see [Hodges–Lehmann estimate](./concepts/parametric-nonparametric.md#b-hodges-lehmann-estimate).
 
 ### Dispersion
 
-Measures of how spread out your data is.
+- **Minimum** – the smallest value, headed **Min**; a −999 here is a missing-value code that was never declared – see [min](./concepts/distributions.md#b-min). {#minimum #min}
+- **Maximum** – the largest value, headed **Max**; a 999 here is the same kind of code – see [max](./concepts/distributions.md#b-max). {#maximum #max}
+- **Range** – maximum minus minimum, set entirely by the two extremes – see [range](./concepts/distributions.md#b-range).
+- **Variance** – the average squared deviation from the mean, in squared units; *s²* under sample statistics and *σ²* under population statistics, and the header says which – see [variance](./concepts/distributions.md#b-variance). {#variance #variance-s² #variance-σ²}
+- **Standard deviation** – the square root of the variance, in the variable's own units, headed **Std dev (s)** or **Std dev (σ)** by the [sample toggle](#b-use-sample-statistics-n-1-denominator) – see [standard deviation](./concepts/distributions.md#b-standard-deviation). {#standard-deviation #std-dev-s #std-dev-σ}
 
-- **Minimum** and **Maximum** – the smallest and largest values. Always worth checking – an unexpected minimum (like -999) or maximum (like 999) often signals a data entry error or a missing value code that wasn't handled.
+> **Rule of thumb?** In a roughly normal distribution about 68% of the values fall within one SD of the mean and about 95% within two – see [normal distribution](./concepts/distributions.md#b-normal-distribution).
 
-- **Range** – the difference between maximum and minimum. Easy to understand, but highly sensitive to outliers – a single extreme value changes the range dramatically.
-
-- **Variance** – the average squared deviation from the mean. Expressed in squared units of the original variable, so if you're measuring height in centimeters, variance is in cm². This makes it hard to interpret directly – standard deviation is usually more practical.
-
-- **Standard deviation (SD)** – the square root of variance. Expressed in the same units as the original variable, making it the most commonly reported measure of spread.
-
-> **Rule of thumb:** in a roughly normal distribution, about 68% of values fall within ±1 SD of the mean, and about 95% within ±2 SD.
-
-- **Winsorized standard deviation** – the SD computed after replacing the extreme values at each tail with the cutoff value at the boundary (rather than discarding them, as with the trimmed mean). The winsorization percentage (0–50%, default 10%) is set independently of the trimmed-mean percentage. Less sensitive to outliers than the plain SD; the natural companion to the trimmed mean. The sample-vs-population toggle ([see below](#sample-vs-population-statistics)) controls which denominator is used; the column header reflects the choice as `Winsorized SD (%, s)` or `Winsorized SD (%, σ)`. Reported as **N/A** when the chosen percentage would leave no central data (e.g. 50% on an even-*n* sample of 4 or 6 observations).
-
-> **Trimming vs. winsorizing:** trimming removes the outermost values; winsorizing keeps the sample size and instead pulls the extremes inward. Winsorized SD is what robust inference methods (e.g. Yuen's t-test) use to pair with a trimmed mean.
-
-- **Interquartile range (IQR)** – the difference between the 75th and 25th percentiles. Captures the spread of the middle 50% of the data – essentially the range of "typical" values, ignoring the extremes on both ends. Unlike SD, it is not affected by outliers – a single extreme value won't change the IQR.
-
-> **Practical use:** if IQR is much smaller than the range, it means your data has a compact core with a few far-flung values. This is a quick way to gauge whether outliers are inflating your spread statistics.
-
-- **Mean absolute deviation** – the average absolute distance from the mean. Like IQR, it is less sensitive to outliers than SD, because it doesn't square the deviations (squaring amplifies the impact of extreme values). A good companion to the mean when you want a spread measure with the same units but less sensitivity to extremes.
-
-- **Median absolute deviation** – the median of *|x − median(x)|*. The robust counterpart to mean AD: by replacing both the centring point (mean → median) and the aggregation (mean → median), it stays stable even when a substantial fraction of the data is contaminated. Multiplied by 1.4826 it estimates the SD of a normal distribution; the **Modified Z outliers** rule uses this internally.
-
-> **SD vs. mean AD vs. median AD:** for clean normal data they tell a similar story. Heavy-tailed data inflates SD the most; the mean AD stays stable longer; the median AD is the most resistant of the three. If your SD is noticeably larger than your mean AD, that's a sign a few extreme values are driving the spread.
-
-- **Coefficient of variation (CV)** – the standard deviation divided by the mean, expressed as a percentage. Useful for comparing variability between variables measured on different scales – for example, comparing the variability of reaction times (measured in milliseconds) with the variability of accuracy scores (measured in percent). The sample-vs-population toggle ([see below](#sample-vs-population-statistics)) controls which SD is used in the numerator; the column header reflects the choice as `CV (%, s)` or `CV (%, σ)`. Only defined for non-negative, ratio-scale data; reported as **N/A** when the data contains any negative value or the mean is zero.
+- **Winsorized standard deviation** – the SD after the extreme **Winsorization percentage** of values at each tail is replaced by the boundary value rather than dropped; the spread that belongs with a trimmed mean – see [winsorizing](./concepts/parametric-nonparametric.md#b-winsorizing). The header carries the percentage and the denominator, as `Winsorized SD (10%, s)`; **N/A** when the percentage leaves no central data (50% on an even *n*). {#winsorized-standard-deviation #winsorized-sd-pct-s #winsorized-sd-pct-σ}
+- **Winsorization percentage** – the share replaced at each end, 0–50%, 10% by default, set independently of the trim percentage; a cleared or unreadable box counts as 10%.
+- **Interquartile range** – Q3 minus Q1, the width of the middle half of the data, headed **IQR**; unmoved by outliers, so the spread to report beside a median – see [IQR](./concepts/distributions.md#b-iqr). {#interquartile-range #iqr}
+- **Mean absolute deviation** – the average absolute distance from the mean, headed **Mean AD**; less sensitive to extremes than the SD because nothing is squared, in the same units as the mean. {#mean-absolute-deviation #mean-ad}
+- **Median absolute deviation** – the median of |*x* − median|, unscaled, headed **Median AD**; multiplied by 1.4826 it estimates the SD of a normal variable, and the **Modified Z outliers** rule is built on it – see [median absolute deviation](./concepts/parametric-nonparametric.md#b-median-absolute-deviation). {#median-absolute-deviation #median-ad}
+- **Coefficient of variation** – the SD as a percentage of the mean, for comparing spread across variables measured on different scales, headed **CV (%, s)** or **CV (%, σ)** by the sample toggle; defined only for non-negative ratio-scale data, so **N/A** when any value is negative or the mean is zero. {#coefficient-of-variation #cv-s #cv-σ}
 
 ### Shape
 
-How the distribution of values looks beyond center and spread.
+- **Skewness** – asymmetry: 0 is symmetric, a positive value a longer right tail, a negative one a longer left tail – see [skewness](./concepts/distributions.md#b-skewness). Always the bias-corrected sample estimator *G₁*, whatever the sample toggle; **N/A** below three observations or when every value is identical.
+- **Kurtosis** – the weight of the tails relative to a normal distribution, reported as excess kurtosis (normal = 0) unless **Report as excess kurtosis** is unticked, and headed **Excess kurtosis** or **Kurtosis** accordingly – see [kurtosis](./concepts/distributions.md#b-kurtosis). Always the bias-corrected *G₂*; **N/A** below four observations or when every value is identical. {#kurtosis #excess-kurtosis}
+- **Report as excess kurtosis** – on by default: raw kurtosis minus 3, so a normal distribution scores 0. Shown whenever kurtosis, its standard error or its confidence interval is ticked, so the form can be set for an interval requested on its own.
+- **SE/CI method** – how the standard errors and confidence intervals of skewness and kurtosis are built; shown when any of the four is ticked, and named in their column headers as `normal` or `bootstrap`.
+	- **Analytical (normal-theory)** – closed-form standard errors derived under a normal distribution, and intervals of estimate ± *z* × SE; honest only near normality.
+	- **Bootstrap (BCa)** – resamples the data over the [bootstrap replications](./settings.md#bootstrap-replications) setting and takes the bias-corrected and accelerated interval, with the standard error the SD of the replicates – see [BCa](./concepts/confidence-intervals.md#b-bca). A cell built on too few usable replicates is flagged, and hovering it says which of the two floors was missed; the point estimate stays valid either way. At the shipped 100 replications the interval is always flagged – raise the setting to 1,000 for a quotable interval.
 
-- **Skewness** – measures asymmetry. A value near 0 indicates a symmetric distribution. Positive skewness means a longer right tail; negative means a longer left tail.
+### Summary counts
 
-> **Example:** income data is typically positively skewed – most people earn moderate amounts, with a long tail of high earners pulling the distribution to the right.
+- **Sample size** – the number of non-missing observations, headed **N** – see [sample size](./concepts/distributions.md#b-sample-size). {#sample-size #n}
+- **Count of distinct values** – how many different values occur, missing excluded, headed **Distinct**; five distinct values in a variable meant to be binary point at inconsistent coding, which a [frequency table](./distribution-analysis.md#frequency-tables) then shows. {#count-of-distinct-values #distinct}
+- **Missing value count** – how many cells are empty, as a count and a percentage of all rows, headed **Missing**. {#missing-value-count #missing}
+- **Zero count** – how many values equal zero, as a count and a percentage of the non-missing values, headed **Zeroes**. {#zero-count #zeroes}
+- **Mild outliers (1.5·IQR)** – the count and percentage of values outside $[Q_1 - 1.5\,\text{IQR},\ Q_3 + 1.5\,\text{IQR}]$, the points a box plot draws beyond its whiskers – see [Tukey's fences](./concepts/outliers-missing-data.md#b-tukeys-fences). Adds an [Inlier range](#b-inlier-range-15iqr) column. **N/A** when the IQR is 0.
+- **Extreme outliers (3·IQR)** – the same rule with the fences at 3 IQR, always a subset of the mild outliers. Adds its own inlier-range column; **N/A** when the IQR is 0.
+- **Modified Z outliers (|M| > 3.5)** – the count and percentage of values whose modified Z-score $M = 0.6745 \cdot (x - \text{median})/\text{MAD}$ exceeds 3.5 in absolute value; built on the median and the median AD, so one extreme value cannot mask another – see [modified z-score](./concepts/outliers-missing-data.md#b-modified-z-score). Adds its own inlier-range column; **N/A** when the median AD is 0.
 
-- **Kurtosis** – measures how heavy the tails are relative to a normal distribution. By default, reported as **excess kurtosis** (raw kurtosis minus 3), so a normal distribution has a value of 0. Positive values indicate heavier tails; negative values indicate lighter tails.
-
-> **Heavy vs. light tails:** a distribution with heavy tails (positive kurtosis) produces more extreme values than you'd expect from a normal distribution – more outliers, more "surprising" data points. A distribution with light tails (negative kurtosis) is the opposite – values cluster closer together with fewer extremes. For example, exam scores that bunch in the middle with few very high or very low scores would have negative kurtosis.
-
-> **Formulas:** skewness and kurtosis always use the bias-corrected sample estimators *G₁* and *G₂* – the same formulas Excel, SPSS, SAS, and R's `e1071::skewness(type = 2)` report by default. The sample-vs-population toggle does **not** affect them. Skewness needs at least 3 observations; kurtosis needs at least 4 (and SE/CI for kurtosis needs 5). Both are undefined (reported as **N/A**) when the standard deviation is zero – i.e. all values are identical.
-
-### Counts
-
-- **Sample size (N)** – the number of non-missing observations.
-
-- **Distinct values** – how many unique values the variable has. Helpful for spotting coding errors or verifying categorical variables. For example, a "Dominant hand" variable with 5 distinct values when you expected 2 might indicate inconsistent coding ("Left", "left", "L", "RIGHT", "Right").
-
-- **Missing value count** – how many observations have no value, shown as both a count and a percentage of the total.
-
-- **Zero count** – how many observations equal zero, shown as both a count and a percentage.
-
-- **Mild outliers (1.5·IQR)** – count (and percent) of values falling outside *[Q1 − 1.5·IQR, Q3 + 1.5·IQR]*. These are the values that appear as individual points beyond the whiskers in a standard box plot. Inlier range is **N/A** when the IQR is zero (at least half the data sits at a single value), since the rule loses its meaning.
-
-- **Extreme outliers (3·IQR)** – count (and percent) of values falling outside the wider band *[Q1 − 3·IQR, Q3 + 3·IQR]*. Always a subset of the mild outliers – these are the truly far-from-typical values. Same IQR=0 caveat as above.
-
-- **Modified Z outliers (|M| > 3.5)** – count (and percent) of values whose modified Z-score *M = 0.6745·(x − median)/MAD* exceeds 3.5 in absolute value (Iglewicz & Hoaglin 1993). Here MAD is the **median absolute deviation**, not the mean form. Unlike a classical Z-score, this rule uses the median and median AD, so the centre and scale used to flag outliers are themselves resistant to outliers – a single extreme value can no longer "mask" others. When the median AD is zero (more than half the data is identical to the median), the rule loses its meaning – same as the IQR=0 case above.
-
-Each outlier rule that is enabled also produces an **Inlier range** column showing the cutoff pair *[lower, upper]*. Feed that pair into a [case filter](./getting-started.md#filtering-cases): a **Between** *lower* and *upper* condition keeps the inliers, while **Outside** keeps the outliers. In the degenerate cases noted above (IQR=0, MAD=0), both the count and the inlier-range cells report **N/A**; hovering the cell shows an explanation of why the rule could not be applied.
-
-> **Picking a rule:** for general use, the **mild outliers (1.5·IQR)** rule matches what a box plot shows and works on any distribution shape. The **extreme** rule isolates the most unambiguous outliers. The **modified Z** rule is the right choice when you want a Z-style threshold without the masking problem of the classical mean/SD version – it agrees with the IQR rules on heavy-tailed data but uses a sharper, distance-based cutoff.
+> **Which rule?** The 1.5·IQR fences match a box plot and suit any shape; 3·IQR isolates the unambiguous cases; the modified Z rule gives a Z-style threshold without the masking of the classical one – see [finding one variable's outliers](./concepts/outliers-missing-data.md#finding-one-variables-outliers).
 
 ### Quantiles
 
-- **Quartiles (25%, 75%)** – the values below which 25% and 75% of the data falls. Together with the median (50th percentile), these define the "box" in a box plot. The 25th percentile (Q1) means "25% of participants scored below this value."
-
-- **Custom percentiles** – enter comma-separated values (e.g. "10, 90" or "5, 25, 50, 75, 95") to compute any percentiles you need.
-
-### Standard errors
-
-The standard error estimates how much a statistic would vary if you repeated the study with a different sample from the same population. A smaller SE means the statistic is more precisely estimated.
-
-> **Standard deviation vs. standard error:** SD describes the spread of individual values in your data. SE describes the precision of a computed statistic (like the mean). SD stays roughly the same as you collect more data; SE shrinks, because larger samples give more precise estimates.
-
-- **SE of mean** – standard error of the arithmetic mean
-- **SE of median** – bootstrap standard error of the median: the empirical SD of the median across resamples with replacement, using the resample count from your global [**Bootstrap replications**](./settings.md#bootstrap-replications) setting. No distributional assumption.
-- **SE of trimmed mean** – Tukey–McLaughlin standard error: the winsorized spread at the *same* trim percentage, divided across the *h* observations the trim left in place. It is the SE that belongs to a trimmed mean – the plain SE of the mean is not valid for it, because trimming changes both the estimator and its sampling variance. Uses the **Trim percentage** box shared with the trimmed mean itself; reported as **N/A** when the trim leaves fewer than two observations (e.g. 50% on *n* = 4).
-- **SE of proportion** – for binary variables only (exactly two distinct non-missing values), whether categorical or numeric (e.g. 0/1 dummies)
-- **SE of skewness** – standard error of the sample skewness
-- **SE of kurtosis** – standard error of the sample kurtosis
-
-> **Method for skewness/kurtosis SE and CI:** a **SE/CI method** dropdown appears in the **Shape** section when any of the four corresponding stats are enabled. Choose **Analytical (normal-theory)** for closed-form SEs derived under the assumption of a normal underlying distribution, or **Bootstrap** for a distribution-free alternative that resamples the data – the CI uses the bias-corrected and accelerated (BCa) method (Efron 1987), which adjusts the percentile bounds for bias and skewness in the sampling distribution. Bootstrap uses the resample count from your global [**Bootstrap replications**](./settings.md#bootstrap-replications) setting; entering an integer in [**Bootstrap seed**](./settings.md#bootstrap-seed) (instead of leaving it empty) makes the resamples reproducible across runs. The method that was used appears in the column header itself – `SE (skewness, normal)` vs `SE (skewness, bootstrap)`, and likewise for the CI columns – so the source is unambiguous when the table is exported or shared. The header reads "bootstrap" rather than "BCa" because the fallback to the percentile interval (described below) leaves the column still labelled honestly.
-
-> **When a bootstrap cell is flagged:** the SE and the CI are flagged independently, because they rest on different machinery and fail at different points. Hovering a flagged cell explains which case you hit; the point estimate in the **Skewness** / **Kurtosis** column stays valid either way.
->
-> - The **SE** is just the standard deviation of the replicates, and settles by roughly 50 usable ones. It is flagged only when fewer than that survive – which needs a small or degenerate sample, since replicates that return an undefined value are dropped.
-> - The **CI** reads its endpoints off replicate percentiles, and those need on the order of 1000 replicates to be stable. At the shipped default of 100 the 2.5th and 97.5th percentiles are individual replicates, so **the CI is flagged at the default setting** – the tooltip says so and points at [**Bootstrap replications**](./settings.md#bootstrap-replications). It is also flagged when the bias/acceleration corrections could not be estimated and the interval fell back to the plain percentile bootstrap. That fallback is automatic above *n* = 20 000 as well: the acceleration step costs *n* leave-one-out passes, so past that size the module takes the percentile interval immediately rather than stalling the run.
-
-> **Where to find the "excess kurtosis" toggle:** the **Report as excess kurtosis** checkbox lives in the **Shape** section and appears whenever kurtosis itself or its SE/CI is selected – so you can request the CI alone and still control the excess-vs-raw form.
-
-### Confidence intervals
-
-A confidence interval gives a range of plausible values for a population parameter. The width depends on the [confidence level](./settings.md#confidence-level) set in your settings (default: 95%).
-
-- **CI for mean** – Student's *t* critical value (df = *n* − 1)
-- **CI for trimmed mean** – the Tukey–McLaughlin / Yuen interval: trimmed mean ± *t* · [SE of the trimmed mean](#standard-errors), at df = *h* − 1 where *h* is the number of untrimmed observations. The header repeats both the confidence level and the trim, as `Trimmed mean CI lower (95%, 10%)`, so the interval can't be read apart from the estimate it brackets. At 0% trim it collapses exactly onto the CI for the mean.
-- **CI for median** – distribution-free, built from the sample order statistics. Selecting it reveals a **Median CI method** dropdown with two constructions:
-	- **Exact (order statistics)** – inverts the Binomial(*n*, 0.5) sign test. Exact and deliberately conservative: actual coverage is at least the nominal level, usually a little above it. Reported as **N/A** when no pair of order statistics reaches the requested coverage at the available discrete levels (e.g. *n* = 5 at 95%).
-	- **Interpolated (Hettmansperger-Sheather)** – interpolates between adjacent order statistics, which attains the nominal level much more closely instead of overshooting it. This is the variant the median notch in [box plots](./distribution-analysis.md#box-plot) draws, so choose it when you want the table and the plot to report the same interval.
-
-	Hovering the column header tells you which of the two produced the numbers in it.
-- **CI for proportion** – Wilson score interval. Better behaved than the textbook Wald interval, especially near 0 or 1. Binary variables only (exactly two distinct non-missing values).
-- **CI for standard deviation** – **Bonett's (2006) kurtosis-adjusted interval**, not the classical chi-square pivot. Available only when **Use sample statistics (n-1)** is checked – both constructions are defined on the sample SD, so the checkbox is disabled and cleared when you switch to population statistics.
-- **CI for variance** – the bounds of the SD interval, squared. Same construction and same sample-statistics requirement as **CI for standard deviation**.
-- **CI for skewness** and **CI for kurtosis** – see method note above. The HL pseudomedian CI is reported together with the estimate itself in the Central tendency section.
-
-> **Interpreting a 95% CI:** if you repeated the study many times, about 95% of the computed intervals would contain the true population value.
-
-> **Why the SD interval won't match SPSS or Excel:** the textbook interval for a standard deviation inverts *(n−1)s²/σ² ~ χ²(n−1)*, which assumes the data is normal. That assumption is not a technicality here – the coverage of a chi-square interval is driven by the fourth moment of the data, so under even mild excess kurtosis a nominal 95% interval can deliver noticeably less, and unlike the *t* interval for the mean it does **not** get better as *n* grows. Bonett's interval replaces the normal-theory constant with the sample's own kurtosis, and holds its level far better on real data. The trade is comparability: a reader recomputing your interval in another package will get the chi-square one and a different pair of numbers. Hovering either CI column header shows this note in the app; state the construction when you report the interval. The columns are labelled `Std dev CI lower (95%, Bonett)` and so on for the same reason.
+- **Quartiles (25%, 75%)** – Q1 and Q3, the values below which a quarter and three quarters of the data fall, headed **Q1 (25%)** and **Q3 (75%)** and computed by linear interpolation (R's type 7) – see [Q1](./concepts/distributions.md#b-q1) and [Q3](./concepts/distributions.md#b-q3). {#quartiles-25-75 #q1-25 #q3-75}
+- **Custom percentiles** – any percentiles you name under **Values (comma separated)**, one column each, headed *P* and the number – see [percentile](./concepts/distributions.md#b-percentile). A box with no valid entry adds no columns and raises a warning.
+- **Values (comma separated)** – the percentiles to compute, 0–100, as `10, 90`; unreadable entries and duplicates are dropped and the rest sorted.
 
 ### Diversity
 
-Information-theoretic and ecological measures of how spread-out values are across distinct levels. Computed for both categorical and numerical variables – in the numerical case, each distinct value is treated as its own level.
+Three measures of how evenly the values are spread across the distinct levels, computed for categorical and numeric variables alike – a numeric variable's distinct values are its levels. Once 90% or more of a numeric variable's values are distinct the measures only restate that, and hovering the cells says so.
 
-- **Shannon entropy (H)** – *H = −Σ pᵢ · ln(pᵢ)*, in nats. An absolute measure of diversity: H = 0 when everything is the same value, and H = ln *k* when *k* levels are perfectly evenly used. Scales with the number of levels, so it isn't directly comparable across variables with different *k*.
+- **Shannon entropy (H)** – $H = -\sum_i p_i \ln p_i$, in nats, headed **Shannon H (nats)**: 0 when every case has the same value and ln *k* when the *k* levels are equally used, so it grows with the number of levels – see [entropy](./concepts/association.md#b-entropy). {#shannon-entropy-h #shannon-h-nats}
+- **Pielou's evenness (J)** – $J = H / \ln k$, the entropy scaled to 0–1 by the number of levels, headed **Pielou's J**: 1 is perfectly even, 0 one level holding everything, and comparable across variables where H is not – see [Pielou's evenness](./concepts/distributions.md#b-pielous-evenness). **N/A** with a single level. {#pielous-evenness-j #pielous-j}
+- **Gini-Simpson (1−D)** – the probability that two random observations fall in different levels, from 0 to 1 – see [Gini-Simpson index](./concepts/distributions.md#b-gini-simpson-index). {#gini-simpson-1d}
 
-- **Pielou's evenness (J)** – *J = H / ln(k)*, where *k* is the number of distinct levels. Normalizes Shannon entropy to [0, 1] so it *is* comparable across variables: 1 = perfectly even, 0 = one level dominates everything. Undefined when there is only a single level.
+### Standard errors
 
-- **Gini-Simpson (1 − D)** – probability that two random observations fall into *different* levels. Bounded in [0, 1]; higher values mean more diversity. The standard "diversity index" in ecology.
+A standard error says how much a statistic would vary from sample to sample – the precision of the statistic, where the SD is the spread of the values – see [standard error](./concepts/confidence-intervals.md#b-standard-error).
 
-> **H vs. J:** they answer different questions. H tells you *how much diversity is here* in absolute terms (so 2 levels at 50/50 give H ≈ 0.69, but 100 levels near-uniform give H ≈ 4.6). J tells you, *given the levels present, how evenly they're used* – both of those examples give J ≈ 1. Report both when both are interesting; report only J when you want a cross-variable comparison.
+- **Standard error of mean** – the SD divided by √*n*, headed **SE (mean)**. {#standard-error-of-mean #se-mean}
+- **Standard error of median** – a bootstrap: the SD of the median over resamples with replacement, as many as the [bootstrap replications](./settings.md#bootstrap-replications) setting says, headed **SE (median)** – see [bootstrap](./concepts/confidence-intervals.md#b-bootstrap). {#standard-error-of-median #se-median}
+- **Standard error of trimmed mean** – the Tukey–McLaughlin standard error: the winsorized spread at the same trim, over the observations the trim left in place, headed **SE (trimmed mean, {pct}%)**; the plain SE of the mean is not valid for a trimmed mean. Shares the **Trim percentage** box; **N/A** when the trim leaves fewer than two observations. {#standard-error-of-trimmed-mean #se-trimmed-mean-pct}
+- **Standard error of proportion** – $\sqrt{p(1 - p)/n}$ for the [proportion](#b-proportion) of a binary variable, headed **SE (proportion)**. {#standard-error-of-proportion #se-proportion}
+- **Standard error of skewness** – by the [SE/CI method](#b-se-ci-method), headed **SE (skewness, {method})**. {#standard-error-of-skewness #se-skewness-method}
+- **Standard error of kurtosis** – by the [SE/CI method](#b-se-ci-method), headed **SE (kurtosis, {method})**. {#standard-error-of-kurtosis #se-kurtosis-method}
 
-> **For continuous numerical variables:** if most values are unique, H ≈ ln *n* and J ≈ 1 – mathematically correct but not very informative. The diversity measures are most useful for categorical variables or discrete numericals (Likert items, counts). The app flags the degenerate case for you: once more than 90% of a numeric variable's values are distinct, hovering its diversity cells shows a note saying the numbers only restate that.
+### Confidence intervals
+
+Every interval is at the [confidence level](./settings.md#confidence-level) set in Settings, which the column headers repeat, and prints as a lower and an upper column – see [confidence interval](./concepts/confidence-intervals.md#b-confidence-interval).
+
+- **CI for mean** – Student's *t* interval at *n* − 1 degrees of freedom, headed **Mean CI lower ({level}%)** and **Mean CI upper ({level}%)**. {#ci-for-mean #mean-ci-lower-level #mean-ci-upper-level}
+- **CI for trimmed mean** – the Tukey–McLaughlin (Yuen) interval: trimmed mean ± *t* × its [standard error](#b-standard-error-of-trimmed-mean) at *h* − 1 degrees of freedom, *h* the untrimmed count; at a 0% trim it equals the CI for the mean. Headed **Trimmed mean CI lower ({level}%, {pct}%)** and **Trimmed mean CI upper ({level}%, {pct}%)**, the trim repeated so the interval reads with the estimate it brackets. {#ci-for-trimmed-mean #trimmed-mean-ci-lower-level-pct #trimmed-mean-ci-upper-level-pct}
+- **CI for median** – distribution-free, built from the order statistics by the **Median CI method** it reveals, headed **Median CI lower ({level}%)** and **Median CI upper ({level}%)**; hovering a header names the construction – see [interval for a median](./concepts/confidence-intervals.md#b-interval-for-a-median). {#ci-for-median #median-ci-lower-level #median-ci-upper-level}
+- **Median CI method** – which of two constructions produces the bounds.
+	- **Exact (order statistics)** – inverts the Binomial(*n*, 0.5) sign test; conservative, its coverage at least the nominal level. **N/A** when no pair of order statistics reaches the level (*n* = 5 at 95%), with the reason on hover.
+	- **Interpolated (Hettmansperger-Sheather)** – interpolates between adjacent order statistics to land closer to the nominal level; the interval the median notch in [box plots](./distribution-analysis.md#box-plot) draws, so pick it when the table and the plot should agree.
+- **CI for proportion** – the Wilson score interval, well behaved near 0 and 1 where the textbook interval is not, headed **Proportion CI lower ({level}%)** and **Proportion CI upper ({level}%)**; binary variables only – see [interval for a proportion](./concepts/confidence-intervals.md#b-interval-for-a-proportion). {#ci-for-proportion #proportion-ci-lower-level #proportion-ci-upper-level}
+- **CI for standard deviation** – Bonett's kurtosis-adjusted interval, not the chi-square pivot, headed **Std dev CI lower ({level}%, Bonett)** and **Std dev CI upper ({level}%, Bonett)**; hovering a header says why another package's number differs – see [interval for a standard deviation](./concepts/confidence-intervals.md#b-interval-for-a-standard-deviation). Needs sample statistics – the box is disabled and cleared under population statistics – and at least five observations. {#ci-for-standard-deviation #std-dev-ci-lower-level-bonett #std-dev-ci-upper-level-bonett}
+- **CI for variance** – the bounds of the SD interval, squared, headed **Variance CI lower ({level}%, Bonett)** and **Variance CI upper ({level}%, Bonett)**; the same construction and the same sample-statistics requirement. {#ci-for-variance #variance-ci-lower-level-bonett #variance-ci-upper-level-bonett}
+- **CI for skewness** – by the [SE/CI method](#b-se-ci-method): skewness ± *z* × SE, or the BCa bootstrap interval, headed **Skew CI lower ({level}%, {method})** and **Skew CI upper ({level}%, {method})**. {#ci-for-skewness #skew-ci-lower-level-method #skew-ci-upper-level-method}
+- **CI for kurtosis** – by the [SE/CI method](#b-se-ci-method), in the form **Report as excess kurtosis** sets, headed **Kurt CI lower ({level}%, {method})** and **Kurt CI upper ({level}%, {method})**. {#ci-for-kurtosis #kurt-ci-lower-level-method #kurt-ci-upper-level-method}
+
+> **Reading a 95% CI?** Over many repetitions of the study, about 95% of the intervals computed this way would contain the population value – see [95% CI](./concepts/confidence-intervals.md#b-95-ci).
 
 ### Sample vs. population statistics
 
-The **Use sample statistics (n-1 denominator)** checkbox (on by default) controls exactly four statistics: variance, standard deviation, Winsorized SD, and coefficient of variation – n-1 when checked, n when unchecked. Skewness and kurtosis always use their bias-corrected sample forms (*G₁*, *G₂*) regardless of the toggle, and so does every standard error and confidence interval, because their sampling theory requires it. Unchecking the box therefore also disables and clears **CI for standard deviation** and **CI for variance**, which are only defined on the sample form.
+- **Use sample statistics (n-1 denominator)** – on by default. Governs four statistics – variance, standard deviation, winsorized standard deviation and the coefficient of variation – with *n* − 1 as the denominator when ticked and *n* when not; their headers read *s* or *σ* accordingly. Skewness, kurtosis and every standard error and confidence interval keep the sample form regardless, and unticking the box also disables and clears **CI for standard deviation** and **CI for variance**, which exist only for the sample form. Keep it ticked unless your data is the whole population of interest: *n* on a sample understates the variability.
 
-- **Sample statistics (n-1)** – use this when your data is a sample from a larger population, which is almost always the case in research. The result labels show *s²* and *s*.
-- **Population statistics (n)** – use this only when your data represents the entire population of interest. The result labels show *σ²* and *σ*.
+## Reading results
 
-> When in doubt, keep sample statistics (n-1) selected. Using n instead of n-1 on sample data underestimates the true variability.
+Results appear in a **Descriptive statistics** card with up to two tables, one row per variable. A variable with no valid value left under the active [case filter](./getting-started.md#filtering-cases) is left out of the table and named in a warning above it; when no ticked statistic applies to any selected variable, no card appears and a notification says so. Each run adds a new card, so tables with different selections can sit side by side.
 
-## Categorical variables
+**Numerical variables.** One row per numeric variable and one column per ticked statistic, the columns in the order of the groups above. Every header carries the setting its numbers depend on – the trim, the confidence level, the SE/CI method, the *s* or *σ* denominator – so an exported table reads without the panel.
 
-Categorical variables get their own results table with a more limited set of statistics:
+**Categorical variables.** One row per categorical variable, with the statistics that apply to categories: the sample size, missing count and distinct values, the mode and its frequency, the three diversity measures and, for a binary variable, the proportion with its standard error and interval.
 
-- Sample size, missing count, distinct values
-- Mode (and its frequency)
-- Diversity measures (Shannon H, Pielou's J, Gini-Simpson)
-- Proportion, SE of proportion, and CI for proportion – only for binary variables (exactly two non-missing categories). Each can be selected independently; the **Category** column identifies which of the two levels the proportion refers to (the more frequent one).
+The columns are the statistics' own entries above; the ones no checkbox names:
 
-Binary **numeric** variables (exactly two distinct values, e.g. 0/1 dummies) get the same proportion columns in the numeric table, using the same most-frequent-value rule for the reference category.
+- **Variable** – the variable's display name.
+- **Mode frequency** – how many observations share the modal value; **N/A** when there is no mode.
+- **HL CI lower ({level}%)** – the lower bound of the pseudomedian's interval, with **HL CI upper ({level}%)** its upper bound; computed with the estimate whether or not any CI box is ticked. {#hl-ci-lower-level #hl-ci-upper-level}
+- **Inlier range (1.5·IQR)** – the cut-off pair *[lower, upper]* of the rule beside it, one column per enabled rule – **Inlier range (3·IQR)** and **Inlier range (modified Z)** likewise; feed the pair to a [case filter](./getting-started.md#filtering-cases), where **Between** keeps the inliers and **Outside** the outliers – see [inlier range](./concepts/outliers-missing-data.md#b-inlier-range). **N/A**, with the reason on hover, when the rule's spread is zero. {#inlier-range-15iqr #inlier-range-3iqr #inlier-range-modified-z}
+- **Category** – the level whose share the proportion columns describe: the more frequent of a binary variable's two levels, the first met on a tie. For a variable with one level, or three or more, the proportion cells read **N/A**, and hovering one says why.
+- **Proportion** – that level's share of the non-missing observations. A binary numeric variable (0/1 dummies and the like) gets the same columns in the numeric table.
 
 ## Reporting checklist
 
-Key things to include when writing up descriptive statistics:
-
 **Method:**
-- Which statistics were reported and why (e.g. median and IQR for skewed data instead of mean and SD)
-- Whether sample (n-1) or population (n) statistics were used
+- Which statistics were reported and why (median and IQR for skewed data instead of mean and SD)
+- Whether sample (*n* − 1) or population (*n*) statistics were used
 - How missing data were handled
-- The construction behind any confidence interval that has more than one: which **Median CI method** was used, and – for the SD and variance intervals – that they are Bonett's kurtosis-adjusted intervals rather than the chi-square ones
+- The construction behind any interval that has more than one: the **Median CI method** used, and that the SD and variance intervals are Bonett's rather than the chi-square ones
 
 **Results:**
-- Central tendency (mean or median, depending on distribution shape; HL pseudomedian for symmetric-but-non-normal data)
-- Dispersion (SD, Winsorized SD, IQR, or range as appropriate)
-- Sample size per variable, especially if it varies due to missing data
-- Skewness and kurtosis if distribution shape is relevant to subsequent analyses (state which SE/CI method was used – analytical or bootstrap)
-- Outlier counts when extreme values affect interpretation – note the rule used (1.5·IQR, 3·IQR, or modified Z with |M| > 3.5) and consider quoting the inlier range so readers know exactly which values were flagged
-- Any variable dropped from the table because every case was missing under the active filter – the module names those variables in a note above the results
+- Central tendency – mean or median by the shape of the distribution, the HL pseudomedian for symmetric but non-normal data
+- Dispersion – SD, winsorized SD, IQR or range as appropriate
+- Sample size per variable, especially where missing data makes it vary
+- Skewness and kurtosis where the shape matters to later analyses, with the SE/CI method – analytical or bootstrap
+- Outlier counts where extreme values affect the interpretation – the rule used (1.5·IQR, 3·IQR, or modified Z with |M| > 3.5) and the inlier range, so readers know which values were flagged
+- Any variable dropped from the table because every case was missing under the active filter
 
 ## Reproducibility
 
-Most descriptive statistics are computed in the browser without R. The one exception is the **Hodges-Lehmann pseudomedian** and its confidence interval, which are computed via R's base `stats::wilcox.test(x, conf.int = TRUE, conf.level = ...)` – this matches the CI rule (exact signed-rank inversion for small *n*, normal approximation for large *n*) that R uses across its own ecosystem. The call passes an off-data `mu` (the sample minimum minus 1): `wilcox.test` silently discards values equal to `mu`, so the offset keeps zero values in the estimate. Replicating with a bare `wilcox.test(x, conf.int = TRUE)` will therefore differ whenever the data contains zeros – by design, since dropping them biases the pseudomedian. The call appears in the [R console](./r-console.md).
-
-Every run lists the methods it actually used in the citation box under the results – the Hodges-Lehmann estimator, Tukey's fences, the modified Z rule, the winsorized SD, Shannon, Pielou and Gini-Simpson, the *G₁*/*G₂* estimators and their standard errors, the BCa and percentile bootstraps, the Tukey-McLaughlin trimmed-mean interval, the median interval (and the Hettmansperger-Sheather variant when you pick it), Bonett's SD interval, and the Wilson score interval. Only the ones behind the statistics you selected appear, so the list doubles as a record of what the numbers rest on. The `stats` package citation is added on top of that whenever the HL pseudomedian is selected, since that one call goes through R.
-
-The bootstrap paths (BCa CIs for skewness/kurtosis and SE of the median) use `Math.random` when [**Bootstrap seed**](./settings.md#bootstrap-seed) is empty, so successive runs on the same data produce slightly different intervals. Enter any integer in that setting to get reproducible results. Each variable then draws from its own stream, derived from the seed and keyed on the variable's position in the selection – so a variable's interval no longer depends on which *other* variables or statistics were requested alongside it, and adding one to the end of the selection leaves every earlier variable's numbers bit-identical. Reordering the selection does move them, because the stream follows the position.
+Most statistics are computed in the browser without R. The Hodges-Lehmann pseudomedian and its interval go through R's `stats::wilcox.test(x, conf.int = TRUE)`, shown in the [R console](./r-console.md), with an offset `mu` that keeps zero values in the estimate – a bare call can differ on data with zeros. Every run's citation box lists the methods behind the ticked statistics and nothing else, with the `stats` package added when the pseudomedian ran. With [Bootstrap seed](./settings.md#bootstrap-seed) empty the bootstrap paths draw fresh resamples on every run, so the median's SE and the bootstrap intervals move in their last digits; an integer there makes them reproducible, each variable drawing its own stream keyed on its position in the selection. The [method notes](./methods/descriptive-statistics.md) hold the reasoning behind these choices.
 
 ## Common pitfalls
 
-**Reporting mean and SD for skewed data.** If a variable is heavily skewed, the mean is pulled toward the tail and the SD is inflated by extreme values. Report median and IQR instead – they describe the "typical" value and spread without being distorted by outliers.
+**Reporting mean and SD for skewed data.** If a variable is heavily skewed, the mean is pulled toward the tail and the SD is inflated by extreme values. Report the median and IQR instead – they describe the typical value and spread without being distorted by outliers.
 
-**Ignoring missing data patterns.** A variable with 40% missing values tells a different story than one with 2% missing. Always check missing counts before interpreting the other statistics – high missingness can bias every summary measure.
+**Ignoring missing data patterns.** A variable with 40% missing values tells a different story than one with 2% missing. Check the missing counts before interpreting the other statistics – high missingness can bias every summary.
 
-**Using the coefficient of variation across variables with different scales of meaning.** CV is useful for comparing relative variability, but it is only meaningful for ratio-scale variables with a true zero. Comparing CVs of temperature in Celsius vs. reaction time in milliseconds is misleading because 0°C is not a true zero. The module guards against the most obvious misuse by reporting CV as **N/A** when any value is negative, but a non-negative scale alone doesn't make CV meaningful – interval scales (years, dates) still aren't ratio-scale.
+**Comparing coefficients of variation across scales with different meanings.** CV is only meaningful for ratio-scale variables with a true zero. Comparing the CV of a temperature in Celsius with that of a reaction time is misleading because 0 °C is not a true zero. The module refuses the most obvious misuse by reporting **N/A** when any value is negative, but a non-negative scale alone doesn't make CV meaningful – interval scales such as years or dates still aren't ratio scales.
 
-**Treating distinct value count as a quality check and stopping there.** Spotting 5 distinct values in a binary variable is a good start, but the frequency table ([Distribution analysis](./distribution-analysis.md#frequency-tables)) shows you *which* values are unexpected – much more actionable than the count alone.
+**Treating the distinct-value count as a quality check and stopping there.** Five distinct values in a binary variable is a good start, but the frequency table in [Distribution analysis](./distribution-analysis.md#frequency-tables) shows *which* values are unexpected – far more actionable than the count alone.
 
-**Treating the mode as informative for continuous numeric variables.** Mode looks at exact-equality counts. For continuous measurements (heights, reaction times, sensor readings) two values almost never coincide, so the result is either "no mode" or a near-arbitrary tie – neither is useful. Use the median or HL pseudomedian as your "typical value" instead, and report the mode only for categorical or discrete numerical variables (Likert items, counts, ordinal codes).
+**Reading the mode of a continuous variable.** The mode counts exact matches. For continuous measurements two values almost never coincide, so the result is either **No mode** or a near-arbitrary tie – neither is useful. Use the median or the HL pseudomedian as the typical value, and report the mode for categorical or discrete numeric variables (Likert items, counts, ordinal codes).
 
-**Treating SE or CI of proportion as off when they don't appear.** These stats are computed only for binary variables – exactly two distinct non-missing values, categorical or numeric. With one level the proportion is trivially 1; with three or more, a single proportion no longer summarises the variable – use the [frequency table](./distribution-analysis.md#frequency-tables) for the full per-category breakdown instead.
+**Reading N/A in the proportion columns as a failure.** The proportion, its standard error and its interval exist only for a binary variable – exactly two distinct non-missing values, categorical or numeric. With one level the proportion is trivially 1; with three or more, a single proportion no longer summarises the variable – use the [frequency table](./distribution-analysis.md#frequency-tables) for the full per-category breakdown.
 
-**Reading "No mode" as zero observations.** A **No mode** cell doesn't mean the variable is empty – it means every observed value is unique, so no value is more frequent than any other. For continuous numeric data this is the typical state; the mode is usually only informative for discrete or categorical variables.
-
-## Notes
-
-- Geometric mean and harmonic mean show **N/A** if any value is zero or negative
-- Coefficient of variation is omitted when the mean is zero or any value is negative – hovering an empty CV cell shows the explanation
-- Proportion, SE of proportion, and CI for proportion are blank for non-binary variables – hovering an empty cell shows why
-- Skewness and kurtosis are reported as **N/A** when all values are identical (zero variance)
-- Mode is reported as **No mode** when every value is unique (no value repeats)
-- The CI for the median is computed from the sample order statistics under whichever **Median CI method** is selected; the exact variant reports **N/A** for small samples where no rank pair achieves the requested coverage (e.g. *n* = 5 at 95%) – hovering an empty cell shows the explanation
-- The CI for proportion uses the Wilson score interval, which is naturally bounded in [0, 1] without artificial clamping
-- A variable with no valid data left under the active [case filter](./getting-started.md#filtering-cases) is left out of the table rather than filling a row with blanks; a warning above the results names every variable dropped this way
-- If none of the selected statistics apply to the selected variables (e.g. only proportion stats with non-binary variables), no results card is produced – a notification explains why
-- Each run produces a new results card – you can generate multiple tables with different statistics selected and compare them side by side
+**Reading "No mode" as zero observations.** A **No mode** cell doesn't mean the variable is empty – it means every observed value is unique, so no value is more frequent than any other. For continuous numeric data this is the usual state.

@@ -73,7 +73,7 @@ paths: { "Physical->Mental": 0.4 },
 
 ### Variables
 
-Each entry under `variables` is one observed indicator. `load` is a factor expression giving its loading on each factor, and cross-loadings are first-class.
+Each entry under `variables` is one observed indicator. `load` is a factor expression giving its loading on each factor, and cross-loadings are first-class. An unfolding item names its factor with `factor` instead – see [unfolding items](#unfolding-items).
 
 ```json5
 defaults: { family: "beta", params: [2, 5], min: 0, max: 100, round: 0 },
@@ -104,6 +104,7 @@ variables: {
 - `count` – `WB: { count: 8, load: "Mental*0.7" }` makes `WB1` … `WB8`.
 - An **array of sets** is shuffled per student: the items are scrambled inside the block, so a set with a **negative** load – a reverse-keyed item – lands at a different name for everyone. The answer to "which items are reverse-keyed?" then has to be found in the [reliability](./reliability-analysis.md) drop table, and cannot be shared between students.
 - `jitter: 0.06` spreads the loadings within a set by a seeded amount, frozen at authoring time so the spec stays stable. `loadRange: [0.8, 0.4]` is a linear gradient across the set instead (single-factor loads only).
+- `deltaRange: [-1.5, 1.5]` does the same for an [unfolding](#unfolding-items) set's ideal points, overwriting δ in `params` item by item, and is refused on any other set. An unfolding set takes no `loadRange` or `jitter`.
 
 > Reverse-keyed is not a special knob – it is just a set whose loading is negative. Everything else about the item is ordinary.
 
@@ -122,6 +123,7 @@ Every variable's standardized latent value is pushed through an inverse CDF to r
 | `zip` | lambda, prob-zero | Zero-inflated Poisson |
 | `zinb` | mean, size, prob-zero | Zero-inflated negative binomial |
 | `ordinal` | thresholds… | Cut points on the latent scale → Likert codes 1, 2, 3, … |
+| `ggum` | discrimination, ideal point, latitudes… | Unfolding Likert codes 1, 2, 3, … – latitudes as the IRT table prints them (= −τ in Roberts' notation). Named by `factor`, not `load` – see [unfolding items](#unfolding-items) |
 | `skew-normal` | location, scale, shape | True skew without clamping |
 | `t` | df, location, scale | Heavy tails; location and scale are optional |
 | `mixture` | weight, mean, sd × ≥ 2 | Multimodal – one triple per component |
@@ -132,9 +134,32 @@ Every variable's standardized latent value is pushed through an inverse CDF to r
 | `loglogistic` | shape, scale | Survival event time |
 | `gompertz` | shape, rate | Survival event time (increasing hazard) |
 
-`min` and `max` clamp the output and `round` sets its decimal places, applied after the family – except for `beta`, which already lands in range, and `ordinal`, whose codes are categorical. Clamping is what piles mass on a ceiling or floor, which the preview reports as `%=max`.
+`min` and `max` clamp the output and `round` sets its decimal places, applied after the family – except for `beta`, which already lands in range, and `ordinal` and `ggum`, whose codes are categorical. Clamping is what piles mass on a ceiling or floor, which the preview reports as `%=max`.
 
 > **Non-normal margins warp correlations.** The latent structure is exactly what you authored, but pushing it through a non-linear margin moves the Pearson correlation off the authored value – hardest of all for binary outcomes, where the φ coefficient has a ceiling below 1. Rank structure survives. This is the main reason the preview's realized numbers, not the spec, are the answer key.
+
+### Unfolding items
+
+An `ordinal` item is a dominance item: the higher the factor, the more the respondent agrees. A `ggum` item is an **unfolding** (ideal-point) item: agreement peaks where the respondent's position meets the statement's and falls off on both sides – the shape the [IRT module's GGUM](./irt-analysis.md#b-ggum-polytomous-unfolding) fits.
+
+```json5
+factors: ["Attitude"],
+variables: {
+	Moderate: { factor: "Attitude", family: "ggum", params: [1.5, 0.2, 1.6, 1.1, 0.5] },
+	Stance: [
+		{ count: 3, factor: "Attitude", family: "ggum", params: [1.5, 0, 1.6, 1.1, 0.5], deltaRange: [-1.5, -0.3] },
+		{ count: 3, factor: "Attitude", family: "ggum", params: [1.5, 0, 1.6, 1.1, 0.5], deltaRange: [0.3, 1.5] },
+	],
+},
+```
+
+- `factor` names the one factor the item sits on, in place of `load`. An unfolding item has no linear loading, so `load` beside it is refused.
+- `params` – `[a, δ, t1, …, tC]`: the discrimination (positive), the ideal point on the unit-variance factor, and C ≥ 1 latitudes, giving the codes 1 … C + 1 (C = 1 is a binary item). The item is drawn from GGUM's own response function in mirt's parameterisation, so a GGUM fit in the IRT module recovers these values: the latitudes are written as its table prints them, **Latitude {n}**, which is −τ in Roberts' notation.
+- `deltaRange` spreads a set's ideal points across its items – see [bulk item blocks](#bulk-item-blocks). An array of sets, as above, shuffles the statements per student, so their order cannot be read off the names.
+- Group effects, predictors and `paths` reach the item through its factor, as they reach any indicator.
+- `min`, `max` and `round` are ignored, as for `ordinal`. Refused: `ggum` as the `defaults` family, on a predictor, a design outcome or a competing risk; `labels`, `censor` and `mnar` on the item; a `mar` reference `on` it.
+
+> **Keep ideal points within ±1.5.** A statement is located only by respondents on both sides of it, and a factor with unit variance has few beyond ±2 – the preview warns (see [Guardrails](#guardrails)).
 
 ### Labels
 
@@ -280,7 +305,7 @@ Give a `design` block instead of `factors` / `variables` for long-format ANOVA a
 | `between` | Between-subjects factors; each subject is assigned one cell, balanced across the crossing |
 | `within` | Within-subjects (repeated-measures) factors, fully crossed within each subject – one row per cell, plus a subject id column |
 | `outcomes` | The dependent variables, one entry each |
-| `cov` | The within-subject covariance Σ_W |
+| `cov` | The within-subject covariance $\Sigma_W$ |
 | `outcomeCov` | Cross-outcome correlation for a multi-DV MANOVA, same shorthand as `phi`; omitted → independent outcomes |
 | `subject` | The subject-id column name, default `subject`, emitted only when there are within factors |
 
@@ -303,7 +328,7 @@ A `normal` outcome takes `mean` and `sd` plus either an `effect` expression or a
 | Form | Meaning |
 |---|---|
 | `{ type: "cs", rho: 0.6 }` | Compound symmetry – one correlation between every pair of cells. The default, at ρ 0.5 |
-| `{ type: "ar1", rho: 0.5 }` | ρ^\|i−j\|, so adjacent timepoints correlate more than distant ones. Needs a single ordered within factor |
+| `{ type: "ar1", rho: 0.5 }` | $\rho^{\vert i - j \vert}$, so adjacent timepoints correlate more than distant ones. Needs a single ordered within factor |
 | `{ "pre~post": 0.4 }` | Unstructured, keyed by within-cell labels |
 
 It applies to the normal latent, so it is exact for normal outcomes and warps for the others.
@@ -324,6 +349,7 @@ The Builder checks a spec before it generates, and reports the problem where you
 
 - A correlation matrix (`phi`, `predictorPhi`, `groupPhi`, `outcomeCov`) that is not positive-definite is rejected by name before generation, rather than surfacing as a raw solver error mid-draw.
 - The preview warns when an indicator's loadings leave it almost no residual variance, which makes it a near-deterministic function of the factors. Lower the loadings if that was not deliberate.
+- The preview warns when fewer than 10 respondents are expected beyond an unfolding item's ideal point – $n\,\Phi(-|\delta|) < 10$ on the unit-variance factor, group and predictor shifts ignored. At n 200 that is any |δ| above about 1.65. An unfolding item is identified only by respondents on both sides of it, so move δ toward 0 or raise `n`.
 - Unknown factor names, malformed mini-DSL expressions, a bad parameter count for a family and a cyclic `paths` block are all reported with the name of the entry that caused them.
 
 ## Tips

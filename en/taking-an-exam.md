@@ -12,7 +12,7 @@ Your instructor sends you a link. That link carries the whole exam – the datas
 1. **Open the link.** A dialog asks you to enter your name.
 2. **Type your name exactly as your instructor expects it.** Your name is what builds your dataset, so a different spelling is a different dataset.
 3. Your data loads and the **Exam** panel appears at the right of the screen.
-4. For each question: run the analysis it names, read the number off the result card, type it into the panel, and press **Check**.
+4. For each question: run the analysis it names, read the number off the result card, and type it into the panel. Then press **Check {n} answers** at the foot of the panel – one press checks every answer you have typed.
 5. When enough questions have passed, export your report from the **Export** menu.
 
 > **Why your numbers differ from everyone else's:** your name is turned into a random seed, and the data is drawn from that seed. Every student gets a dataset with the same *structure* but different values, so which variables come out significant is genuinely yours. Copying a classmate's answers cannot work, and neither can looking them up – but your own data is perfectly reproducible, so your instructor can regenerate it from your name and check your report against it.
@@ -22,8 +22,8 @@ Your instructor sends you a link. That link carries the whole exam – the datas
 The panel floats over the app so you can keep working while it is open.
 
 - The header shows **Exam** and your score as `passed / total`. Click it to collapse the panel out of the way; click again to bring it back.
-- The body lists every question with its own input and its own **Check** button.
-- The footer shows the export gate (see [exporting your report](#exporting-your-report)) and a **Restore the exam dataset** button.
+- The body lists every question with its own input.
+- The footer shows the export gate (see [exporting your report](#exporting-your-report)), the **Check {n} answers** button and a **Restore the exam dataset** button.
 
 The panel sits underneath dialogs, so the **Cases** and **Variables** modals stay reachable while it is open.
 
@@ -46,9 +46,9 @@ An unanswered question reads **— not answered —**. A question that builds on
 
 ## Checking your answers
 
-Press **Check** and the question is marked immediately: **Correct**, or *Not the app's number – read your output again*. A table is marked cell by cell, so you can see exactly which row is wrong.
+Press **Check {n} answers** and every answered question not yet marked is marked at once: **Correct**, or *Not the app's number – read your output again*. The button counts what it will check – **Check 1 answer**, or **Nothing to check** when every answer is marked. A table is marked cell by cell, so you can see exactly which row is wrong.
 
-- **Retries are unlimited and are not counted.** Nothing records how many times you pressed **Check**, and there is no penalty for pressing it early.
+- **Retries are unlimited and are not counted.** A marked answer, a failed one included, is checked again once you change it; nothing records how many times you checked, and there is no penalty for checking early.
 - **A mark you have earned is kept.** Once a question passes it stays passed, even if you change settings afterwards.
 - **A set is marked as a whole.** If a checkbox question fails, one of your ticks is wrong – go back to your output and read the table again rather than guessing which one.
 - **Changing an answer clears what depends on it.** If you change a pick, the questions built on it lose their answers and marks, because they were about a different variable.
@@ -72,13 +72,13 @@ The exam grades you on the analysis **you** ran, so the settings you are working
 - [Multiple comparison adjustment](./settings.md#multiple-comparison-adjustment) – if you switch to Holm, you are graded on Holm.
 - [Significance level](./settings.md#significance-level) and the [precision settings](./settings.md#precision-settings).
 - Missing data handling – on listwise deletion your cards are computed on fewer rows, and so is the answer key.
-- [Parallel analysis draws](./settings.md#parallel-analysis-draws) and the [reproducibility seed](./settings.md#reproducibility-seed), for factor questions.
+- The [reproducibility seed](./settings.md#reproducibility-seed), for factor questions. Parallel analysis is graded at its default of [100 draws](./factor-analysis.md#b-parallel-analysis-draws), whatever count the factor view is set to, so leave that field as it is.
 
 Some settings can make a question impossible rather than merely different, and the panel tells you which:
 
 - *Turn p-value display on in Settings to answer this* – p-values are hidden entirely under the [display format](./settings.md#display-format) setting `none`.
 - *Set p-value display to exact values in Settings to answer this* – the `category` format prints a band rather than a number.
-- *Set a random seed in Settings to answer this* – a few questions draw random numbers, and with no [seed](./settings.md#reproducibility-seed) set they would give a different result every time you press **Check**.
+- *Set a random seed in Settings to answer this* – a few questions draw random numbers, and with no [seed](./settings.md#reproducibility-seed) set they would give a different result every time they are checked.
 
 The settings each answer was checked under are recorded with the mark and printed on your exported report, so your instructor can reproduce exactly what you did.
 
@@ -97,10 +97,10 @@ See [data transformation](./data-transformation.md) for what the transformation 
 The panel footer tells you where you stand:
 
 - **Export unlocked** / **Ready to export** – you have passed enough questions.
-- **Export locked – n of m questions must pass** – the export is blocked until you do.
-- **n of m questions should pass before you export** – you will be asked to confirm, but you can go ahead.
+- **Export locked – n of m questions must be checked** / **Export locked – n of m questions must pass** – the export is blocked until enough questions are checked, then until enough have passed.
+- **n of m questions should be checked before you export** / **n of m questions should pass before you export** – you will be asked to confirm, but you can go ahead.
 
-Your instructor chooses which of these applies. When you export to Word, the document carries an **answer sheet** appendix listing every question, your final answer and its mark – including the questions that are not graded, so the picks your other answers were built on are visible too. A provenance line in the page header and a short integrity hash tie the document to your dataset.
+Your instructor chooses which of these applies. When you export to Word, the document carries an **Exam answer sheet** appendix listing every question, your final answer and its mark – including the questions that are not graded, so the picks your other answers were built on are visible too. A provenance line in the page header and a short integrity hash tie the document to your dataset.
 
 Write your interpretations into the document as the prose questions ask. The panel only certifies that you ran the analysis correctly; the reasoning is what your instructor reads.
 
