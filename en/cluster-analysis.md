@@ -19,7 +19,7 @@ The **Cluster analysis** module groups observations, variables, or both into clu
 
 At least 2 variables must be selected, and by default they must be numeric – non-numeric variables are automatically excluded and listed in the output. The exception is the [Gower metric](#gower-and-mixed-type-data), which scores categorical and ordinal variables directly and so keeps them in the analysis. Either way, variables that turn out to be constant across the complete cases are dropped too, and listed as such – at least two of the selected variables must actually vary.
 
-k must also be smaller than the number of objects being clustered: fewer than the variables in variable mode, and fewer than the complete cases in case mode, where every k in a Step 2 range is held to the same bound. Biclustering needs at least two complete cases and at least as many as the biclusters asked for, and FABIA cannot be asked for more biclusters than there are variables. Numeric fields are clamped to their own minimum and maximum, so a value typed outside the range is repaired rather than passed to R, and an emptied field runs at its default – except Step 3's two k fields, which refuse an empty value.
+k must also be smaller than the number of objects being clustered: fewer than the variables in variable mode, and fewer than the complete cases in case mode, where every k in a Step 2 range is held to the same bound. Biclustering needs at least two complete cases and at least as many as the biclusters asked for, and FABIA cannot be asked for more biclusters than there are variables. Every number field is checked against its own minimum and maximum, and a count field – k, a range bound, iterations, replications, a size minimum – takes whole numbers only: a value outside the range, a decimal in a count or an emptied field is flagged beside the field and blocks the step that reads it until corrected. Only the fields on screen for the chosen algorithm and options count.
 
 ## Step 1: Method & settings
 
@@ -46,12 +46,12 @@ k must also be smaller than the number of objects being clustered: fewer than th
 **K-means settings:**
 
 - **K-means algorithm** – which of R's four k-means variants runs. All four minimise the same within-cluster sum of squares and usually agree; they differ in how the centres are updated.
-- **Hartigan-Wong** – default; moves single cases between clusters whenever the move lowers the within-cluster sum of squares, and is the variant R's authors recommend. It is the one that reports its own convergence failures.
+- **Hartigan-Wong** – default; moves single cases between clusters whenever the move lowers the within-cluster sum of squares, and is the variant R's authors recommend.
 - **Lloyd** – the textbook batch algorithm: assigns every case to the nearest centre, then recomputes all centres, until the assignment stops changing.
 - **Forgy** – the same batch procedure under its other name; R runs the two identically.
 - **MacQueen** – updates the two centres involved each time a single case is reassigned, rather than every centre after a full pass.
 - **Number of random starts** – default 25, from 1 to 100: how many random starting sets of centres are tried; the run with the lowest within-cluster sum of squares is kept. Higher values reduce the chance of a suboptimal solution.
-- **Maximum iterations** – default 100, from 10 to 1,000: the pass limit per start. When the algorithm hits it without converging, a warning on the card says so and suggests raising the limit or the number of starts.
+- **Maximum iterations** – default 100, from 10 to 1,000: the pass limit per start. When the algorithm runs out of passes without converging, a warning on the card names the limit it stopped at and, with interpretation enabled, suggests raising it or the number of starts; a run that converges on its last allowed pass is not flagged. Step 2 holds every k's fit to the same limit and marks the ones that stop at it – see the [comparison table](#comparison-table).
 
 **Hierarchical settings:** the distance metric plus a linkage.
 
@@ -143,11 +143,11 @@ Before running the full analysis, this step compares solutions across a range of
 Set the **Cluster range to test** and click **Analyze & determine k**. Every k in the range is clustered with the Step 1 settings and scored on the indices you leave on, one row per k.
 
 - **Minimum** – the smallest count tested, default 2. It can be 1, in which case the k = 1 row describes the unpartitioned data. Under **Bicluster range to test** it is the smallest number of biclusters, with the same default.
-- **Maximum** – the largest count tested, default 10. It must stay below the number of objects – the variables in variable mode, the complete cases in case mode – and a maximum at or below the minimum is raised to one above it, since a comparison needs a range. Under **Bicluster range to test** it is the largest number of biclusters, with the same default.
+- **Maximum** – the largest count tested, default 10. It must stay below the number of objects – the variables in variable mode, the complete cases in case mode – and a maximum at or below the minimum is refused with a message when you run the comparison, since a comparison needs a range. Under **Bicluster range to test** it is the largest number of biclusters, with the same default.
 
 Under **Validity metrics**, each index you leave on is recomputed for every k in the range and becomes a column of the [comparison table](#comparison-table) – switching off the ones you will not read is what makes a wide range affordable. The same four checkboxes return in Step 3, where each is a row of the validity table.
 
-- **Silhouette analysis** – the average silhouette width: how much closer each object sits to its own cluster than to the nearest other, averaged over the objects, from −1 to +1 ([the silhouette](./concepts/clustering.md#b-the-silhouette)). Higher is better – 0.50 and above reasonable, 0.70 and above strong. On by default; its column is headed **Silhouette**, it is what **Suggested k (silhouette)** reads, and switching it off withdraws the silhouette plot and that suggestion too. {#silhouette-analysis #solution-comparison-silhouette}
+- **Silhouette analysis** – the average silhouette width: how much closer each object sits to its own cluster than to the nearest other, averaged over the objects, from −1 to +1 ([the silhouette](./concepts/clustering.md#b-the-silhouette)). Higher is better – above 0.50 reasonable, above 0.70 strong. On by default; its column is headed **Silhouette**, it is what **Suggested k (silhouette)** reads, and switching it off withdraws the silhouette plot and that suggestion too. {#silhouette-analysis #solution-comparison-silhouette}
 - **Calinski-Harabasz index** – between-cluster against within-cluster variation, each divided by its degrees of freedom ([the Calinski–Harabasz index](./concepts/clustering.md#b-the-calinski-harabasz-index)); higher is better. On by default; its column is headed **Calinski-Harabasz**. It is computed from cluster means, and is withdrawn under [Gower](#gower-and-mixed-type-data). {#calinski-harabasz-index #solution-comparison-calinski-harabasz}
 - **Davies-Bouldin index** – each cluster's scatter set against its nearest neighbour's, averaged over the clusters ([the Davies–Bouldin index](./concepts/clustering.md#b-the-davies-bouldin-index)); lower is better. On by default; its column is headed **Davies-Bouldin**. It is measured in the selected distance metric, and from cluster medoids rather than means under Gower. {#davies-bouldin-index #solution-comparison-davies-bouldin}
 - **Dunn index** – the smallest dissimilarity between two clusters over the largest within one ([the Dunn index](./concepts/clustering.md#b-the-dunn-index)); higher is better, and a single outlying object can move it a long way. Off by default; its column is headed **Dunn**. {#dunn-index #solution-comparison-dunn}
@@ -155,48 +155,50 @@ Under **Validity metrics**, each index you leave on is recomputed for every k in
 Under **Output options**, up to four plots are drawn beside the table:
 
 - **Show elbow plot (within-cluster SS)** – on by default: the total within-cluster sum of squares against k, with a ring on the elbow – the k furthest from the straight line joining the first and last points – or a note that the curve bends too little to mark one ([the elbow method](./concepts/clustering.md#b-the-elbow-method)). Not drawn under Gower. {#show-elbow-plot-within-cluster-ss #elbow-plot-within-cluster-ss}
-- **Show silhouette plot** – on by default, and offered while **Silhouette analysis** is on: the average silhouette width against k, the best k highlighted and guides at 0.25, 0.50 and 0.70 separating weak, reasonable and strong structure. {#show-silhouette-plot #silhouette-score-by-k}
-- **Compute gap statistic (slower)** – on by default: how much tighter the clusters are than those of 100 uniform reference samples, at every k, measured with the dissimilarity the run clusters on ([the gap statistic](./concepts/clustering.md#b-the-gap-statistic)). It adds the **Gap** column, the plot and **Suggested k (gap statistic)**. On the plot the bars span ±1 SE and the highlighted k is the one Tibshirani's rule picks – the smallest k whose gap reaches the next k's gap less its standard error – which is not always the plain maximum; when the rule's k lies outside the range tested, nothing is highlighted and a note says so. Not computed under Gower. If the computation fails, the Gap column reads N/A and R's message is printed under the table and in place of the plot. {#compute-gap-statistic-slower #gap-statistic-by-k}
+- **Show silhouette plot** – on by default, and offered while **Silhouette analysis** is on: the average silhouette width against k, the best k highlighted and, with interpretation enabled, guides at 0.25, 0.50 and 0.70 separating weak, reasonable and strong structure. {#show-silhouette-plot #silhouette-score-by-k}
+- **Compute gap statistic (slower)** – on by default: how much tighter the clusters are than those of 100 uniform reference samples, at every k, measured with the dissimilarity the run clusters on ([the gap statistic](./concepts/clustering.md#b-the-gap-statistic)). It adds the **Gap** column, the plot and **Suggested k (gap statistic)**. On the plot the bars span ±1 SE, and with interpretation enabled the highlighted k is the one Tibshirani's rule picks – the smallest k whose gap reaches the next k's gap less its standard error – which is not always the plain maximum; when the rule's k lies outside the range tested, nothing is highlighted and a note says so. With interpretation off, no k is highlighted. Not computed under Gower. If the computation fails, the Gap column reads N/A and R's message is printed under the table and in place of the plot. {#compute-gap-statistic-slower #gap-statistic-by-k}
 - **Show dendrogram** – Hierarchical only, on by default: the full tree with a draggable cut line – see [reading the dendrogram](#reading-the-dendrogram). It follows Step 3's **Optimize leaf ordering**, so both steps draw the same tree.
 
 #### Cluster tendency
 
 **Cluster tendency.** In case mode the card opens by asking whether the data look clustered at all – the check that comes before "how many?", since every algorithm returns clusters, including on data that has none ([clustering tendency](./concepts/clustering.md#b-clustering-tendency)). Both tests are Euclidean whatever the metric, with a note saying so under another; neither is reported in variable mode or under Gower. {#cluster-tendency}
 
-- **Hopkins statistic** – how much closer the objects sit to one another than uniformly random points over the same range would ([the Hopkins statistic](./concepts/clustering.md#b-the-hopkins-statistic)): 0.75 or above reads *Clustered structure*, between 0.25 and 0.75 *Weak or unclear tendency* – 0.5 is what random data gives – and below 0.25 *Regularly spaced, not clustered*. It has no p-value.
-- **Duda-Hart Je(2)/Je(1)** – the within-cluster sum of squares of the selected algorithm's two-cluster solution over the total sum of squares ([the Duda–Hart test](./concepts/clustering.md#b-the-duda-hart-test)), with a p-value: significant at the [significance level](./settings.md#significance-level) reads *Two clusters beat one*, otherwise *One cluster is not rejected*.
+- **Hopkins statistic** – how much closer the objects sit to one another than points drawn uniformly over the data's bounding box would ([the Hopkins statistic](./concepts/clustering.md#b-the-hopkins-statistic)), in Cross and Jain's form, which raises each nearest-neighbour distance to the number of variables: 0.5 is what random data gives, and values towards 1 mean clustering. Its p-value is one-sided: significant at the [significance level](./settings.md#significance-level) reads *Clustering tendency*, otherwise *Spatial randomness is not rejected*. A note under the table names how many points were drawn against how many of the objects; below 20 objects too few can be drawn for the p-value, which is then left out and the note says why.
+- **Duda-Hart Je(2)/Je(1)** – the within-cluster sum of squares of the selected algorithm's two-cluster solution over the total sum of squares ([the Duda–Hart test](./concepts/clustering.md#b-the-duda-hart-test)), with a one-sided p-value read at Milligan and Cooper's critical z = 3.20 (α ≈ 0.0007) rather than at the significance level, as a note under the table says: significant at that level reads *Two clusters beat one*, otherwise *One cluster is not rejected*, and the p cell is highlighted at the same level.
 - **Cluster tendency – Value** – the test's statistic: the Hopkins ratio on its row, Je(2)/Je(1) on the Duda-Hart row.
 
 The readings fill the **Interpretation** column when interpretation is enabled in [Settings](./settings.md#significance-formatting).
 
 #### Comparison table
 
-**Solution comparison.** One row per k tested and one column per index – the heading of the standard and the [biclustering](#bicluster-comparison-table) comparison alike. Green marks the best value in a column, and a note under the table says what else is marked. {#solution-comparison}
+**Solution comparison.** One row per k tested and one column per index – the heading of the standard and the [biclustering](#bicluster-comparison-table) comparison alike. With [interpretation](./settings.md#b-show-interpretation-column-when-applicable) enabled, green marks the best value in a column, and a note under the table says what else is marked. {#solution-comparison}
 
 - **k** – the count the row describes. Click it to carry that k into Step 3's **Number of clusters (k)** field – or, on a biclustering card, **Number of biclusters (k)** – instead of retyping it, with a toast confirming the new value.
 - **Within SS** – the total within-cluster sum of squares ([within-cluster dispersion](./concepts/clustering.md#b-within-cluster-dispersion)); lower means tighter clusters, but it falls with every cluster added, so it carries no best mark.
 - **Variance explained (%)** – the share of the total sum of squares lying between the clusters rather than within them; it rises with every cluster added, so it carries no best mark either. {#solution-comparison-variance-explained}
 - **Smallest cluster** – the member count of the smallest cluster, so a solution that only splits off a handful of objects stands out.
 - **Largest cluster** – the member count of the largest cluster.
-- **Gap** – the gap statistic at each k; higher means tighter than the reference, and the green mark sits on the k the 1-standard-error rule picks, matching **Suggested k (gap statistic)** rather than the column's maximum.
-- **Hartigan** – Hartigan's index comparing each k with the next ([Hartigan's rule](./concepts/clustering.md#b-hartigans-rule)); a value above 10, highlighted in yellow, says another cluster is still worth adding. The last row reads N/A, having no next k to compare with.
+- **Gap** – the gap statistic at each k; higher means tighter than the reference, and with interpretation enabled the green mark sits on the k the 1-standard-error rule picks, matching **Suggested k (gap statistic)** rather than the column's maximum.
+- **Hartigan** – Hartigan's index comparing each k with the next ([Hartigan's rule](./concepts/clustering.md#b-hartigans-rule)); a value above 10, highlighted in yellow with interpretation enabled, says another cluster is still worth adding. The last row reads N/A, having no next k to compare with.
 
 The **Silhouette**, **Calinski-Harabasz**, **Davies-Bouldin** and **Dunn** columns are the [validity metrics](#b-silhouette-analysis) you left on. When the range starts at 1, the separation indices need at least two clusters and read N/A on the k = 1 row.
 
 Within SS, variance explained, Calinski-Harabasz and Hartigan are computed under Euclidean geometry whatever metric you selected – when you pick another metric, a note under the table says so. The Gap statistic itself is computed on the dissimilarity you chose, but its reference sample is drawn uniformly, which is not a structureless null for `1 − r` or `1 − |r|`; a second note says so under those two metrics. Under [Gower](#gower-and-mixed-type-data) those four columns and the Gap column are left out of the table altogether, since mixed types give no centroid to compute them from.
 
-Below the table, suggestions show:
+Under K-means every k's fit is checked for convergence, as the Step 3 run is ([iteration limit](./reading-results.md#b-iteration-limit)). A k whose fit stopped at the **Maximum iterations** limit has its row shaded red, a note under the table names the limit and those k values, and with interpretation enabled the shaded rows take no green mark and no suggested k – with no k converged, nothing is marked. The gap statistic runs k-means fits of its own, to the data and to each of its 100 reference sets: a Gap value resting on one that stopped short carries a †, and a note names the k values, whether the fit to the data stopped and how many reference sets did. Such a k keeps its gap and its place in the 1-standard-error rule.
 
-- **Suggested k (silhouette)** – the k with the highest average silhouette, while **Silhouette analysis** is on.
-- **Suggested k (gap statistic)** – the k the 1-standard-error rule picks: the smallest k whose gap reaches the next k's gap less its standard error. When the rule picks k = 1, the card says the gap statistic favours no cluster structure instead of naming a k.
+With [interpretation](./settings.md#b-show-interpretation-column-when-applicable) enabled, suggestions show below the table:
 
-A suggestion is the best of the range, which says nothing about whether the range holds structure at all – so if no k reaches a silhouette of 0.25, a caveat under the suggestions spells that out with the best score found.
+- **Suggested k (silhouette)** – the k with the highest average silhouette, while **Silhouette analysis** is on, skipping any k whose k-means fit did not converge.
+- **Suggested k (gap statistic)** – the k the 1-standard-error rule picks: the smallest k whose gap reaches the next k's gap less its standard error. When the rule picks k = 1, the card says the gap statistic favours no cluster structure instead of naming a k; when it picks a k whose k-means fit did not converge, no gap suggestion is given.
+
+A suggestion is the best of the range, which says nothing about whether the range holds structure at all – so if no k exceeds a silhouette of 0.25, a caveat under the suggestions spells that out with the best score found.
 
 > **Metrics disagree – which one do I trust?** They usually do, since each index measures something different; treat the table as a shortlist and choose among its top two or three k by interpretability and stability – see [when the indices disagree](./concepts/clustering.md#b-when-the-indices-disagree).
 
 #### Reading the dendrogram
 
-The dendrogram in Step 2 is interactive. Drag the cut line to see how the tree splits at different k, then **click the cut line** to send that k straight to Step 3 – or use the **Move the cut to the suggested k** button to jump to the silhouette suggestion. Cluster numbering follows the order the clusters first appear along the tree, so the colors and labels on the plot match the numbers in every table.
+The dendrogram in Step 2 is interactive. Drag the cut line to see how the tree splits at different k, then **click the cut line** to send that k straight to Step 3 – or, with interpretation enabled, use the **Move the cut to the suggested k** button to jump to the silhouette suggestion. Cluster numbering follows the order the clusters first appear along the tree, so the colors and labels on the plot match the numbers in every table.
 
 ### Biclustering (biclustering mode)
 
@@ -209,7 +211,7 @@ For algorithms that need a user-specified k (BiMax, FABIA, Cheng & Church), set 
 Three slower diagnostics are off by default. Each adds columns to the table and a plot of its own:
 
 - **Stability analysis (bootstrap, slower)** – resamples the cases, refits the biclustering at every k and scores how much of each bicluster comes back, by Jaccard similarity; it adds the **Stability** column, and when it runs, the suggested k is the most stable one. {#stability-analysis-bootstrap-slower #stability-analysis-bootstrap}
-- **F-statistic diagnostics (slower)** – row and column F statistics for every bicluster of at least two rows and two columns, with resampled p-values; it adds the **Avg row F**, **Avg col F**, **Row sig. (%)** and **Col sig. (%)** columns and a plot with a reference line at 80%. They are descriptive only, not a significance test – the biclusters were chosen to maximise exactly these effects – as the notes under the table and the plot say. {#f-statistic-diagnostics-slower #f-statistic-diagnostics}
+- **F-statistic diagnostics (slower)** – row and column F statistics for every bicluster of at least two rows and two columns, with resampled p-values; it adds the **Avg row F**, **Avg col F**, **Row sig. (%)** and **Col sig. (%)** columns and a plot of the two significant shares against k, its axis naming the level they are counted at – *Prop. significant (p ≤ {alpha})*, with no target line. They are descriptive only, not a significance test – the biclusters were chosen to maximise exactly these effects – as the notes under the table and the plot say. {#f-statistic-diagnostics-slower #f-statistic-diagnostics}
 - **Consensus scoring (slower)** – refits the algorithm repeatedly under different seeds at every k and scores how far the runs agree, by Jaccard similarity; it adds the **Consensus** column. Offered for Cheng & Church and FABIA: BiMax is deterministic and agrees with itself perfectly, so the box is hidden under it. This is a reproducibility score, not a new solution – the [consensus partition](#consensus-partition) offered for case and variable clustering is a different thing that happens to share the word. {#consensus-scoring-slower #consensus-scoring}
 - **Bootstrap replications** – default 100, from 10 to 10,000, shown while any of the three is on: how many resamples stability and the F-statistic draw, and how many repeated runs consensus scoring compares. Stability and consensus refit the biclustering once per replicate for every k in the range, and the F-statistic diagnostics resample once per bicluster found at every k, so they cost the range width times the biclusters found times the replications – narrow the range before switching them on. Step 3 has fields of the same name, with the same default and range, for its own resampling outputs: one shared by **Cluster stability** and **Consensus partition**, and one under the bicluster summary's **Stability**.
 
@@ -223,18 +225,18 @@ Under the same **Solution comparison** heading, one row per k; the **k** cell ca
 - **Δ var. (%)** – the gain in variance explained over the previous k; the first row has none.
 - **Avg MSR** – the average [mean squared residue](./concepts/clustering.md#b-mean-squared-residue) over the biclusters; lower is more coherent. It is undefined below two rows or two columns, so where only some biclusters qualify the cell names how many it averaged, e.g. `0.017 (3/4)`.
 - **Avg r** – the average [within-bicluster correlation](./concepts/clustering.md#b-within-bicluster-correlation); higher is more coherent. Unlike MSR it ignores amplitude, so rows that move together at different scales still score well. Undefined below two rows or two columns like MSR, with the same `(3/4)` marker, and a row constant across a bicluster's columns is left out of its bicluster's average.
-- **Avg overlap** – the average Jaccard similarity between the biclusters' cells, pair by pair; above 0.3 it is yellow, meaning the biclusters largely repeat one another.
+- **Avg overlap** – the average Jaccard similarity between the biclusters' cells, pair by pair; the higher it is, the more the biclusters repeat one another. It carries no mark.
 - **Cell cov. (%)** – the percentage of data cells included in at least one bicluster.
-- **Stability** – the mean bootstrap Jaccard of that k's biclusters, from **Stability analysis (bootstrap, slower)**; higher is better, and green marks the best. {#solution-comparison-stability}
+- **Stability** – the mean bootstrap Jaccard of that k's biclusters, from **Stability analysis (bootstrap, slower)**; higher is better, and with interpretation enabled green marks the best. {#solution-comparison-stability}
 - **Avg row F** – the row-effect F statistic averaged over the biclusters, from **F-statistic diagnostics (slower)**; descriptive only.
 - **Avg col F** – the column-effect F statistic averaged the same way.
-- **Row sig. (%)** – the share of biclusters whose row-effect p-value falls below the [significance level](./settings.md#significance-level) against the resampled null; green from 80%. Inflated by construction, so descriptive only.
+- **Row sig. (%)** – the share of biclusters whose row-effect p-value falls at or below the [significance level](./settings.md#significance-level) against the resampled null. Inflated by construction, so descriptive only, and never highlighted.
 - **Col sig. (%)** – the same share for the column effects.
-- **Consensus** – the mean Jaccard agreement between the repeated runs at that k, from **Consensus scoring (slower)**; higher is better, and green marks the best. {#solution-comparison-consensus}
+- **Consensus** – the mean Jaccard agreement between the repeated runs at that k, from **Consensus scoring (slower)**; higher is better, and with interpretation enabled green marks the best. {#solution-comparison-consensus}
 
-A k whose fit failed outright is drawn red, with R's message under the table. Warnings above the table say when no biclusters were found at any count, when every count overlaps above 0.3, and when stability was asked for but could not be measured at any count.
+A k whose fit failed outright is drawn red, with R's message under the table; a biclustering package that cannot be installed ends the comparison – and a Step 3 run alike – with one error naming it. Warnings above the table say when no biclusters were found at any count, and when stability was asked for but could not be measured at any count.
 
-**Suggested k.** The count given below the table, with the rule that produced it: the highest bootstrap stability when that diagnostic ran, otherwise the variance-explained elbow – the last k before the gain in variance explained falls below half the gain before it. The elbow rule applies only once the curve has gained at least 5 percentage points across the range; when it has not, or no gain collapses, the suggestion is the smallest k tested.
+**Suggested k.** The count given below the table while interpretation is enabled, with the rule that produced it: the highest bootstrap stability when that diagnostic ran, otherwise the variance-explained elbow – the last k before the gain in variance explained falls below half the gain before it. The elbow rule applies only once the curve has gained at least 5 percentage points across the range; when it has not, or no gain collapses, the suggestion is the smallest k tested.
 
 For auto-k algorithms (Plaid, Spectral), Step 2 shows an informational note instead – the algorithm determines k on its own. For Spectral the note adds that **Maximum within-bicluster spread** from Step 1 is what decides how many biclusters come back.
 
@@ -242,13 +244,13 @@ For auto-k algorithms (Plaid, Spectral), Step 2 shows an informational note inst
 
 Enter the number of clusters and click **Run cluster analysis** (or **Run biclustering analysis**). Long runs can be interrupted with the Cancel button on the progress overlay.
 
-Every output card opens with the settings the run used – mode, algorithm, distance metric, linkage or K-means parameters, whether standardization was applied, the variables included, any excluded as non-numerical or constant, and the number of complete cases out of the total – then any warnings (listed [below](#warnings)), then the sections the options ask for, in the order they are listed here.
+Every output card opens with the settings the run used – mode, algorithm, distance metric, linkage or K-means parameters, **Standardized (z-scores)** stated Yes or No, the variables included, any excluded as non-numerical or constant, and the number of complete cases out of the total – then any warnings (listed [below](#warnings)), then the sections the options ask for, in the order they are listed here. Under [Gower](#gower-and-mixed-type-data) the **Gower variable types** row names every variable and how it was scaled, so it stands in for both the variable list and the standardization row; a Step 3 card also drops the list when a table it shows names every variable – the variable cluster assignments, the cluster profiles, the cluster medoids or the variable contribution table. The bicluster comparison names the **Resampling replications** whenever stability, the F-statistic or consensus scoring resampled.
 
-All diagnostic plots produced here and in step 2 (elbow, silhouette, gap, dendrogram, heatmap, and the rest) are resizable and can be saved individually as SVG, PNG, or JPG using the export buttons beside each chart – see [resizing and exporting charts](./getting-started.md#resizing-and-exporting-charts).
+All diagnostic plots produced here and in step 2 (elbow, silhouette, gap, dendrogram, heatmap, and the rest) are resizable and can be saved individually as SVG, PNG, or JPG using the export buttons beside each chart – see [resizing and exporting charts](./reading-results.md#resizing-and-exporting-charts).
 
 ### Case and variable clustering
 
-- **Number of clusters (k)** – default 3, at least 2: how many clusters the run partitions the objects into. Clicking a **k** in Step 2's [comparison table](#b-k), or the dendrogram's cut line, fills it in. It must stay below the number of objects – the variables in variable mode, the complete cases in case mode – and a value that breaks either bound, or an empty field, is refused with a message rather than run.
+- **Number of clusters (k)** – default 3, at least 2: how many clusters the run partitions the objects into. Clicking a **k** in Step 2's [comparison table](#b-k), or the dendrogram's cut line, fills it in. It must stay below the number of objects – the variables in variable mode, the complete cases in case mode. A value below 2 or an empty field is flagged beside the field and blocks the run, and a k at or above the object count is refused with a message.
 
 Under **Validity metrics** the four checkboxes of [Step 2](#b-silhouette-analysis) return with the same defaults, each now a row of the [validity table](#cluster-validity-metrics) for the one k, and two resampling diagnostics join them:
 
@@ -260,7 +262,7 @@ Either box reveals a [**Bootstrap replications**](#b-bootstrap-replications) fie
 Under **Output options**:
 
 - **Cluster profiles (means per variable)** – on by default: each variable's mean within each cluster beside its overall mean, on the variables' original scale – usually the table that says what the clusters are. Under [Gower](#gower-and-mixed-type-data) a categorical variable has no mean, so its cells report the modal level and the section is titled *Cluster profiles (variable means and modal levels)*. Not offered in variable mode. {#cluster-profiles-means-per-variable #cluster-profiles-variable-means #cluster-profiles-variable-means-and-modal-levels}
-- **Cluster sizes and distribution** – on by default: the **Cluster sizes** table, one row per cluster with its member count (**n**) and share of the objects (**%**), and each cluster's [average silhouette](#b-avg-silhouette) whenever the silhouette was computed. {#cluster-sizes-and-distribution #cluster-sizes}
+- **Cluster sizes and distribution** – on by default: the **Cluster sizes** table, one row per cluster with its member count (**n**) and share of the objects (**%**), and each cluster's [average silhouette](#b-avg-silhouette) and count of [negative silhouettes](#b-negative-silhouettes) whenever the silhouette was computed. In case clustering with unequal sizes, a line under the table names the smallest cluster, its size and share, and how many times larger the largest is; with interpretation enabled, a second line gives that cluster's graded [mean Jaccard](#b-cluster-stability-bootstrap-jaccard-interpretation) when **Cluster stability (bootstrap Jaccard, slower)** ran, and when it was not requested, one line for the whole solution – equal sizes included – says that stability was not run and would show which clusters reappear in other samples. {#cluster-sizes-and-distribution #cluster-sizes}
 - **Within-cluster sum of squares** – on by default: each cluster's [within-cluster sum of squares](#b-within-cluster-sum-of-squares-within-ss) and its share of the total, with a **Total** row – which clusters are tight and which loose. Not produced under Gower.
 - **Between-cluster sum of squares** – off by default: the sum of squares lying between the clusters, and **Variance explained**, its percentage of the total – how much of the spread the partition accounts for. Not produced under Gower.
 - **Cluster centers (medoids)** – off by default, offered for **K-medoids (PAM)** in case mode: the **Cluster medoids** section, each cluster's medoid – the actual case that represents it – with its values on the original scale beside the overall mean (under Gower, the overall mean or modal level, headed **Overall**), and a **Medoid cases** line naming the case numbers. {#cluster-centers-medoids #cluster-medoids}
@@ -282,10 +284,10 @@ Under **Advanced options**, in case mode:
 
 #### Cluster validity metrics
 
-**Cluster validity metrics.** One row per metric, with its value and, when [interpretation](./settings.md#significance-formatting) is enabled, a reading. **Calinski-Harabasz index**, **Davies-Bouldin index** and **Dunn index** are the [Step 2 entries](#b-calinski-harabasz-index), read the same way for the one k.
+**Cluster validity metrics.** One row per metric, with its value and, when [interpretation](./settings.md#b-show-interpretation-column-when-applicable) is enabled, a reading. **Calinski-Harabasz index**, **Davies-Bouldin index** and **Dunn index** are the [Step 2 entries](#b-calinski-harabasz-index), read the same way for the one k.
 
-- **Average silhouette width** – the mean silhouette over all objects, from −1 to +1 ([the silhouette](./concepts/clustering.md#b-the-silhouette)); present while **Silhouette analysis** is on. Its reading is *Strong structure* from 0.70, *Reasonable structure* from 0.50, *Weak structure* from 0.25 and *No substantial structure* below that.
-- **Cophenetic correlation** – hierarchical runs only, always reported: the correlation between the input dissimilarities and the heights at which the tree first joins each pair – how faithfully the tree reproduces the data ([the cophenetic correlation](./concepts/clustering.md#b-the-cophenetic-correlation)), 0.75 and above the usual mark of a good fit. It grades the tree rather than the cut, so it has no checkbox and does not change with k.
+- **Average silhouette width** – the mean silhouette over all objects, from −1 to +1 ([the silhouette](./concepts/clustering.md#b-the-silhouette)); present while **Silhouette analysis** is on. Its reading is *Strong structure* above 0.70, *Reasonable structure* above 0.50, *Weak structure* above 0.25 and *No substantial structure* at or below that, an exact cut staying in the lower band; a legend under the table names Kaufman and Rousseeuw's bands.
+- **Cophenetic correlation** – hierarchical runs only, always reported: the correlation between the input dissimilarities and the heights at which the tree first joins each pair – how faithfully the tree reproduces the data ([the cophenetic correlation](./concepts/clustering.md#b-the-cophenetic-correlation)). With interpretation enabled it reads *Very good fit of the tree* from 0.9, *Good fit of the tree* from 0.8, *Poor fit of the tree* from 0.7 and *Very poor fit of the tree* below, on Rohlf's bands; the legend under the table adds that a low value means distortion in the tree rather than a useless dendrogram, and that with poorly separated clusters the coefficient misleads as a measure of fit. It grades the tree rather than the cut, so it has no checkbox and does not change with k.
 
 Under [Gower](#gower-and-mixed-type-data) a note under the table says the sums of squares and Calinski-Harabasz are left out and Davies-Bouldin comes from medoids; under any other non-Euclidean metric, that the sums of squares and Calinski-Harabasz are still Euclidean.
 
@@ -294,7 +296,7 @@ Under [Gower](#gower-and-mixed-type-data) a note under the table says the sums o
 **Cluster stability (bootstrap Jaccard).** One row per cluster: each replicate resamples the objects, reclusters them with the same settings, and matches every original cluster to its best counterpart by Jaccard similarity – the share of members two sets have in common. A note under the table restates the two cut-offs and the replicate count. {#-}
 
 - **Mean Jaccard** – the average best-match similarity across the replicates; the cluster's stability score.
-- **Recovered** – how many replicates brought the cluster back with a Jaccard of 0.75 or more.
+- **Recovered** – how many replicates brought the cluster back with a Jaccard above 0.75.
 - **Dissolved** – how many scored it 0.5 or less. It counts replicates, so it keeps its own, stricter meaning beside the mean.
 - **Replicates scored** – how many replicates produced a solution to score the cluster against; a replicate whose refit failed scores nothing.
 - **Interpretation** – with interpretation enabled, the mean read against Hennig's bands: *Highly stable* from 0.85, *Stable* from 0.75, *Indicates a pattern, but membership is doubtful* from 0.60, and *Not trustworthy* below. A warning above the card names how many clusters fell below 0.60. {#cluster-stability-bootstrap-jaccard-interpretation}
@@ -305,16 +307,17 @@ A cluster with a high silhouette and a low mean Jaccard is well cut in this samp
 
 **Consensus partition (ensemble of resamples).** The resamples are pooled into a co-association matrix – for every pair of objects, the share of replicates that put the two in one cluster – which is cut into k clusters of its own; the section reports how that consensus partition compares with the one the card shows. {#-}
 
-- **Agreement with the reported solution (adjusted Rand)** – how closely the consensus partition reproduces the reported one, 1 for identical and near 0 for chance agreement. With interpretation enabled it reads *Excellent agreement* from 0.90, *Good agreement* from 0.80, *Moderate agreement* from 0.65 and *Poor agreement* below, and below 0.65 a warning above the card says the boundaries rest on this one fit.
+- **Agreement with the reported solution (adjusted Rand)** – how closely the consensus partition reproduces the reported one, 1 for identical and near 0 for chance agreement. With interpretation enabled it reads *Excellent agreement* above 0.90, *Good agreement* above 0.80, *Moderate agreement* above 0.65 and *Poor agreement* at or below that – an exact cut stays in the lower band – and at or below 0.65 a warning above the card says the boundaries rest on this one fit.
 - **Ambiguous pairs (PAC)** – the share of pairs whose co-association fell between 0.1 and 0.9, which the ensemble neither reliably kept together nor reliably separated. Lower is better: near zero, every pair was settled one way or the other.
 - **Mean co-association** – in the per-cluster table beside each consensus cluster's size (**n**): the average co-association over the pairs inside it, near 1 when its members held together in nearly every resample; a one-member cluster has none.
-- **Reported solution (rows) against the consensus partition (columns)** – a crosstab of the two partitions. Consensus clusters are numbered after the reported cluster each overlaps most, so the diagonal holds the objects both group alike, and the highlighted off-diagonal cells are the ones the ensemble would have placed elsewhere.
+- **Reported solution (rows) against the consensus partition (columns)** – a crosstab of the two partitions. Consensus clusters are numbered after the reported cluster each overlaps most, so the diagonal holds the objects both group alike, and the off-diagonal cells, highlighted while interpretation is enabled, are the ones the ensemble would have placed elsewhere.
 
 A low agreement does not make the consensus partition right and the reported one wrong – both are cuts of the same data. It says the data do not pin the grouping down, and is a reason to report the solution with caution rather than a different solution to report.
 
 #### Sizes, profiles and sums of squares
 
-- **Avg. silhouette** – in **Cluster sizes**, the mean silhouette width of the cluster's own members, which the overall average hides: a weak cluster shows here while the overall figure still looks acceptable. {#avg-silhouette}
+- **Avg. silhouette** – in **Cluster sizes**, the mean silhouette width of the cluster's own members, which the overall average hides: a weak cluster shows here while the overall figure still looks acceptable. With interpretation enabled each cluster's figure is coloured on the bands of the [average silhouette width](#b-average-silhouette-width), and a legend under the table names them, as the app's extension of Kaufman and Rousseeuw's table for the overall average to a single cluster. {#avg-silhouette}
+- **Negative silhouettes** – in **Cluster sizes**, how many of the cluster's members have a negative silhouette width – an object whose average dissimilarity to its own cluster exceeds that to the nearest other, so likely in the wrong cluster; a note under the table gives the count over all objects. Printed whenever the silhouette was computed, with no verdict.
 - **Cluster** – in the stability, consensus and size tables, the cluster the row describes, numbered as in every table and plot of the card.
 - **Variable** – in the profile, medoid, contribution and bicluster tables, the variable the row describes, by its display name.
 - **Cluster {n}** – in the profile and medoid tables, the cluster's mean (or medoid value) on each variable. Read each against **Overall** to see what sets the cluster apart; the names you give clusters are your interpretation, not the data's.
@@ -337,9 +340,9 @@ Under Gower a categorical variable's F-statistic and Eta² cells read –, since
 
 #### Multidimensional scaling
 
-The plot takes the dissimilarity the run already built – the same matrix the tree, the medoids and the validity indices read – and finds two-dimensional coordinates whose distances reproduce it as closely as two dimensions allow: it shows whether the clusters are separated in the data, or only in the partition table. The method is chosen under **Scaling** rather than inferred from the distance metric, so either question can be asked of any run.
+The plot takes the dissimilarity the run already built – the same matrix the tree, the medoids and the validity indices read – and finds two-dimensional coordinates whose distances reproduce it as closely as two dimensions allow: it shows whether the clusters are separated in the data, or only in the partition table. The method is chosen under **Scaling** rather than inferred from the distance metric, so either question can be asked of any run, and the section's heading names the one that ran – *Multidimensional scaling (classical)* or *Multidimensional scaling (non-metric)*.
 
-Each method reports the fit it optimizes, in a note under the plot: classical scaling the share of the dissimilarity structure its two dimensions carry, non-metric scaling Kruskal's stress-1 with his reading – excellent at 0.025 or below, good at 0.05, fair at 0.1, poor past that. Read the fit before the picture: two dimensions carrying 40% of the structure, or a stress of 0.2, means points close on screen need not be close in the data.
+Each method reports the fit it optimizes, in a note under the plot: classical scaling the share of the dissimilarity structure its two dimensions carry, non-metric scaling Kruskal's stress-1, with his reading while interpretation is enabled – *excellent* at 0.025 or below, *good* at 0.05, *fair* at 0.10 and *poor* from 0.20, a value between two of those anchors taking both words: *good to excellent*, *fair to good*, *poor to fair*. Read the fit before the picture: two dimensions carrying 40% of the structure, or a stress of 0.2, means points close on screen need not be close in the data.
 
 Points are coloured by the cluster the run reported, and hovering one names it. Labels are placed furthest-from-centre first, at most 40, and those that would overlap are dropped, with a note saying how many were drawn; in variable mode the points are variables. Neither method can be interrupted once it starts, so above 1,000 objects the plot is replaced by a message saying so.
 
@@ -363,7 +366,7 @@ The warnings count variables rather than observations, and add one for a cluster
 
 ### Biclustering
 
-- **Number of biclusters (k)** – default 3, at least 1: how many biclusters BiMax, FABIA and Cheng & Church search for. Clicking a **k** in Step 2's [bicluster comparison table](#bicluster-comparison-table) fills it in. Hidden for Plaid and Spectral, which decide the count themselves. A value below 1, an empty field, more biclusters than complete cases, or under FABIA more than there are variables, is refused with a message.
+- **Number of biclusters (k)** – default 3, at least 1: how many biclusters BiMax, FABIA and Cheng & Church search for. Clicking a **k** in Step 2's [bicluster comparison table](#bicluster-comparison-table) fills it in. Hidden for Plaid and Spectral, which decide the count themselves. A value below 1 or an empty field is flagged beside the field and blocks the run; more biclusters than complete cases, or under FABIA more than there are variables, is refused with a message.
 
 Under **Output options**:
 
@@ -379,7 +382,7 @@ Under **Output options**:
 
 #### Biclustering overview
 
-**Overview.** The first section of every biclustering card: how much of the matrix the biclusters account for. The settings above it add the **Matrix size**, the complete cases out of the total and the number of **Biclusters found**; a run that finds none still gets its card, with those settings and a warning, so you can see what to change next. {#overview}
+**Overview.** The first section of every biclustering card: how much of the matrix the biclusters account for. The settings above it add the complete cases out of the total and, under BiMax, FABIA and Cheng & Church, the **Biclusters requested**; the count found is in the card's title, and a run that finds none still gets its card, with those settings and a warning, so you can see what to change next. The variable list is left out when the membership or profile tables, which name every variable, are shown. {#overview}
 
 - **Overview – Variance explained.** The percentage of the matrix's variance the biclusters capture; under FABIA, as a note says, the share its own factorization captures – the same definition as the comparison table's [Var. Expl. (model, %)](#b-var-expl-model). {#overview-variance-explained}
 - **Row coverage** – the percentage of cases that fall in at least one bicluster.
@@ -399,7 +402,7 @@ Under **Output options**:
 - **Case membership – Count.** How many biclusters the case belongs to – 0 for a case no bicluster claims.
 - **Variable membership – Count.** How many biclusters the variable belongs to.
 - **Bicluster {n}** – in the bicluster profiles, each variable's mean within that bicluster, on the original scale; a variable outside the bicluster reads –.
-- **Bicluster summary – Stability.** The bicluster's mean best-match Jaccard across the bootstrap resamples, a failed refit scoring 0; higher is better. With interpretation enabled an **Interpretation** column reads it against the [cluster stability bands](#b-cluster-stability-bootstrap-jaccard-interpretation). {#bicluster-summary-stability}
+- **Bicluster summary – Stability.** The bicluster's mean best-match Jaccard across the bootstrap resamples, a failed refit scoring 0; higher is better, and a note under the table gives the number of bootstrap resamples. With interpretation enabled an **Interpretation** column reads it against the [cluster stability bands](#b-cluster-stability-bootstrap-jaccard-interpretation). {#bicluster-summary-stability}
 - **Coherence per bicluster – Avg r.** The average correlation over every pair of the bicluster's rows across its columns ([within-bicluster correlation](./concepts/clustering.md#b-within-bicluster-correlation)); higher is more coherent, and unlike MSR it ignores a difference in amplitude between rows. A row holding one value across the bicluster's columns correlates with nothing and is left out – a bracketed count, `(-2)`, says how many – and a bicluster left with fewer than two varying rows scores no r. {#coherence-per-bicluster-avg-r}
 - **Variance of row means** – how much the bicluster's rows differ in level across its columns: a row effect inside the block.
 - **Variance of column means** – the same for its columns.
@@ -413,27 +416,22 @@ The heatmap draws the analysis matrix cell by cell on a diverging colour ramp �
 
 ### Warnings
 
-The analysis generates warnings for potentially problematic results.
+The analysis generates warnings for potentially problematic results. Those that report what the run did – non-convergence, a single-variable cluster, biclusters missing or degenerate – always show, and drop their advice when [interpretation](./settings.md#b-show-interpretation-column-when-applicable) is off; those that read a value against a rule of thumb show only while it is on.
 
 **Case and variable clustering:**
 
-- **K-means did not converge** – the iteration limit was reached; raise it or the number of random starts
-- **Unbalanced clusters** – one warning for the three views of the same problem: a smallest cluster under 5% of cases, one holding fewer than 10 observations, or a largest more than 10× the smallest. It names the smallest cluster's size and share and the largest-to-smallest ratio.
-- **Low silhouette** – below 0.25 ("no substantial structure") or 0.25–0.50 ("weak structure")
-- **Many negative silhouettes** – more than 10% of observations (or of variables, in variable mode) have negative silhouette values (likely in the wrong cluster)
+- **K-means did not converge** – the run stopped at the iteration limit, which the warning names; with interpretation enabled it adds: raise the limit or the number of random starts
+- **Low silhouette** – at or below 0.25 ("no substantial structure"), or above 0.25 and up to 0.50 ("weak structure")
 - **Clusters that did not reproduce** – with stability enabled, how many fell below a mean Jaccard of 0.6 across resamples
-- **Consensus disagrees** – with the consensus partition enabled, an adjusted Rand below 0.65
-- **Single-variable clusters** (variable mode) – a cluster containing only one variable may not be meaningful
+- **Consensus disagrees** – with the consensus partition enabled, an adjusted Rand at or below 0.65
+- **Single-variable clusters** (variable mode) – some cluster holds only one variable; with interpretation enabled the warning suggests fewer clusters
 
 **Biclustering:**
 
 - **Fewer biclusters than requested** – the algorithm returned less than k
 - **Degenerate biclusters** – some have fewer than two rows or two columns, so neither MSR nor Avg r is defined for them
-- **Heavy overlap** – the biclusters share more than 30% of their cells on average, so they largely repeat the same structure
-- **Coverage too low** – under 25% of cells belong to any bicluster
-- **Coverage too high** – over 90% of cells are covered, so the biclusters describe the matrix as a whole rather than local structure
 
-Step 2's comparison card carries warnings of its own: no biclusters found at any k in the range, every k overlapping above 0.3, or stability requested but unmeasurable everywhere – in which case the suggested k quietly falls back to the variance-explained rule.
+Step 2's comparison card carries warnings of its own: no biclusters found at any k in the range, or stability requested but unmeasurable everywhere – in which case the suggested k quietly falls back to the variance-explained rule.
 
 ### Inserting results into the dataset
 
@@ -471,7 +469,7 @@ Key things to include when writing up cluster analysis results:
 - Variance explained (between-cluster SS as percentage of total) – not produced under Gower
 - If you show the [MDS plot](#multidimensional-scaling), the scaling method and its fit – the goodness-of-fit for classical, stress-1 for non-metric – since the picture is not interpretable without it
 - If you show the [cluster biplot](#cluster-biplot), the share of variance on each axis and the fact that it is Gabriel's distance-preserving scaling – arrow length means a different thing under the other scaling
-- Any [warnings](#warnings) the card printed – unbalanced clusters, a low silhouette or many negative ones, clusters that did not reproduce, a consensus that disagrees
+- Any [warnings](#warnings) the card printed – a low silhouette, clusters that did not reproduce, a consensus that disagrees – and the count of negative silhouettes
 
 **For biclustering:** report the algorithm, number of biclusters found, variance explained, cell coverage, and coherence – both MSR and Avg r, since they answer different questions. Include the membership table or heatmap, and the bicluster stability if it was run.
 

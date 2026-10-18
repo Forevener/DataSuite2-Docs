@@ -7,7 +7,7 @@ description: The café dataset behind the DataSuite 2 concept pages – its code
 
 Every page in this section works one example: a small café with two branches that changed its menu and wants to know what happened. The data is one file, [`cafe.csv`](../../examples/cafe.csv) – download it, load it the way [Getting started](../getting-started.md#loading-data) describes, and every number quoted on these pages is one you can reproduce. This page is its codebook: where the data comes from, what each column holds, and the three things wrong with it that you will need to notice and fix before the numbers mean anything – which is exactly what a real file asks of you.
 
-The data is synthetic. It was generated from the recipe stored beside it ([`cafe.json5`](../../examples/cafe.json5)), so it behaves like survey and till data – skewed waiting times, a few blanks, one absurd value – without being anyone's records.
+The data is synthetic: it was generated to behave like survey and till data – skewed waiting times, a few blanks, one absurd value – without being anyone's records.
 
 ## The story
 

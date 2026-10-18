@@ -19,7 +19,7 @@ For a walkthrough of scoring a questionnaire – recoding, reversing items, comp
 
 ## The rule editor
 
-A rule-type button opens the editor beside the **Transformation rules** list, in four panels: **Input variables**, where you click or drag to select the variables the rule reads, with **Output options** beside it, and below them **Edit transformation rule**, with the rule's name and settings, and the **Preview**. Every rule needs at least one input variable (a formula that declares its outputs may read none); **Cancel** discards the editor, **Save rule** saves the rule and applies it at once. A rule that cannot be saved – a field left empty, a range the editor refuses, a formula that does not compile – says why in the preview as you type, and again on **Save rule**. Drag the line between the settings and the preview to share the width between them; the split is remembered, and a double-click on the line returns it to the default. {#input-variables}
+A rule-type button opens the editor beside the **Transformation rules** list, in four panels: **Input variables**, where you click or drag to select the variables the rule reads, with **Output options** beside it, and below them **Edit transformation rule**, with the rule's name and settings, and the **Preview**. Every rule needs at least one input variable (a formula that declares its outputs may read none); **Cancel** discards the editor, **Save rule** saves the rule and applies it at once. A rule that cannot be saved – a field left empty, a range the editor refuses, a formula that does not compile – says why in the preview as you type, and again on **Save rule**; a number outside its field's range, or a decimal where a whole number is asked for, is also outlined in its field, and **Save rule** moves to it. Drag the line between the settings and the preview to share the width between them; the split is remembered, and a double-click on the line returns it to the default. {#input-variables}
 
 - **Rule name** – the name the rule is listed under, and the name the [rule library](#rule-library) matches on. Left blank, the rule is named after its method or type and its first three inputs – *Z-score: height, weight* – the name the field shows greyed while you build the rule.
 
@@ -63,7 +63,7 @@ Maps numeric ranges to output values, one row per range. Both bounds are inclusi
 
 Cuts a numeric variable into ordered bins – a median split, tertiles, age bands – with a **Method** for the cut points and a **Bin labels** choice for what the bins are called. Bins are half-open: a value equal to a cut point falls in the bin above it, and the outer bins are unbounded, so every number lands somewhere. Missing cells stay missing and a non-numeric cell comes out blank, so a column with no numeric cell comes out blank throughout. {#binning}
 
-- **Quantiles (equal counts)** – cut points at the quantiles j/k of the observed values, so the bins hold equal counts: a **Number of bins** of 2 is a median split, 3 tertiles, 4 quartiles. Heavy ties can put a cut at the minimum; such a cut is dropped rather than leaving an empty bin, so the rule may make fewer bins than asked, and the preview says so.
+- **Quantiles (equal counts)** – cut points at the quantiles j/k of the observed values, so the bins hold equal counts: a **Number of bins** of 2 is a median split, 3 tertiles, 4 quartiles. Heavy ties can put a cut at the minimum; such a cut is dropped rather than leaving an empty bin, so the rule may make fewer bins than asked, and the preview says so. Typed **Labels** stay on the bins they were typed for – a merged bin takes its first and last labels joined (*Q1–Q2*) – and the rule description marks each variable whose bins merged.
 - **Equal width** – cut points at equal steps between the observed minimum and maximum, so the bins are equally wide whatever they hold.
 - **Typed cut points** – a comma-separated list of **Cut points**, the same on every dataset.
 - **Number of bins** – k, a whole number of at least 2, for the two derived methods.
@@ -93,9 +93,9 @@ Turns one categorical variable into a set of numeric indicator columns, one per 
 
 Folds the rare levels of a categorical variable into one – the long tail of a free-text field, the single-digit cells a contingency table cannot use. Every valid cell at a rare level takes the **Label for the collapsed level**; every other cell – missing included – is kept as it is, so a numeric-coded factor keeps its numbers. Pick a **Method** and type its threshold in the field beneath, which is named after the method. {#collapse-levels}
 
-- **Minimum count** – a level with fewer cases than the minimum is collapsed; 5 is the usual floor for a contingency table's expected counts. The field takes the count, a whole number of at least 1.
-- **Minimum share of cases** – a level holding less than this share of the valid cells is collapsed, so the floor scales with n. The field takes the percentage. {#minimum-share-of-cases #minimum-share}
-- **Keep the top k levels** – the k most frequent levels stay and every other is collapsed; a tie at the boundary keeps the level earlier in sort order. The field takes k. {#keep-the-top-k-levels #levels-to-keep}
+- **Minimum count** – a level with fewer cases than the minimum is collapsed. Five is a common rule of thumb for sparse levels; a contingency test's expected counts depend on both variables, and the test checks them itself. The field takes the count, a whole number of at least 1.
+- **Minimum share of cases** – a level holding less than this share of the valid cells is collapsed, so the floor scales with n. The field takes the percentage, any value above 0. {#minimum-share-of-cases #minimum-share}
+- **Keep the top k levels** – the k most frequent levels stay and every other is collapsed; a tie at the boundary keeps the level earlier in sort order. The field takes k, a whole number of at least 1. {#keep-the-top-k-levels #levels-to-keep}
 - **Label for the collapsed level** – the value the rare levels become, "Other" by default; required.
 
 The **Levels collapsed now** preview lists what would collapse for the current selection, each level with its count, and how many levels stay; the set is re-derived on each run, and the rule description records the levels the last run collapsed. To freeze it, copy the levels into a [value recode](#value-recode).
@@ -125,9 +125,9 @@ A mathematical expression evaluated row by row. Selected input variables are ref
 sum(v1:v7) / 7
 ```
 
-Three special variables are available: `i`, the current row number (1-based); `v`, the current value of the variable being processed, when replacing in place; and `c`, the full column array of the current variable.
+Three special variables are available: `i`, the current row number (1-based); `v`, the current value of the variable being processed; and `c`, the full column array of the current variable. A formula reading `v` or `c` runs once per selected input; one with `@` declarations binds neither, and the autocomplete stops offering them.
 
-A formula with `@` declarations creates several new variables in one rule, one per line; a later line can reference an earlier one, and the **Detected output variables** panel says whether each output is new or replaces an existing variable:
+A formula with `@` declarations creates several new variables in one rule. Each declaration runs from its `@name =` to the next, so a long expression may span lines; a later declaration can reference an earlier one, and the **Detected output variables** panel says whether each output is new or replaces an existing variable:
 
 ```
 @Total = v1 + v2 + v3
@@ -136,6 +136,8 @@ A formula with `@` declarations creates several new variables in one rule, one p
 ```
 
 A formula that does not compile, or whose `@` reference names no declaration above it, cannot be saved; the message names the declaration and the error. Nor can a formula with no `@` that reads neither `v` nor `c` but would write several outputs, since every output would be the same column: name the one result with `@diff = …`, or write `v` or `c` for one result per input.
+
+A statement that is no declaration – `k = 2` above the first `@`, or after a declaration's expression – is an assignment, run where it stands and visible to everything below it. A statement whose value goes nowhere, an empty declaration and a declaration reading itself are underlined and block the save. Without declarations, the formula's last statement is its value, whether or not it ends in `;`.
 
 A blank cell is missing, never `0`: arithmetic on it leaves the row blank, while `sum`, `mean` and the other aggregates skip it – the [formula reference](./formula-reference.md#missing-values) has the rules and the guards, and the full list of operators and functions. The editor highlights syntax, matches brackets, underlines a syntax error as you type and offers **autocomplete** – start typing a variable name or a function and a suggestion list appears (<kbd>Ctrl</kbd>+<kbd>Space</kbd> opens it, <kbd>Tab</kbd> accepts). Under the editor, the **Available functions** line – Math, Aggregates, Text, Dates, Conditions, Multi-variable – links each family to its section of the formula reference, opened in a new tab.
 
@@ -149,7 +151,7 @@ Applies a regular-expression search-and-replace to the text of each cell separat
 - **Case sensitive** – match upper and lower case as typed; off, `a` matches `A`. On by default.
 - **Multiline mode** – `^` and `$` match at the line breaks inside a cell rather than only at its ends.
 
-The **Preview** takes the first valid cell of the first selected variable, whether or not it matches, and shows its matches highlighted with the capture groups in distinct colours, then the result of the replacement.
+The **Preview** takes the first valid cell of the first selected variable, whether or not it matches, and shows its matches highlighted with each capture group coloured where it matched, nested groups included – what `$1`, `$2` will substitute – then the result of the replacement.
 
 ### Standardize
 
@@ -169,7 +171,7 @@ A column-wise transform: the parameters – mean, SD, range, cut-offs, λ – ar
 - **Min-max (0–1)** – $(x - \min)/(\max - \min)$ over the observed range. A constant column becomes 0.5.
 - **POMP (0–100)** – percent of maximum possible, $100 \cdot (x - \min)/(\max - \min)$ over the **Scale range**, so a 1–5 scale and a 0–10 scale read on one 0–100 metric.
 - **Reverse scoring** – $(\min + \max) - x$ over the scale range, so a 1–5 item reads 5–1: the usual treatment of a negatively worded item before a scale is summed – see [reverse scoring](./concepts/reliability.md#b-reverse-scoring); the [questionnaire scoring guide](./questionnaire-scoring-guide.md) walks through it. When the items may go to an [IRT analysis](./irt-analysis.md#negatively-keyed-items), keep the originals – **Create new variable(s)**, not **Replace original values** – since that module reverses the items itself and its careless-responding screen reads the answers as given.
-- **Scale range** – the lowest and highest value the scale allows, **Min** and **Max**, for POMP and reverse scoring. Type the scale's own limits: an end left blank is read off the data on each run, and the rule description shows the observed range it fell back on.
+- **Scale range** – the lowest and highest value the scale allows, **Min** and **Max**, for POMP and reverse scoring. Type the scale's own limits: an end left blank is read off the data on each run, and the rule description shows the observed range it fell back on. With the range typed, the description lists the cells outside it per variable (*outside 1–4: item3 2*); they are still rescaled as computed.
 
 **Ranks**
 
@@ -251,14 +253,14 @@ Every rule but three offers three output modes; a multi-variable formula, a dumm
 - **Replace original values** – the input variables are modified in place. The default.
 - **Replace another variable** – the results go into different existing variables, chosen under **Variable to replace**; the input and output counts must match (a formula may write one output), and an output cannot be one of the inputs. The inputs pair with the outputs in list order, and editing the rule keeps each pair it already has.
 - **Create new variable(s)** – the results go into new columns, named under **New variable name**.
-- **New variable name** – the new column's name; with several inputs each gets its own column, the name as a prefix – `z_height`, `z_weight` for a name of `z`. Required, except for a formula, whose output is called `transformed` when the field is blank.
+- **New variable name** – the new column's name; with several inputs each gets its own column, the name as a prefix – `z_height`, `z_weight` for a name of `z`. Required, except for a formula, whose output is called `transformed` when the field is blank. The names the rule will write appear under the field as you type, each flagged **Will create new** or **Will replace existing**, so a name already taken is caught before saving; a rule's own earlier outputs are not flagged.
 - **Detected output variables** – the columns a formula's `@` declarations, a dummy coding or a log-ratio will write, each flagged **Will create new** or **Will replace existing**.
 
 ## Managing rules
 
 Saved rules appear in the **Transformation rules** list, each card with a drag handle (⠿), a coloured badge for its type, its name and an **Edit rule** (✏️) and a **Delete rule** (🗑️) button. Below them the card names what the rule reads and writes – *height, weight → z_height, z_weight*, or *height, weight (in place)* for a rule that replaces its inputs, each side cut after three names – then describes its settings, including, for a rule that derives values from the data (cut points, λ, a fill value, the levels collapsed, a shift, an observed range), the values the last run used. A last line reports a run that did not go cleanly: *Last run failed* with the error, or how many output cells came out missing where everything the output reads held a value.
 
-Rules are applied in the order they appear, each reading the data as the rules above it left it, so a recode that merges two levels changes what a dummy coding below it produces. Drag a card by its handle to move it; the rules then re-run from the imported data in the new order. A rule can only read a column that a rule above it creates, so the editor refuses to save a rule that reads its own output or a column created by a rule below it, and a drag that would put a rule above the rule creating its input is undone with the same message. Editing a rule re-opens the editor with its current settings; on save, what its previous version wrote is first undone – a recode moved from one variable to another leaves the first at its imported values – and the rule then re-runs with every rule that depends on it. Deleting a rule – after a confirmation that names the rules it affects – removes the variables it created, restores any column it replaced in place from the imported data, and re-runs the rules that read those variables. A variable a rule creates keeps its place in the variable list, its selection and its type whenever the rules re-run – after an edit, a change of the [missing data setting](./settings.md#missing-data) or a project load – and is removed only once no rule writes it.
+Rules are applied in the order they appear, each reading the data as the rules above it left it, so a recode that merges two levels changes what a dummy coding below it produces. Drag a card by its handle to move it; the rules then re-run from the imported data in the new order. A rule can only read a column that a rule above it creates, so the editor refuses to save a rule that reads its own output or a column created by a rule below it, and a drag that would put a rule above the rule creating its input is undone with the same message. Editing a rule re-opens the editor with its current settings; on save, what its previous version wrote is first undone – a recode moved from one variable to another leaves the first at its imported values – and the rule then re-runs with every rule that depends on it. Deleting a rule – after a confirmation that names the rules it affects – removes the variables it created, restores any column it replaced in place from the imported data, and re-runs the rules that read those variables. A variable a rule creates keeps its place in the variable list, its selection and its type whenever the rules re-run – after an edit, a change of the [missing data setting](./settings.md#missing-data) or a project load – and is removed only once no rule writes it. The next result's setup card lists, under [Values changed](./reading-results.md#b-values-changed), the columns an add, edit, delete or move changed – a move only those whose values the new order changes.
 
 Each rule runs on its own, so a rule that fails – an invalid pattern, a formula from an older project that no longer compiles – does not stop the rules below it. The columns it creates are left empty, and a column it rewrites in place keeps the values it had before the rule. Its card shows the error, a message names it when a re-run breaks a rule that ran cleanly before, and **Save rule** warns when the rule it saved fails. A rule that names a variable the dataset does not hold – pulled from the [rule library](#rule-library) onto other data, or loaded from an older project whose order puts a reader above its creator – does not run at all: its card is dimmed and reads *Not run: this dataset has no* and the variables, until you edit the rule and replace them. The editor marks each missing variable where it stood – among the inputs, the variables to replace, the group or order select – and saves nothing until every one is replaced.
 
@@ -290,7 +292,7 @@ A pushed rule remembers the rules above it that it depends on: those that create
 
 ### Import and export
 
-- **Import** – load rules from a JSON file previously exported from DataSuite, or the rules of a saved project file; when the file holds rules the library already has, a dialog asks whether to replace them or skip the duplicates.
+- **Import** – load rules from a JSON file previously exported from DataSuite, or the rules of a saved project file. A rule whose content the library already holds is skipped, and the imported rules depending on it are linked to the copy there; a dialog asks whether to replace or skip only when an imported rule would overwrite a library rule with different content.
 - **Export** – download the selected library rules as a shareable JSON file.
 
 ## Table converter
@@ -304,16 +306,16 @@ The table converter reshapes data between wide and long format – see [wide and
 
 Repeated measurements stored as separate columns, one row per subject, become one row per subject and condition, which is what a repeated-measures or a mixed design needs. The variables you do not stack are carried over unchanged, repeated on each of a subject's rows. {#table-converter #wide-to-long}
 
-- **Stacking pattern** – how the source columns are ordered. DataSuite reads the variable names and pre-selects the pattern, the number of conditions and the condition labels it detects there, when the names agree.
+- **Stacking pattern** – how the source columns are ordered. DataSuite reads the variable names and pre-selects the pattern, the number of conditions and the condition labels it detects there, when the names agree. Names are cut between whole parts only, so `IQ_pre` and `IQ_post` stack as `IQ` over *pre* and *post*, and several measures over the same occasions (`item1_pre` … `item2_post`) are told apart. Detected variables are paired by condition name, whatever their order in the file; when the measures name their conditions differently they are paired by position, and the preview warns.
 - **Grouped by condition** – every variable's column for the first condition, then every variable's column for the second, and so on.
 - **Grouped by variable** – each variable's conditions are adjacent.
-- **Number of conditions** – how many repeated measurements each variable has, 2 to 20. The count of stacked variables must divide by it: the modal warns when it does not, and the columns left over are ignored.
+- **Number of conditions** – how many repeated measurements each variable has, at least 2. The count of stacked variables must divide by it: when it does not, the preview names the variables that would be left over, and **Apply transformation** stays disabled until you deselect them – they are then carried over unchanged – or change the count.
 - **Condition column name** – the name of the new column holding the condition labels, "Condition" by default.
-- **Condition labels** – a name for each condition ("Before", "After"), pre-filled from the variable names when they can be read, else T1, T2 ….
+- **Condition labels** – a name for each condition ("Before", "After"), pre-filled from the variable names when they can be read, else T1, T2 …. Each condition needs a label of its own: a label used twice is named in the preview and keeps **Apply transformation** disabled.
 - **Subject identifier** – what links a subject's rows together in the result.
 - **Generate automatically** – row numbers, one subject per row of the wide data, in a column named **Subject ID**. If a subject occupies several rows, each becomes a separate subject in the result and no later check can tell – the warning under the select says so; choose the subject's column instead.
 - **None (independent groups)** – no identifier column: the stacked columns hold independent groups – one group's scores in one column, another's in the next – so the result lists each condition's cases in turn, all of the first condition, then all of the second. A row whose measurements are all missing is dropped, since it is padding from a column shorter than its neighbours; with an identifier such a row stays.
-- **Use column: {variable}** – an existing column holds the identifier; it keeps its name in the result and is not stacked.
+- **Use column: {variable}** – an existing column holds the identifier; it keeps its name in the result and is not stacked. The preview warns when the column repeats a value – counting the stacked rows that repeat a subject and condition – or has missing values, counting the rows that belong to no subject; applying stays allowed.
 - **Variables to stack** – click or drag to select the variables to reshape, in the pattern's order; the count beneath says how many measurements per condition that makes, or warns that the variables do not divide evenly. Each measurement column of the result is named by what its source columns' names share, so `score_t1` and `score_t2` stack into `score`.
 - **Preview** – the result as the settings stand, every row when there are 20 or fewer, else the first and last ten: one column each for the subject identifier, the condition, every stacked measurement and every variable carried over; the variables being stacked together are listed under the table. The long-to-wide converter's has a [status of its own](#b-long-to-wide-preview).
 
@@ -323,7 +325,7 @@ Data held as one row per subject and condition becomes one row per subject, each
 
 - **Identifier columns** – the columns that name one row of the wide table: a subject ID, or several columns that do it together, such as a subject and a session. A row whose identifier or key is missing is skipped, and the status under the preview counts it.
 - **None – match rows by position** – no identifier: the first row of each key combination is placed beside the first row of the others, the second beside the second, and so on, and a combination with fewer rows is padded with missing cells. The rows placed side by side have nothing to do with each other, as the warning under the checkbox says – use it for independent groups only, the reverse of the wide-to-long converter's [None (independent groups)](#b-none-independent-groups).
-- **Key columns** – the columns whose levels become the new column names – a condition, a time point. Each value column gets one column per key combination that occurs, named `{value}_{key}` (`score_T1`, `score_T2`), the levels in the app's sort order. Several keys nest in the order you pick them, the first outermost, so picking occasion then item gives `score_1_a`, `score_1_b` ….
+- **Key columns** – the columns whose levels become the new column names – a condition, a time point. Each value column gets one column per key combination that occurs, named `{value}_{key}` (`score_T1`, `score_T2`), the levels in the order they first appear in the data. Several keys nest in the order you pick them, the first outermost, so picking occasion then item gives `score_1_a`, `score_1_b` ….
 - **Value columns** – the measurements to spread, each into one column per key combination; a subject with no row for a combination gets a missing cell.
 - **Column order** – the order of the spread columns when there are several value columns.
 - **Grouped by value** – each value column's conditions are adjacent: `score_T1, score_T2, rt_T1, rt_T2`.
@@ -333,7 +335,9 @@ Data held as one row per subject and condition becomes one row per subject, each
 
 ### Applying a conversion
 
-The footer of both converters says what applying carries along besides replacing the dataset. When the project has transformation rules, they will be cleared, and their output columns are kept as plain data. Under [listwise deletion](./settings.md#missing-data) the rows with a missing value are already removed, and under imputation the missing cells are already filled – the converters read the data as the missing-data setting left it, so the converted data keeps both.
+The footer of both converters says what applying carries along besides replacing the dataset. When the project has transformation rules, they will be cleared, and their output columns are kept as plain data. Under [listwise deletion](./settings.md#missing-data) the rows with a missing value are already removed, and under imputation the missing cells are already filled – the converters read the data as the missing-data setting left it, so the converted data keeps both. Rows excluded by the [case filters](./getting-started.md#filtering-cases) and variables deselected in the Variables dialog are left out of the converted data for good, and the footer counts both. The next result's setup card names the reshape and the new size – [Data stacked](./reading-results.md#b-data-stacked) or [Data unstacked](./reading-results.md#b-data-unstacked).
+
+The converted data keeps the variable types you declared: an identifier or carried column keeps its own, a stacked measurement the type all of its source columns share, a spread column its value column's; every other column, the condition column included, is typed from its values as on import. A new column whose name is already taken gets a suffix – `Condition_2` beside a carried `Condition` – so no column is overwritten.
 
 - **Apply transformation** – replaces the dataset with the converted one.
 

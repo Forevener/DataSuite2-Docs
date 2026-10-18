@@ -7,7 +7,7 @@ description: The DataSuite 2 generator spec – factors, variables, distribution
 
 The exam generator takes a **spec**: a JSON5 document describing a population, not a dataset. Each student's data is drawn from that population using their own name as the seed, so everyone gets numbers that are theirs alone while the structure you authored – the factors, the effects, the missingness – holds for all of them.
 
-The same spec feeds both actions in the view. **Export exam link** turns it into a `?exam=` link students open; **Load mock data into app** draws one dataset and loads it straight into DataSuite, which is how you test a module against data with known properties.
+The same spec feeds every action in the view. **Export exam link** turns it into a link students open, and **Export exam file** into a `.exam` file holding the same exam, which students open with **Choose file** – the way to send an exam whose link is too long for a messenger (the view warns past 4,000 characters); **Load mock data into app** draws one dataset and loads it straight into DataSuite, which is how you test a module against data with known properties.
 
 > This page is about the dataset. For the graded questions that ride on top of it, see [exam question reference](./exam-question-reference.md). For what the student sees, see [taking an exam](./taking-an-exam.md).
 

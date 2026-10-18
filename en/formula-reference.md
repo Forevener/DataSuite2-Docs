@@ -47,7 +47,7 @@ A blank cell is missing, never `0` – see [Missing values](#missing-values) for
 | `v` | current value of the variable being processed (see below) |
 | `c` | full column array of the variable being processed (see below) |
 
-`v` and `c` are available when a rule has multiple input variables and the output is set to [replace original values](./data-transformation.md#output-options). In that case, the formula runs once per variable per row – `v` is the current cell value and `c` is the full column. This is useful for applying the same transformation to many variables at once, e.g. `v * 100` to convert all selected variables to percentages.
+`v` and `c` are available whenever at least one input variable is selected and the formula has no `@` declarations, which bind neither. A formula reading them runs once per input per row – `v` is that input's current cell value and `c` its full column – and writes one result per input, where the [output options](./data-transformation.md#output-options) send it. This is useful for applying the same transformation to many variables at once, e.g. `v * 100` to convert all selected variables to percentages.
 
 ## Missing values
 
@@ -61,7 +61,8 @@ To branch on a blank or substitute a value:
 
 | Function | Description | Example |
 |---|---|---|
-| `isBlank(x)` / `isMissing(x)` | true for a blank cell, and for an empty or whitespace-only string | `isBlank(v1) ? 0 : v1 * 2` |
+| `isBlank(x)` | true for a blank cell, and for an empty or whitespace-only string | `isBlank(v1) ? 0 : v1 * 2` |
+| `isMissing(x)` | true for a blank cell or a failed `number()` parse; false for a whitespace-only string | `isMissing(number(v1)) ? 0 : 1` |
 | `isNotBlank(x)` | the opposite | `isNotBlank(v1) ? v1 : 0` |
 | `coalesce(a, b)` | `a` if it has a value, otherwise `b` | `coalesce(v1, 0)` |
 
@@ -71,15 +72,17 @@ To branch on a blank or substitute a value:
 
 ### Numbers
 
-Numbers are written as-is: `42`, `3.14`, `-7`. Scientific notation is supported: `1.5e3` (= 1500).
+Numbers are written as-is: `42`, `3.14`, `-7`. Scientific notation is supported: `1.5e3` (= 1500). A result that is not a finite real number – an infinity, a complex number, a value with units – is written as a missing cell, and the rule's card counts such cells.
 
 ### Strings
 
 Strings are enclosed in double quotes: `"hello"`. Use `+` to concatenate: `"ID_" + v1`.
 
+A formula never turns text into a number on its own. Arithmetic, orderings (`<`, `>`) and the aggregates on a text cell leave the row missing – a whitespace-only cell included – `"10" == 10` is false, and `+` joins numeric text rather than adding it. To read a text column as numbers, parse it with `number()`: `number(v1) * 2`, `mean(number(c1))`; a cell that is not numeric text, or is blank, comes out missing. `mode` works on text as it is.
+
 ### Booleans
 
-`true` and `false` – returned by comparisons and logical operators, and used in conditionals.
+`true` and `false` – returned by comparisons and logical operators, and used in conditionals. Written to the dataset, they become 1 and 0.
 
 ### Arrays
 
@@ -102,6 +105,8 @@ Both forms produce the same result.
 
 The range syntax `v1:v7` expands into an array automatically, so `sum(v1:v7)` becomes `sum([v1, v2, v3, v4, v5, v6, v7])` internally and works as expected.
 
+A cell holds one value, so an array is not written as a result: a one-value array – a single mode, `quantileSeq(c1, [0.5])` – writes that value, and a longer one leaves the cell missing.
+
 ### Indexing
 
 Access individual elements of an array using square brackets. **Indices are 1-based** (not 0-based like in most programming languages):
@@ -110,6 +115,8 @@ Access individual elements of an array using square brackets. **Indices are 1-ba
 c1[1]       // first value in column 1
 c1[i]       // current row's value in column 1
 ```
+
+Columns are read-only: an assignment into one (`c1[1] = 0`) leaves the row's result missing and the column as it was, and `sort(c1)` or `partitionSelect(c1, k)` returns the values in order without reordering the column the later rows read.
 
 ## Operators
 
@@ -201,7 +208,7 @@ These work with multiple values or arrays (e.g. via the `v1:v7` range syntax). O
 | `std(...)` | standard deviation | `std(v1:v5)` |
 | `variance(...)` | variance | `variance(v1:v5)` |
 | `prod(...)` | product of values | `prod(v1:v3)` |
-| `mode(...)` | most frequent value(s), as an array | `mode(c1)` |
+| `mode(...)` | most frequent value(s), as an array – a single mode is written as its value, a tie leaves the cell missing | `mode(c1)` |
 | `mad(...)` | median absolute deviation | `mad(c1)` |
 | `quantileSeq(array, p)` | quantile at probability `p` (0–1), or several for an array of them | `quantileSeq(c1, 0.75)` |
 | `count(...)` | number of non-blank values | `count(v1:v9)` |
@@ -302,7 +309,7 @@ Use whichever reads more naturally. Dot syntax can be especially convenient for 
 format(template, arg0, arg1, ...)
 ```
 
-Replaces `{0}`, `{1}`, etc. with the corresponding arguments, up to five (`{0}` to `{4}`):
+Replaces `{0}`, `{1}`, etc. with the corresponding arguments, up to five (`{0}` to `{4}`), in one pass – text an argument brings in is left as it is. A placeholder whose argument is a blank cell leaves the row missing:
 
 ```
 format("Subject {0}, Group {1}", v1, v2)
@@ -350,7 +357,7 @@ follow_up = dateDiff(consent_date, cutoff, "month")
 event_occurred = isNotBlank(event_date)
 ```
 
-The first rule picks the event date when present, otherwise treats the participant as still under observation today. The second computes follow-up time in months from enrollment to that cutoff. The third produces the binary event indicator – the role-picker in the analysis module reads `false`/`true` as censored/event automatically.
+The first rule picks the event date when present, otherwise treats the participant as still under observation today. The second computes follow-up time in months from enrollment to that cutoff. The third produces the binary event indicator, written as 1 and 0 – the role-picker in the analysis module reads `0` as censored and the other level as the event automatically.
 
 For days or years instead of months, swap the third argument: `dateDiff(consent_date, cutoff, "day")` or `... "year"`. If your dataset has a separate last-contact date for participants still alive at the end of follow-up, use that instead of `today()`:
 
@@ -375,7 +382,7 @@ Use `@Name = expression` to create multiple output variables in a single rule:
 @Centered = @Total - (mean(c1) + mean(c2) + mean(c3))
 ```
 
-Each `@Name` creates a new variable (or overwrites an existing one with the same name). Later declarations can reference earlier ones with the `@` prefix. The [output options](./data-transformation.md#output-options) panel is disabled for multi-variable formulas since output targets are explicit.
+Each `@Name` creates a new variable (or overwrites an existing one with the same name). A declaration's text runs from its `@Name =` to the next one, and its first statement is the output, so a long expression may span lines – an open parenthesis, a trailing operator. Later declarations can reference earlier ones with the `@` prefix. Any other statement – above the first declaration, or after a declaration's first statement – is an [intermediate assignment](#intermediate-variables), run where it stands and visible to everything below it. A statement whose value goes nowhere, an empty declaration and a declaration reading itself are underlined and block the save, and a declaration failing on a row leaves the others' values for that row intact. The [output options](./data-transformation.md#output-options) panel is disabled for multi-variable formulas since output targets are explicit.
 
 Column arrays are per input variable: `mean(c1)` is the mean of the first item, and there is no column for a declared variable, so centre a total on the sum of the item means as above rather than on `mean(c1 + c2 + c3)` – adding columns element-wise fails on the first blank cell in any of them.
 
@@ -388,7 +395,7 @@ total = v1 + v2 + v3
 total / 3
 ```
 
-The last line is the result that gets stored. Earlier lines define intermediate variables for use in subsequent expressions. This is equivalent to writing `(v1 + v2 + v3) / 3` but easier to read for complex formulas.
+The last statement is the result that gets stored, whether or not it ends in `;`. Earlier lines define intermediate variables for use in subsequent expressions. This is equivalent to writing `(v1 + v2 + v3) / 3` but easier to read for complex formulas.
 
 > **Note:** intermediate assignments (with `=`) are different from [multi-variable formulas](#multi-variable-formulas) (with `@Name =`). Intermediate variables exist only within the formula and are not saved to the dataset.
 
@@ -398,7 +405,7 @@ The formula editor provides several features to help you write formulas:
 
 - **Syntax highlighting** – numbers, strings, operators, and function calls are color-coded
 - **Bracket matching** – matching parentheses are highlighted when the cursor is next to one
-- **Autocomplete** – start typing (2+ characters) and a suggestion list appears with variable references, functions, and constants. Press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open the list manually. Variable suggestions show the display name alongside the reference (e.g. `v1 Age`)
+- **Autocomplete** – start typing (2+ characters) and a suggestion list appears with variable references, functions, and constants. Press <kbd>Ctrl</kbd>+<kbd>Space</kbd> to open the list manually. Variable suggestions show the display name alongside the reference (e.g. `v1 Age`); `v` and `c` are offered whenever they are bound
 - **Error checking** – syntax errors are underlined in the editor with a description in the gutter. Errors are detected as you type
 - **Search** – press <kbd>Ctrl</kbd>+<kbd>F</kbd> to find text, <kbd>Ctrl</kbd>+<kbd>H</kbd> to find and replace
 
@@ -407,7 +414,7 @@ The formula editor provides several features to help you write formulas:
 - **A blank is never `0`.** Arithmetic on a blank cell gives a blank, aggregates skip it – see [Missing values](#missing-values). To fill one, `coalesce(v1, 0)`.
 - **`v1` vs `c1`** – `v1` gives you one value (the current row), `c1` gives you the entire column as an array. Use `c1` for column-wide calculations: `v1 - mean(c1)` centers each value around the column mean.
 - **Errors in formulas** produce a missing value for that row – the rest of the data is unaffected. Check the data preview to spot any unexpected blanks.
-- **String concatenation** uses `+`: `v1 + " " + v2` joins two text values with a space.
+- **String concatenation** uses `+`: `v1 + " " + v2` joins two text values with a space. Text is never read as a number unless you parse it with `number()` – see [Strings](#strings).
 - **Parentheses** control evaluation order as expected: `(v1 + v2) * v3`.
 - **Constants** `pi`, `e`, `Infinity`, and `NaN` are available.
 - **Comments** can be added with `#`: `v1 + v2 # total score`. Anything after `#` on the same line is ignored.

@@ -5,7 +5,7 @@ description: Why DataSuite 2's data transformation rules cut, scale, estimate, r
 
 # Data transformation – method notes
 
-The decisions behind the [data transformation](../data-transformation.md) rules – which convention, estimator, default or fallback stands behind each method, and the numbers that validate them, each computed on the example dataset ([`cafe.csv`](../../examples/cafe.csv), its spec beside it). Sections follow the manual's.
+The decisions behind the [data transformation](../data-transformation.md) rules – which convention, estimator, default or fallback stands behind each method, and the numbers that validate them, each computed on the example dataset ([`cafe.csv`](../../examples/cafe.csv)). Sections follow the manual's.
 
 ## The rule editor
 
@@ -19,7 +19,7 @@ The decisions behind the [data transformation](../data-transformation.md) rules 
 
 ### Value recode
 
-**A mapping matches by text and writes a numeric target as a number.** Cells are compared with the typed original as strings, so a column imported as numbers and the same column imported as text recode alike, and a mapping written for one dataset carries to the other through the rule library. A target that reads as a number is stored as one, so a column recoded to numeric codes is typed continuous by the type pass that follows every run; a target that does not stays text. The mapping table pools the distinct values of every selected input in the canonical level order the analyses use – numeric ascending when every level is a number, else alphabetical – so the pre-fill reads as the frequency table would. {#original-value #new-value}
+**A mapping matches by text and writes a numeric target as a number.** Cells are compared with the typed original as strings, so a column imported as numbers and the same column imported as text recode alike, and a mapping written for one dataset carries to the other through the rule library. A target that reads as a number is stored as one, so a column recoded to numeric codes is typed continuous by the type pass that follows every run; a target that does not stays text. The mapping table pools the distinct values of every selected input in the canonical level order the analyses use – numeric ascending when every level is a number, else alphabetical with numbers inside a label read as numbers – so the pre-fill reads as the frequency table would. {#original-value #new-value}
 
 ### Range recode
 
@@ -87,7 +87,7 @@ The decisions behind the [data transformation](../data-transformation.md) rules 
 
 **Interpolation's x is the order value when it is numeric, and tied order values split the gap in half.** Linear interpolation between the nearest numeric cells needs a position for each row: the row's place in its group by default, or the **Order by** variable's own value when that variable reads as numbers, so a gap of three weeks between two measurements is spanned in proportion to the weeks rather than to the number of rows between them. Two anchors with the same order value have no distance to divide, so the rows between them take the halfway value. A cell that is not a number counts as a gap under interpolation – there is no line through text – where LOCF and NOCB carry any non-missing cell, text included, as it is. {#linear-interpolation #last-observation-carried-forward-locf #next-observation-carried-backward-nocb}
 
-**The mode takes the first of the tied values in canonical order, written as the original cell.** A column with two values equally frequent has two modes; the fill takes the one earlier in canonical level order – numeric ascending, else alphabetical – so the answer is reproducible rather than an accident of row order, and writes the cell as it was stored, so a numeric column filled with its mode stays numeric. {#mode}
+**The mode takes the first of the tied values in canonical order, written as the original cell.** A column with two values equally frequent has two modes; the fill takes the one earlier in canonical level order – numeric ascending, else alphabetical with numbers inside a label read as numbers – so the answer is reproducible rather than an accident of row order, and writes the cell as it was stored, so a numeric column filled with its mode stays numeric. {#mode}
 
 ## Managing rules
 

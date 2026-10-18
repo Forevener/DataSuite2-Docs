@@ -5,12 +5,12 @@ description: Power analysis, effect size conversion, alpha correction, scale len
 
 # Analysis planner
 
-The **Analysis planner** is a study-planning toolkit that needs no dataset: seven collapsible sections, each a calculator with its own button. [Power analysis](#power-analysis) solves for the sample size, power or detectable effect of a planned test; the [effect size converter](#effect-size-converter) moves one effect size onto every other supported measure; the [alpha correction planner](#alpha-correction-planner) prints the per-test thresholds of five multiple-comparison procedures; [scale length planning](#scale-length-planning-spearman-brown) projects reliability against the number of items; [correlation attenuation](#correlation-attenuation) says what unreliable measures do to a correlation; [precision planning](#precision-planning-ci-width) sizes a sample for a confidence interval of a given width; and the [group allocation optimizer](#group-allocation-optimizer) prices an unequal split. Open the section you need – the others stay collapsed.
+The **Analysis planner** is a study-planning toolkit that needs no dataset: eight collapsible sections, each a calculator with its own button. [Power analysis](#power-analysis) solves for the sample size, power or detectable effect of a planned test; [DIF power](#dif-power-irt) sizes the two groups of a planned DIF study of one binary test item; the [effect size converter](#effect-size-converter) moves one effect size onto every other supported measure; the [alpha correction planner](#alpha-correction-planner) prints the per-test thresholds of five multiple-comparison procedures; [scale length planning](#scale-length-planning-spearman-brown) projects reliability against the number of items; [correlation attenuation](#correlation-attenuation) says what unreliable measures do to a correlation; [precision planning](#precision-planning-ci-width) sizes a sample for a confidence interval of a given width; and the [group allocation optimizer](#group-allocation-optimizer) prices an unequal split. Open the section you need – the others stay collapsed.
 
 > **Why plan ahead?** A study sized before the data exist can be powered for the effect that matters and corrected for the tests it will run; one sized afterwards can only be rationalised – see [power and sample size](./concepts/power-sample-size.md).
 
-1. Open the section for the question you have – [how many cases](#power-analysis), [which measure](#effect-size-converter), [which threshold](#alpha-correction-planner), [how many items](#scale-length-planning-spearman-brown), [how much a correlation shrinks](#correlation-attenuation), [how precise an estimate](#precision-planning-ci-width) or [what an unequal split costs](#group-allocation-optimizer)
-2. Fill in its fields – each opens at a conventional default, which is a starting point, not a plan
+1. Open the section for the question you have – [how many cases](#power-analysis), [how many per group for a DIF study](#dif-power-irt), [which measure](#effect-size-converter), [which threshold](#alpha-correction-planner), [how many items](#scale-length-planning-spearman-brown), [how much a correlation shrinks](#correlation-attenuation), [how precise an estimate](#precision-planning-ci-width) or [what an unequal split costs](#group-allocation-optimizer)
+2. Fill in its fields – each opens at a conventional default, which is a starting point, not a plan. A value outside a field's range, or a count that is not a whole number, is outlined in red with the range it accepts, and the section's button refuses to run until it is fixed; the last result stays on screen meanwhile
 3. Click the section's button – **Calculate**, **Convert**, **Calculate thresholds**, **Calculate required items**, **Calculate sample size** or **Calculate power**
 4. Read the result box and the table under it; after a power analysis, open the [power curve](#b-show-power-curve) and the [heatmap](#b-show-sensitivity-heatmap) as well
 
@@ -64,13 +64,13 @@ Click **Calculate** to run.
 
 ### Power analysis results
 
-- **Result** – the answer in a highlighted box. Solving for sample size it reads *Required sample size: 64 (Total: 128)* – the per-group count rounded up and, for the two-group tests and one-way ANOVA, the total in brackets – or *Required denominator (error) df* for factorial ANOVA. Solving for power it reads *Achieved power*, and for effect *Minimum detectable effect*.
+- **Result** – the answer in a box, the same neutral blue whatever the answer. Solving for sample size it reads *Required sample size: 64 (Total: 128)* – the per-group count rounded up and, for the two-group tests and one-way ANOVA, the total in brackets – or *Required denominator (error) df* for factorial ANOVA. Solving for power it reads *Achieved power* – with the [interpretation](./settings.md#b-show-interpretation-column-when-applicable) setting on, followed by *meeting the conventional 0.80* or *below the conventional 0.80*, Cohen's convention, which the citation box then lists; and for effect *Minimum detectable effect*.
 - **Parameters used** – every input the calculation took, with the solved quantity in its unrounded form.
 - **Sensitivity analysis** – the power the test actually has at 50%, 75%, 100%, 125% and 150% of the reference sample size – the calculated one when solving for sample size, the entered one otherwise – each recomputed rather than interpolated. Read it as the cost of being wrong: if power falls to 0.5 at three quarters of your sample, the plan is fragile – see [how sure the answer is](./concepts/power-sample-size.md#how-sure-the-answer-is).
 - **Show power curve** – draws power against the sample size for the entered effect and α, from about a fifth of the reference to where the curve reaches 0.99. A green dashed crosshair marks the calculated result, and hovering the curve reads the power at any sample size. The x-axis is labelled with the count the test uses – per group, pairs, the total, or the error df for factorial ANOVA. If no point could be computed for the parameters, the chart area says so – see [power curve](./concepts/power-sample-size.md#b-power-curve).
 - **Show sensitivity heatmap** – a grid of power over seven sample sizes, from 0.4 to 3 times the reference, and six effect sizes, from 0.4 to 2 times the entered one, each cell coloured on a sequential blue scale with its power printed inside; a cell that cannot be computed is grey with a dash. It shows what an optimistic effect size costs as well as a short sample.
 
-Both charts can be resized and carry SVG / PNG / JPG export buttons (see [resizing and exporting charts](./getting-started.md#resizing-and-exporting-charts)).
+Both charts can be resized and carry SVG / PNG / JPG export buttons (see [resizing and exporting charts](./reading-results.md#resizing-and-exporting-charts)).
 
 - **Quick reference: effect size conventions** – the card shown before the first calculation: Cohen's small, medium and large benchmarks for the five measures the tests use – see [Cohen's conventions](./concepts/power-sample-size.md#b-cohens-conventions).
 
@@ -83,9 +83,46 @@ Both charts can be resized and carry SVG / PNG / JPG export buttons (see [resizi
 | Cohen's w | 0.10 | 0.30 | 0.50 |
 
 - **Measure** – the effect size measure a row is about: in the quick reference, the one whose benchmarks the row gives; in the [converter's table](#b-converted-effect-sizes), the one the value was converted to.
-- **Small** – the benchmark Cohen attached to a small effect on each measure's scale; below it the [converter](#effect-size-converter) reads an effect as negligible.
+- **Small** – the benchmark Cohen attached to a small effect on each measure's scale; below it the [converter](#b-interpretation) reads a d, f, f² or w as negligible.
 - **Medium** – Cohen's benchmark for a medium effect, and the value every effect size field opens at.
-- **Large** – Cohen's benchmark for a large effect; the converter reads anything at or above it as large.
+- **Large** – Cohen's benchmark for a large effect; the converter reads a d, f, f² or w at or above it as large.
+
+## DIF power (IRT)
+
+Sizes a planned differential item functioning study before any data exist: for one binary item of a Rasch or 2PL test, the reference and focal group sizes at which its likelihood-ratio DIF test reaches the target power for uniform DIF at the ETS category B and C boundaries, and the power at a range of group sizes – the a priori form of the [power table](./irt-analysis.md#b-power-to-detect-uniform-dif) under IRT analysis's DIF results. {#dif-power-irt}
+
+> **What is DIF?** An item functions differently when two groups at the same trait level answer it differently, and uniform DIF makes it easier for one group at every level – see [differential item functioning](./concepts/latent-variables.md#b-differential-item-functioning) and [uniform DIF](./concepts/latent-variables.md#b-uniform-dif).
+
+### DIF power configuration
+
+The design is stated, not estimated: the item parameters you expect, from a pilot or a published calibration of the test.
+
+- **Item model** – the IRT model of the test's right-or-wrong items.
+	- **Rasch** – every item shares one slope: the studied item's slope field is hidden, and the slope field becomes the [common slope](#b-common-slope-a-of-every-item) – see [Rasch model](./concepts/latent-variables.md#b-rasch-model).
+	- **2PL** – the default: each item has its own slope, so the studied item's is entered apart from the others' – see [2PL](./concepts/latent-variables.md#b-2pl).
+- **Number of items** – the test's length, the studied item included, at least 2; default 20.
+- **Slope (a) of the other items** – under 2PL, the discrimination every item but the studied one is given, greater than 0; default 1 – see [discrimination](./concepts/latent-variables.md#b-discrimination).
+- **Common slope (a) of every item** – the same field under Rasch: the one slope all items share, default 1. The Rasch model fixes the slopes at 1 and lets the trait's spread vary instead, so the value is the trait's standard deviation in logits, as the hint under the field says.
+- **Intercepts (d) of the other items** – the range the other items' intercepts span, **from** −2 **to** 2 by default, spread evenly over those items, ends included; a higher intercept is an easier item – see [intercept (d)](./concepts/latent-variables.md#b-intercept-d). {#intercepts-of-the-other-items #from #to}
+- **Studied item's slope (a)** – under 2PL, the discrimination of the item the DIF is planned for, greater than 0; default 1.
+- **Studied item's intercept (d)** – that item's intercept in the reference group, default 0; the DIF is a shift of it in the focal group.
+- **Focal group's latent mean** – the groups' difference in the trait itself, called impact: the focal group's mean in reference-group standard deviations, the reference mean being 0; default 0. Both groups take the same spread.
+- **Focal-to-reference size ratio** – focal-group cases per reference case, greater than 0; default 1, two equal groups.
+
+The significance level and the target power are the fields of [power analysis](#b-significance-level-α), with the same defaults; a target power at or below α is refused with a message. Click **Calculate sample size** to run – the computation runs in R and can be cancelled while it does.
+
+### DIF power results
+
+- **Required group sizes** – one row per DIF size: the reference and focal group sizes, each rounded up, at which the studied item's likelihood-ratio test reaches the target power at α. {#dif-power-results}
+- **DIF size** – the size the row plans for, **ETS B (moderate)** or **ETS C (large)**.
+- **ETS B (moderate)** – uniform DIF at the ETS category B boundary, a Mantel–Haenszel delta of 1: in the sizes table the row planned for it, in the power table the column of power to detect it.
+- **ETS C (large)** – the same at the category C boundary, a delta of 1.5.
+- **Mantel–Haenszel Δ** – the size on the Mantel–Haenszel delta scale the ETS categories are defined on.
+- **Intercept shift** – the same size as the amount the focal group's intercept is raised by, delta ⁄ 2.35: 0.426 for B and 0.638 for C.
+- **Reference n** – the reference group's size; **Focal n** is the focal group's, the reference size times the ratio, rounded up, and **Total N** the two added. {#reference-n #focal-n}
+- **Power by group size** – the test's power under **Power to detect uniform DIF**, one column per DIF size, at the reference size the B row needs and at a quarter, half, three quarters and one and a half times it, plus the size the C row needs, each with its focal size at the stated ratio. Read it as the cost of being wrong about the sample. {#dif-power-by-group-size}
+
+Two notes under the tables name the DIF sizes and their sources, and say how the power was computed: the test's degrees of freedom – 1 under Rasch, 2 under 2PL, where the slope is compared too – and the 10,000 simulated response patterns per group it is approximated from, under the [reproducibility seed](./settings.md#reproducibility-seed), whose value the note gives, or *unseeded* when the seed is empty.
 
 ## Effect size converter
 
@@ -108,19 +145,20 @@ Converts one effect size into every other supported measure – for when a paper
 - **Cramér's V** – at least 0 and below 1, and needs the [table dimensions](#b-table-dimensions-for-cramérs-v); a wider table lowers the ceiling further, and a V at or above it is refused with the bound named – see [Cramér's V](./concepts/effect-sizes.md#b-cramérs-v).
 - **Odds ratio** – greater than 0; 0.5 and 2 are the same size of effect – see [odds ratio](./concepts/effect-sizes.md#b-odds-ratio).
 - **CLES** – the common language effect size, the probability that a random case from one group scores above one from the other; strictly between 0 and 1 – see [common language ES](./concepts/effect-sizes.md#b-common-language-es).
-- **NNT** – the number needed to treat, greater than 0; needs the [control event rate](#b-control-event-rate-for-nnt), and an NNT that rate cannot produce is reported as invalid rather than converted.
+- **NNT** – the number needed to treat: how many cases must be treated for one more of them to have the event than under control; greater than 0, a smaller number a stronger effect. It needs the [control event rate](#b-control-event-rate-for-nnt), and an NNT that rate cannot produce is reported as invalid rather than converted. In the results table its row is the NNT the effect implies at that rate, or the [NNH](#b-nnh) when the effect lowers the event rate – see [NNT](./concepts/effect-sizes.md#b-nnt).
 - **Value** – the number to convert, on the scale of the measure chosen above; default 0.50. In the results table the column of that name holds the same effect on each row's scale – η² and partial η² carry the same number there, since a single d describes one factor.
 - **Total sample size (both groups)** – the N behind a Hedges' g, both groups together, default 30; it sets the correction between d and g, so it is required, and at least 6, when converting *from* g, and optional otherwise.
 - **Table dimensions (for Cramér's V)** – the rows and columns of the contingency table, both at least 2; required when converting from Cramér's V, and without them the V row of the output reads *requires table dimensions*.
 - **Proportions (for Cohen's h)** – the two proportions p₁ and p₂, each between 0 and 1; the h row of the output is computed from them, since a d alone gives no h, and reads *requires proportions* when they are blank.
-- **Control event rate (for NNT)** – the event rate in the untreated group, default 0.50, which is also used when the field is left blank; the NNT row reads *requires base rate* when the rate is outside (0, 1).
+- **Control event rate (for NNT)** – the event rate in the untreated group – the event being the outcome a positive effect makes more likely – between 0.01 and 0.99; default 0.50, which is also used when the field is left blank.
 
 Click **Convert** to run.
 
 ### Converter results
 
-- **Converted effect sizes** – a table of fourteen rows: the measure you entered with exactly the value typed, and every other measure derived from it. A row whose extra input you left blank shows a dash and names what it needs; if the value admits no Cohen's d at all, every row reads *requires valid input* rather than a zero that would read as "no effect".
-- **Interpretation** – negligible, small, medium or large, from the same magnitude registry as the app's results cards, so a number reads the same here as on the card that reported it, and a value at Cohen's benchmark is on the rung the benchmark names. The odds ratio is read symmetrically around 1, CLES by its distance from 0.5, Cramér's V against the w benchmarks scaled to the table, and NNT on its own ladder, where a smaller number is a stronger effect.
+- **Converted effect sizes** – a table of fourteen rows: the measure you entered with exactly the value typed, and every other measure derived from it. A row whose extra input you left blank names what it needs – in the **Interpretation** column beside a dash, or in the **Value** cell itself with interpretation off; if the value admits no Cohen's d at all, every row reads *requires valid input* rather than a zero that would read as "no effect".
+- **Interpretation** – negligible, small, medium or large, through the same band rules as the app's results cards, so a number reads the same here as on the card that reported it, and a value at a benchmark is on the rung the benchmark names. Each row reads its own measure's benchmarks: d, g and h Cohen's d cuts, r McGrath and Meyer's point-biserial ones, R², η² and partial η² Cohen's η² cuts, CLES Vargha and Delaney's, and f, f² and w Cohen's own for each; Cramér's V reads the w cuts scaled to the table. The odds ratio and the NNT or NNH take the band of the d they encode. A note under the table says that the f², w and Cramér's V rows keep their own cutoffs, so their band can differ from d's by a rung, and that a d at one of its own cutoffs can land one band lower on the r, R², η² and CLES rows, because their published cutoffs are rounded. The column and the note under the table follow the [interpretation](./settings.md#b-show-interpretation-column-when-applicable) setting, as a results card's verdicts do; the [quick reference](#b-quick-reference-effect-size-conventions) stays shown either way.
+- **NNH** – the number needed to harm: the NNT row's place when the effect lowers the event rate instead of raising it – how many cases must be treated for one fewer of them to have the event – printed as a positive number and banded, as the NNT is, by the d it encodes – see [NNH](./concepts/effect-sizes.md#b-nnh).
 
 ## Alpha correction planner
 
@@ -186,7 +224,7 @@ Click **Calculate** to run.
 - **Attenuation results** – the corrected correlation, the attenuation factor and a sentence reading them together.
 - **Attenuation factor** – the square root of the product of the two reliabilities: the share of a true correlation that survives measurement. Two measures with a reliability of 0.80 keep 0.80 of it.
 - **Expected observed correlation** – the true correlation times the factor: what the data will show.
-- **Estimated true correlation** – the observed correlation divided by the factor. An estimate outside [−1, 1] is flagged in red rather than clipped: it means the reliabilities entered are too low to have produced the correlation observed, so at least one of them is understated.
+- **Estimated true correlation** – the observed correlation divided by the factor. An estimate outside [−1, 1] is flagged in red rather than clipped: it means the reliabilities entered are too low to have produced the correlation observed, so at least one of them is understated – the note under it says the first half always and the second with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, and redraws when the setting changes.
 
 > **Why this matters for planning:** the data will carry the attenuated correlation, so the power analysis should use that one, not the true one – see [what moves power](./concepts/power-sample-size.md#what-moves-power).
 
@@ -249,6 +287,12 @@ Power analysis and study planning parameters belong in the **Method** section of
 - The resulting required sample size
 - Whether you accounted for attrition (e.g. "we aimed for N = 80 to account for 20% expected dropout")
 
+**For DIF power, report:**
+- The item model, the test length, and the item parameters assumed – the other items' slope and intercept range, the studied item's slope and intercept – with their source
+- The DIF size planned for (ETS category B or C, as a Mantel–Haenszel delta and an intercept shift), the focal group's latent mean and the size ratio
+- Target power, significance level, and the resulting reference and focal group sizes
+- That the power is an approximation from simulated response patterns, with the seed
+
 **For alpha correction, report:**
 - The correction method chosen and why (e.g. "Benjamini-Hochberg to control false discovery rate at 5%")
 - The number of comparisons in the family
@@ -259,7 +303,7 @@ Power analysis and study planning parameters belong in the **Method** section of
 
 ## Reproducibility
 
-Power analysis and the group allocation optimizer run in R with the `pwr` package, and precision planning in R with its base quantile functions; all three print their code to the [R console](./r-console.md), where you can inspect, copy or re-run the exact commands. The effect size converter, the alpha correction planner, correlation attenuation and scale length planning are arithmetic and run in the browser, so they print nothing there. Every tool lists the methods it used in the citation box at the top of the output section – the power conventions behind the defaults, each conversion the table reached (Hedges' g, the odds-ratio and CLES relations, partial η², and Cramér's V and NNT only when you supplied the inputs they need), all seven multiple-comparison procedures the threshold table and its note name, Fisher's *z* transformation on the correlation branch of precision planning, the correction for attenuation, and the Spearman-Brown prophecy formula – so the list doubles as a record of what your numbers rest on. The routines behind each tool – the pivot, the rounding, the search ceilings, the refusals – are on the [method notes](./methods/analysis-planner.md) page.
+Power analysis and the group allocation optimizer run in R with the `pwr` package, DIF power with `mirt`, and precision planning in R with its base quantile functions; all four print their code to the [R console](./r-console.md), where you can inspect, copy or re-run the exact commands. The effect size converter, the alpha correction planner, correlation attenuation and scale length planning are arithmetic and run in the browser, so they print nothing there. Every tool lists the methods it used in the citation box at the top of the output section – Cohen's conventions behind a power read against 0.80, the ETS DIF categories and the likelihood-ratio power method behind DIF power, Cohen's benchmarks and each conversion the converter's table reached (Hedges' g, the odds-ratio and CLES relations, the odds ratio's conversion to d, partial η², Cramér's V only when you supplied the table dimensions, and the NNT whenever its row holds a value), the point-biserial and CLES benchmarks only while the converter's **Interpretation** column is shown, all seven multiple-comparison procedures the threshold table and its note name, Fisher's *z* transformation on the correlation branch of precision planning, the correction for attenuation, and the Spearman-Brown prophecy formula – so the list doubles as a record of what your numbers rest on. The routines behind each tool – the pivot, the rounding, the search ceilings, the refusals – are on the [method notes](./methods/analysis-planner.md) page.
 
 ## Common pitfalls
 

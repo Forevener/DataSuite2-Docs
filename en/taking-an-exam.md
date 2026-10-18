@@ -5,11 +5,11 @@ description: How to open an exam link, answer questions in the exam panel, check
 
 # Taking an exam
 
-Your instructor sends you a link. That link carries the whole exam – the dataset recipe and the questions – so there is nothing to download, no account to create, and nothing to upload. Everything runs in your browser, and your work stays on your machine.
+Your instructor sends you a link or an exam file (`.exam`). Either one carries the whole exam, questions and data included, so there is no account to create and nothing to upload. Everything runs in your browser, and your work stays on your machine.
 
 ## Quick start
 
-1. **Open the link.** A dialog asks you to enter your name.
+1. **Open the link** – or, with a file, open DataSuite and pick it with **Choose file**, as you would a dataset. A dialog asks you to enter your name.
 2. **Type your name exactly as your instructor expects it.** Your name is what builds your dataset, so a different spelling is a different dataset.
 3. Your data loads and the **Exam** panel appears at the right of the screen.
 4. For each question: run the analysis it names, read the number off the result card, and type it into the panel. Then press **Check {n} answers** at the foot of the panel – one press checks every answer you have typed.
@@ -17,13 +17,15 @@ Your instructor sends you a link. That link carries the whole exam – the datas
 
 > **Why your numbers differ from everyone else's:** your name is turned into a random seed, and the data is drawn from that seed. Every student gets a dataset with the same *structure* but different values, so which variables come out significant is genuinely yours. Copying a classmate's answers cannot work, and neither can looking them up – but your own data is perfectly reproducible, so your instructor can regenerate it from your name and check your report against it.
 
+> **Your name stays on your machine.** It is used only inside your browser, to draw your dataset, and is never sent or saved anywhere – the one place it appears is the [report you export](#exporting-your-report).
+
 ## The exam panel
 
 The panel floats over the app so you can keep working while it is open.
 
 - The header shows **Exam** and your score as `passed / total`. Click it to collapse the panel out of the way; click again to bring it back.
 - The body lists every question with its own input.
-- The footer shows the export gate (see [exporting your report](#exporting-your-report)), the **Check {n} answers** button and a **Restore the exam dataset** button.
+- The footer shows the export gate (see [exporting your report](#exporting-your-report)), the **Check {n} answers** button, a **Restore the exam dataset** button and a **Leave exam** button.
 
 The panel sits underneath dialogs, so the **Cases** and **Variables** modals stay reachable while it is open.
 
@@ -88,7 +90,7 @@ Some questions ask you to change the data first – filter to one group in the *
 
 Your changes never corrupt the answer key: grading always runs against a pristine copy of your original dataset, kept aside when the exam opened. What matters is that **your** screen shows the right thing – a filter you forgot to clear is the usual reason a later answer stops matching.
 
-If your data gets into a state you cannot untangle, press **Restore the exam dataset**. It redraws your original data from your name and discards every transformation and filter you have added; your answers and marks are kept. Reloading the exam link does the same thing.
+If your data gets into a state you cannot untangle, press **Restore the exam dataset**. It redraws your original data from your name and discards every transformation and filter you have added; your answers and marks are kept. Reloading the page does the same thing. To return to the normal app, press **Leave exam** – opening the exam again under the same name brings your answers and marks back.
 
 See [data transformation](./data-transformation.md) for what the transformation rules do.
 
@@ -100,7 +102,7 @@ The panel footer tells you where you stand:
 - **Export locked – n of m questions must be checked** / **Export locked – n of m questions must pass** – the export is blocked until enough questions are checked, then until enough have passed.
 - **n of m questions should be checked before you export** / **n of m questions should pass before you export** – you will be asked to confirm, but you can go ahead.
 
-Your instructor chooses which of these applies. When you export to Word, the document carries an **Exam answer sheet** appendix listing every question, your final answer and its mark – including the questions that are not graded, so the picks your other answers were built on are visible too. A provenance line in the page header and a short integrity hash tie the document to your dataset.
+Your instructor chooses which of these applies. When you export to Word, the document carries an **Exam answer sheet** appendix listing every question, your final answer and its mark – including the questions that are not graded, so the picks your other answers were built on are visible too. A provenance line in the page header – your name and your dataset's seed – and a short integrity hash tie the document to your dataset.
 
 Write your interpretations into the document as the prose questions ask. The panel only certifies that you ran the analysis correctly; the reasoning is what your instructor reads.
 

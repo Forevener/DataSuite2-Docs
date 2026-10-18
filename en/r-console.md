@@ -33,7 +33,7 @@ mean(c(1, 2, 3, 4, 5))
 
 ## Slash commands
 
-Type `/` to see a list of special commands. Use **Up/Down** to navigate and **Tab** to autocomplete.
+Type `/` to see a list of special commands. Use **Up/Down** to navigate and **Tab** to autocomplete. A command that fails – `/reset` when the engine cannot start, `/data` when the data cannot be bound – prints *Command failed* with the reason in the console.
 
 ### `/data` – load your dataset into R
 
@@ -59,7 +59,7 @@ model <- lm(Score ~ Age + Group, data = df)
 
 Different types are rendered differently:
 
-- **Data frames and matrices** – formatted tables
+- **Data frames and matrices** – formatted tables, with factor columns shown as their labels and dates and times as dates and times; row names, such as a correlation matrix's variables, lead each row as an unheaded label column, while R's automatic 1, 2, 3 … row names are left out
 - **Named vectors** – key-value tables
 - **Short unnamed vectors** – comma-separated values
 - **Long unnamed vectors** (more than 20 elements) – truncated with a count
@@ -99,7 +99,7 @@ Removes all plots from the **Plots** tab (see [plotting](#plotting) below).
 
 ### `/outputplot [n]` – send a plot to results
 
-Sends a plot to the output section as a result card. Without an argument, sends the latest plot. With a number (e.g. `/outputplot 3`), sends that specific plot. With `all`, sends every plot in the gallery.
+Sends a plot to the output section as a result card. Without an argument, sends the latest plot. With a number (e.g. `/outputplot 3`), sends that specific plot. With `all`, sends every plot in the gallery. A plot sent to results goes into the [Word report](./reading-results.md#exporting-results) as an image.
 
 ### `/help` – show available commands
 
@@ -243,7 +243,7 @@ Use `ds_library()` instead of `library()` to load packages. It installs the pack
 
 ## Things to know
 
-- **This is WebR, not desktop R.** Most base R and many CRAN packages work, but some packages that rely on system libraries or compiled code may not be available. If a package fails to load, it likely hasn't been compiled for WebR yet.
+- **This is WebR, not desktop R.** Most base R and many CRAN packages work, but some packages that rely on system libraries or compiled code may not be available. If a package fails to load, it likely hasn't been compiled for WebR yet. A package that an analysis or a `pkg::` call installs on demand and that fails to install is not tried again in the same session – every later use fails at once with the same error; `ds_library()` tries again, and so does a fresh session after [`/reset`](#reset-restart-r) or a page reload.
 - **`help()` and `?` are not available.** Use `example(functionName)` to see usage examples, or consult the documentation links above.
 - **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep. (Command history *does* persist – see [running commands](#running-commands).)
 - **The console shares the R engine with analyses.** If you run a heavy computation in the console, built-in analyses will wait until it finishes (and vice versa).

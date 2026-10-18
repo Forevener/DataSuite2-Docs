@@ -28,14 +28,14 @@ The left column holds the variable pickers – the time and event variables at t
 
 Shown only while **Interval-censored** is selected.
 
-- **Upper bound variable** – the upper end of each subject's interval, for data where the event is known only to have happened between two assessments: a numeric variable holding the first assessment at which the event was found, left empty (NA) for subjects who never had it, whose time variable then carries their last event-free assessment. A row with the event whose upper bound is missing or smaller than its time is dropped and counted. Required under interval censoring, and must be numeric.
+- **Upper bound variable** – the upper end of each subject's interval, for data where the event is known only to have happened between two assessments: a numeric variable holding the first assessment at which the event was found, left empty (NA) for subjects who never had it, whose time variable then carries their last event-free assessment. A row with the event whose upper bound is missing or smaller than its time is dropped and counted. Required under interval censoring, and must be numeric; a note under the card's count table names it.
 - **Select upper-bound variable** – the placeholder: an interval-censored run stops with a message until it is filled.
 
 ### Event indicator and level roles
 
 - **Event variable** – the categorical variable saying how each subject's follow-up ended. Picking it fills the **Level roles** table below with one row per observed value; a blank or unparseable cell is not a level, and its row is dropped and counted. A variable with more than 20 distinct values is refused for role assignment – almost always a continuous variable picked by mistake – and has to be recoded as a discrete indicator first. At least one of its levels must carry a non-censored role, or the run stops with a message.
 - **Select event variable** – the placeholder: the role table reads *Select an event variable to see its levels* until one is chosen.
-- **Level roles** – one dropdown per observed level of the event variable, each set to one of five roles. The defaults follow common conventions: a level reading `0`, `false`, `no`, `censored` or `alive` – in any case, spaces trimmed – is pre-assigned **Censored**, and the other levels, in sorted order (numeric when every level is a number, alphabetical otherwise), are pre-assigned **Event**, **Event (cause 2)**, **Event (cause 3)** and **Event (cause 4)** in turn; a fifth non-censored level and beyond default to **Event (cause 4)** as well. Adjust as needed – your picks are remembered per variable, so switching to another event variable and back restores them. Mapping levels in place is what lets one dataset be read as `0`/`1`, as "alive"/"dead" or as a multi-level cause code without recoding it, and two or more non-censored roles unlock the competing-risks methods.
+- **Level roles** – one dropdown per observed level of the event variable, each set to one of five roles. The defaults follow common conventions: a level reading `0`, `false`, `no`, `censored` or `alive` – in any case, spaces trimmed – is pre-assigned **Censored**, and the other levels, in sorted order (numeric when every level is a number, alphabetical otherwise, with numbers inside a label read as numbers), are pre-assigned **Event**, **Event (cause 2)**, **Event (cause 3)** and **Event (cause 4)** in turn; a fifth non-censored level and beyond default to **Event (cause 4)** as well. Adjust as needed – your picks are remembered per variable, so switching to another event variable and back restores them. Mapping levels in place is what lets one dataset be read as `0`/`1`, as "alive"/"dead" or as a multi-level cause code without recoding it, and two or more non-censored roles unlock the competing-risks methods.
 - **Censored** – the event did not occur during the subject's follow-up: the row counts among those at risk up to its time and then leaves without an event – see [censoring](./concepts/survival.md#b-censoring).
 - **Event** – the event occurred at the subject's time. Under a single-event method every non-censored role is read as this one event; under a competing-risks method it is the first cause.
 - **Event (cause 2)** – a second, competing kind of event, for the competing-risks methods: a subject who had it can no longer have the first – see [competing risks](./concepts/survival.md#b-competing-risks). Under a single-event method it counts as an event like any other.
@@ -44,7 +44,7 @@ Shown only while **Interval-censored** is selected.
 
 ### Entry time (left-truncation)
 
-- **Entry-time variable** – an optional numeric variable for delayed entry: the time at which each subject came under observation, when that is later than time zero – age-as-time-scale analyses, registries that subjects join at varying ages – see [left truncation](./concepts/survival.md#b-left-truncation). A subject is then counted at risk only from their entry time on. The entry time must be strictly earlier than the subject's time, or the row is dropped and counted – such a subject was at risk for no time at all – and a missing entry time drops the row too. The variable is honoured by the survival curves, Cox regression, parametric regression and cause-specific competing-risks regression; the [group comparison test](#non-parametric-options) and [cumulative incidence](#analysis-methods) cannot use it and say so on the card; [interval censoring](#censoring) and Fine-Gray regression refuse the combination before the run.
+- **Entry-time variable** – an optional numeric variable for delayed entry: the time at which each subject came under observation, when that is later than time zero – age-as-time-scale analyses, registries that subjects join at varying ages – see [left truncation](./concepts/survival.md#b-left-truncation). A subject is then counted at risk only from their entry time on. The entry time must be strictly earlier than the subject's time, or the row is dropped and counted – such a subject was at risk for no time at all – and a missing entry time drops the row too. The variable is honoured by the survival curves, Cox regression, the **Gompertz (proportional hazards)** family of parametric regression and cause-specific competing-risks regression, and a note under the card's count table names it; the [group comparison test](#non-parametric-options) and [cumulative incidence](#analysis-methods) cannot use it and say so on the card; [interval censoring](#censoring), Fine-Gray regression and the other parametric families – **Compare all** included – refuse the combination before the run.
 - **None** – the default: every subject is followed from time zero. {#entry-time-variable-none}
 
 ### Grouping and strata
@@ -138,8 +138,8 @@ When the proportional-hazards assumption fails for one covariate, you can let th
 - **Log-normal** – an AFT family whose hazard rises and then falls, for hump-shaped risk.
 - **Log-logistic** – an AFT family shaped like the log-normal, with lighter tails.
 - **Gaussian** – linear regression on the time scale itself; rarely the right pick, since it allows negative times.
-- **Gompertz (proportional hazards)** – a proportional-hazards family with an exponentially increasing hazard, common in adult-mortality models. Not available for interval-censored data: the run stops with a message. {#gompertz-proportional-hazards #gompertz}
-- **Compare all (AIC ranking)** – fits every family, reports the best-AIC fit as the card's model, and adds an AIC ranking table and bar plot – see [AIC](./concepts/regression-basics.md#b-aic). Under interval censoring Gompertz is dropped from the comparison.
+- **Gompertz (proportional hazards)** – a proportional-hazards family with an exponentially increasing hazard, common in adult-mortality models. The one family that takes an [entry-time variable](#entry-time-left-truncation) – the others refuse one before the run. Not available for interval-censored data: the run stops with a message. {#gompertz-proportional-hazards #gompertz}
+- **Compare all (AIC ranking)** – fits every family, reports the best-AIC fit as the card's model, and adds an AIC ranking table and bar plot – see [AIC](./concepts/regression-basics.md#b-aic). Under interval censoring Gompertz is dropped from the comparison; with an entry-time variable the run is refused, since only Gompertz could fit.
 - **Overlay fitted curves on Kaplan-Meier** – adds a plot of the fitted parametric survival curve over the Kaplan-Meier reference, split by the grouping variable when one is set. On by default. Under interval censoring the plot is not available and the card says so.
 
 > **AFT or PH?** A proportional-hazards model multiplies the hazard; an accelerated-failure-time model stretches or shrinks the time scale, and its time ratio is read in time units – often the more intuitive of the two. See [time ratio](./concepts/survival.md#b-time-ratio).
@@ -156,13 +156,13 @@ With **Cause-specific hazards (Cox per cause)** selected, a **Cause-specific Cox
 
 ## Sample size and EPV checks
 
-Before fitting any regression the module counts the events against the parameters the fit will spend. Fewer events than parameters stops the run with a message; fewer than ten events per parameter lets it run, with a warning that the estimates may be unstable. A parameter is one per numeric covariate and *(levels − 1)* per factor covariate. A parametric fit adds its distribution parameters – one for the scale, two for Gompertz's scale and shape, none for the exponential – and counts the grouping variable, which enters it as a factor rather than as a stratum, as [interval-censored Cox](#interval-censored-cox-regression) does; **Compare all** counts Gompertz's two. A Cox fit with a [time-varying coefficient](#non-proportional-hazards) counts that covariate once more per additional period. Competing-risks regression is checked on the cause with the fewest events, since each cause is its own model.
+Before fitting any regression the module counts the events against what the fit will estimate. Fewer events than parameters stops the run with a message; fewer than ten events per predictor lets it run, with a warning naming the ratio and its counts – *{epv} events per predictor for {method} ({events} events, p = {params}).* – which, while [interpretation](./settings.md#b-show-interpretation-column-when-applicable) is on, adds that the estimates can be badly unstable below about 10. The warning stays on the card as a note under the coefficient table – on the competing-risks card under the table of the cause with the fewest events – and with interpretation on the card cites the rule beside it. A predictor is one per numeric covariate and *(levels − 1)* per factor covariate; the grouping variable counts as one where it enters as a factor rather than as a stratum – in a parametric fit and in [interval-censored Cox](#interval-censored-cox-regression) – and a Cox fit with a [time-varying coefficient](#non-proportional-hazards) counts that covariate once more per additional period. The stop counts a parametric fit's distribution parameters too – one for the scale, two for Gompertz's scale and shape, none for the exponential, and Gompertz's two under **Compare all** – while the warning counts the predictors alone, as on the Cox and competing-risks cards. Competing-risks regression is checked on the cause with the fewest events, since each cause is its own model.
 
-> **Why ten events per parameter?** Below one event per parameter the fit is singular, and below ten the coefficients ride on single observations – see [events per parameter](./concepts/survival.md#b-events-per-parameter-survival).
+> **Why ten events per predictor?** Below one event per parameter the fit is singular, and below ten per predictor the coefficients ride on single observations – see [events per parameter](./concepts/survival.md#b-events-per-parameter-survival).
 
 ## Reading results
 
-Each run produces one output card titled with the method, the time variable and the event variable – the covariates, the strata and, in **Compare all** parametric mode, the family that won the AIC ranking are named there too. Every confidence interval on a card is at the [global confidence level](./settings.md#confidence-level), which its column header names, so a card left on screen always says which level produced it; where a run cannot produce a section, a note on the card says so.
+Each run produces one output card titled with the method, the time variable and the event variable – the strata and the parametric family, in **Compare all** mode the one that won the AIC ranking, are named there too; the covariates are named only when no coefficients came back, since the coefficient table names them otherwise. Under the card's count table – the curve, model, group or fit summary – a note gives the event coding, each role with the levels it was given (*Event coding: Event = 1; Censored = 0.*) – every non-censored level under **Event** on a single-event card – and names the entry-time variable of a left-truncated fit and the upper-bound variable of an interval-censored one. A Cox, parametric or competing-risks fit that stopped at its iteration limit before converging says so in a warning naming the limit – see [iteration limit](./reading-results.md#b-iteration-limit). Every confidence interval on a card is at the [global confidence level](./settings.md#confidence-level), which its column header names, so a card left on screen always says which level produced it; where a run cannot produce a section, a note on the card says so.
 
 ### Non-parametric survival
 
@@ -182,14 +182,21 @@ The card of **Non-parametric survival curve**: a summary table per stratum, the 
 - **S(t)** – the estimated survival probability at that time, its confidence interval in the column beside it – see [survival function](./concepts/survival.md#b-survival-function)
 - **N at risk** – the subjects still under observation and event-free just before that time – in this table and, under the survival curve, at each axis tick – see [number at risk](./concepts/survival.md#b-number-at-risk)
 
-**Group comparison.** The [group comparison test](#b-group-comparison-test) of the curves, once a grouping variable is set and the test is not **Skip test**: the test's name, its χ², df and p. With an entry-time variable the card warns that the test ignored it, though the curves honour it – see [log-rank test](./concepts/survival.md#b-log-rank-test).
+**Group comparison.** The [group comparison test](#b-group-comparison-test) of the curves, once a grouping variable is set and the test is not **Skip test**: the test's name, its χ², df and p, and under it one row per group with the observed and expected events the statistic compares. With an entry-time variable the card warns that the test ignored it, though the curves honour it – see [log-rank test](./concepts/survival.md#b-log-rank-test).
 
-**Pairwise comparisons.** With three or more groups, every pair tested with the same weight: χ², df, the raw p and, under any [p-value adjustment](./settings.md#multiple-comparison-adjustment) but **None**, the adjusted p, with a note naming the method that ran; under **None** the table is raw and a warning says the family was left uncorrected. The [cumulative incidence](#b-pairwise-comparisons-gray) card's table of the same name adds a cause per row and is adjusted within each cause.
+- **Observed events** – under **Log-rank (ρ = 0)**, the events the group had
+- **Expected events** – under log-rank, the events the group would have had if every group shared one hazard: at each event time, the group's share of those at risk times the events there, summed
+- **Weighted observed** – under **Peto-Peto (ρ = 1)** and **Fleming-Harrington (ρ = 0.5)**, the observed events with each event time weighted as the test weights it – a weighted sum, not a number of events
+- **Weighted expected** – the expected events under the same weights
+- **O/E** – observed over expected: above 1 the group had more events than a shared hazard predicts, below 1 fewer; with two groups, the one above 1 is the group whose survival the test found worse when it rejects
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, the test's [decision](./reading-results.md#b-verdict-decision) at the [significance level](./settings.md#significance-level): *Survival differs between groups* or *No significant difference in survival*. With two groups a rejection adds its [direction](./reading-results.md#b-verdict-direction), *more events than expected in {group}* – the group whose observed events exceed the expected, under every weight. The pairwise and RMST tables carry no verdict {#group-comparison-interpretation}
+
+**Pairwise comparisons.** With three or more groups, every pair tested with the same weight: χ², df, the raw p and, under any [p-value adjustment](./settings.md#multiple-comparison-adjustment) but **None**, the adjusted p beside it – or in its place, headed **p (adj)**, when the adjusted values replace the originals – with a note naming the method that ran; under **None** the table is raw and a warning as the run finishes says the family was left uncorrected. The [cumulative incidence](#b-pairwise-comparisons-gray) card's table of the same name adds a cause per row and is adjusted within each cause.
 
 - **Group 1** – the first level of the pair the row compares
 - **Group 2** – the second level of the pair; a difference is Group 1 minus Group 2
 
-**RMST difference.** With two or more groups, one row per pair: the difference in restricted mean survival time at the same τ as the summary table, with its SE, z and p – see [RMST](./concepts/survival.md#b-restricted-mean-survival-time-rmst). With three or more groups the p-values are adjusted as a family of their own, separately from the pairwise tests.
+**RMST difference.** With two or more groups, one row per pair: the difference in restricted mean survival time at the same τ as the summary table, with its SE, z and p – see [RMST](./concepts/survival.md#b-restricted-mean-survival-time-rmst). With three or more groups the p-values are adjusted as a family of their own, separately from the pairwise tests, and shown as the pairwise table shows them.
 
 - **Δ RMST ({level}% CI)** – the difference in restricted mean survival time, Group 1 minus Group 2, with its confidence interval beneath
 
@@ -206,13 +213,14 @@ The card of **Cox proportional hazards regression** on right-censored data: the 
 - **Ties method** – the [Ties handling](#b-ties-handling) the fit used – **Efron**, **Breslow** or **Exact partial likelihood**
 - **Robust SE** – *Yes* when [Robust (sandwich) variance](#b-robust-sandwich-variance) was on, so every SE, interval and p in the coefficient table is a sandwich estimate; *No* otherwise
 
-**Coefficients.** One row per term – a numeric covariate, or one level of a factor covariate against its reference, spelled `{covariate} = {level} (ref: {reference})` – with the columns below; the same shape serves the [interval-censored](#interval-censored-cox-regression), [parametric](#parametric-regression) and [competing-risks](#competing-risks-regression) cards, which rename the ratio column – see [term](./concepts/regression-basics.md#b-term).
+**Coefficients.** One row per term – a numeric covariate, or one level of a factor covariate against its reference, spelled `{covariate} = {level} (ref: {reference})` – with the columns below; the same shape serves the [interval-censored](#interval-censored-cox-regression), [parametric](#parametric-regression) and [competing-risks](#competing-risks-regression) cards, which rename the ratio column – see [term](./concepts/regression-basics.md#b-term). Below ten events per predictor a note under the table states the ratio – see [EPV checks](#sample-size-and-epv-checks).
 
 - **HR ({level}% CI)** – the hazard ratio, the exponential of the coefficient, with its confidence interval beneath; read the interval first, and whether it excludes 1 is the test – see [hazard ratio](./concepts/survival.md#b-hazard-ratio)
 - **log(HR)** – the raw coefficient, on the log-hazard scale
 - **SE** – the coefficient's standard error – model-based, or the sandwich estimate when robust variance is on – see [standard error of a coefficient](./concepts/regression-basics.md#b-standard-error-of-a-coefficient)
 - **z** – log(HR) ⁄ SE, with [significance stars](./settings.md#significance-formatting) – see [z](./concepts/hypothesis-testing.md#b-z)
 - **p** – the row's p-value under the null that the coefficient is zero – see [p](./concepts/hypothesis-testing.md#b-p)
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, each term's [decision](./reading-results.md#b-verdict-decision) at the [significance level](./settings.md#significance-level) and, on a rejection, its [direction](./reading-results.md#b-verdict-direction): *Significant, higher hazard* or *… lower hazard* on the Cox, interval-censored Cox and Gompertz cards, *Significant, longer time to event* or *… shorter time to event* on an AFT fit, *Not significant* otherwise, and *Undetermined* where the row has no p. The ratios carry no band. On the parametric card the intercept and the distribution parameters read –; the competing-risks cards carry no verdict {#coefficients-interpretation}
 
 **Overall tests.** Three tests of the joint null that every coefficient is zero, each with its χ², df and p.
 
@@ -224,9 +232,10 @@ The card of **Cox proportional hazards regression** on right-censored data: the 
 
 **Hazard ratio forest plot.** Each term's HR and interval on a log axis with a reference line at 1; the same plot on the interval-censored card. A term whose hazard ratio is not estimable – a level with no events, say – is left out and named in a note under the plot.
 
-**Proportional hazards test.** When enabled: `cox.zph` per term and a **GLOBAL** row, each with χ², df and p. A significant term is one whose hazard ratio changes over follow-up – see [proportional hazards](./concepts/survival.md#b-proportional-hazards). When the test cannot be computed for the fit – no coefficient was estimable – a note says so in place of the table and plot.
+**Proportional hazards test.** When enabled: `cox.zph` per term and a **GLOBAL** row, each with χ², df and p, judged at the [assumption test significance level](./settings.md#assumption-test-significance-level). A significant term is one whose hazard ratio changes over follow-up – see [proportional hazards](./concepts/survival.md#b-proportional-hazards). When the test cannot be computed for the fit – no coefficient was estimable – a note says so in place of the table and plot.
 
 - **GLOBAL** – the joint test over every term; a clean global test does not clear each term, so read the rows above it too
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, each row's [decision](./reading-results.md#b-verdict-decision) at the assumption test significance level: *Proportional hazards rejected for {term}* – *… for the model as a whole* on the **GLOBAL** row – or *No evidence against proportional hazards*, never a statement that the assumption holds {#proportional-hazards-test-interpretation}
 
 **Schoenfeld residuals.** The scaled residuals over time, one panel per term, with a loess smoother; a non-flat smoother is the visual counterpart of a significant test.
 
@@ -234,9 +243,10 @@ The card of **Cox proportional hazards regression** on right-censored data: the 
 
 - **Time interval** – the period the row's hazard ratio holds in: `≤ {cut}` for the first, `{from} – {to}` between two cuts, `> {cut}` for the open last one
 
-**Test of proportionality.** The likelihood-ratio test of the constant-effect model against the time-varying one – one row, with χ², df and p. A significant result says the effect moves across the periods.
+**Test of proportionality.** The likelihood-ratio test of the constant-effect model against the time-varying one – one row, with χ², df and p, judged at the assumption test significance level like the proportional hazards test. A significant result says the effect moves across the periods.
 
 - **Constant vs time-varying effect** – the test's row; its df is the number of extra coefficients the periods spent
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, the test's [decision](./reading-results.md#b-verdict-decision) at the assumption test significance level: *{var}'s hazard ratio changes over time* or *No evidence the hazard ratio changes* {#test-of-proportionality-interpretation}
 
 **Hazard ratios by time interval.** The period hazard ratios as a forest, on a log axis with the reference line at 1: an effect that wears off drifts towards 1 across the periods.
 
@@ -249,7 +259,7 @@ The card of **Cox proportional hazards regression** on right-censored data: the 
 - **max |dfbetas|** – the largest absolute dfbetas any one subject produces for the term
 - **mean |dfbetas|** – the mean absolute dfbetas over the subjects
 
-**Dfbetas residuals per subject.** The per-subject scatter behind the summary, one panel per term against the subject's row index, with the five largest values in each panel highlighted.
+**Dfbetas residuals per subject.** The per-subject scatter behind the summary, one panel per term against the subject's row index, with the five largest values in each panel highlighted while [interpretation](./settings.md#b-show-interpretation-column-when-applicable) is enabled.
 
 **Baseline survival.** The survival curve of a reference subject – `survfit` on the fitted model, one curve per stratum when a grouping variable is set, with a confidence band. The reference is stated under the plot: numeric covariates at their mean and, on this card, factor covariates at their dummy-coded mean – the sample's level mix – so the curve is an average subject's; on the [interval-censored card](#interval-censored-cox-regression) factor covariates sit at their reference level, one curve per group, and there is no band.
 
@@ -284,12 +294,13 @@ Its **Model summary** row carries **N**, **Events**, **AIC** and **log L** besid
 - **Distribution** – the family the row's fit committed to: the one chosen, or under **Compare all** the best-AIC family in the summary and every family in the ranking
 - **Scale parameter** – the fitted scale of an AFT family, the spread of its log-time error, fixed at 1 for the exponential; blank for Gompertz, whose parameters are rows of the coefficient table
 
-**AIC ranking.** Under **Compare all**, every family's AIC, ΔAIC and log L with a convergence flag, sorted best first; a family that failed to fit keeps its row with ✗ and is named under the table with the message R returned. Under interval censoring Gompertz is not in the ranking – see [AIC](./concepts/regression-basics.md#b-aic).
+**AIC ranking.** Under **Compare all**, every family's AIC, ΔAIC and log L with a convergence flag, sorted from the lowest AIC; a family that failed to fit keeps its row with ✗ and is named under the table with the message R returned. When the best AIC ties with another at the printed precision, a note says so and names the family chosen on the exact AIC. Under interval censoring Gompertz is not in the ranking – see [AIC](./concepts/regression-basics.md#b-aic).
 
-- **ΔAIC** – the family's AIC minus the best family's: 0 for the winner, and differences under two are no difference
-- **Fit** – ✓ when the fit converged, ✗ when it failed; the same column on the competing-risks [Fit summary](#b-fit-summary) flags each cause's model
+- **ΔAIC** – the family's AIC minus the lowest: 0 for the chosen fit, the [preferred](./reading-results.md#b-wording-a-verdict-avoids) one, and larger the less support the family keeps against it
+- **Fit** – ✓ when the fit converged, ⚠ when it stopped at its [iteration limit](./reading-results.md#b-iteration-limit) and kept its last iteration's estimates, which a warning names, ✗ when it failed; the same column on the competing-risks [Fit summary](#b-fit-summary) flags each cause's model
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, the family's ΔAIC graded on Burnham, Anderson and Huyvaert's (2011) continuum of support against the chosen fit: *Preferred* at 0, *Plausible* up to 7, *Equivocal* up to 14 and *Implausible* beyond, a [boundary marker](./reading-results.md#boundary-marker) on a ΔAIC printed across a cut and a [band legend](./reading-results.md#b-band-legends) under the table naming the source; a family that failed to fit reads – {#aic-ranking-interpretation}
 
-**AIC by distribution.** The ranking as a bar chart: the bars carry ΔAIC from the best fit, the winner in its own colour, and each bar's label prints the absolute AIC – `{aic} (best)` for the winner, `{aic} (Δ {delta})` for the rest.
+**AIC by distribution.** The ranking as a bar chart: the bars carry ΔAIC from the preferred fit, which is drawn in its own colour, and each bar's label prints the absolute AIC – `{aic} (preferred)` for the chosen fit, `{aic} (Δ {delta})` for the rest.
 
 The **Coefficients** table has the Cox card's shape with an estimate column added and the ratio column renamed:
 
@@ -322,7 +333,9 @@ The card of **Cumulative incidence (competing risks)**: the group sizes, the eve
 
 **Gray's K-sample test.** When a grouping variable is set: per cause, Gray's test of whether the cumulative incidence functions differ across the groups, with χ², df and p – the competing-risks counterpart of the log-rank test.
 
-**Pairwise comparisons.** With three or more groups, Gray's test per group pair and cause: χ², df, the raw p and the adjusted p, corrected within each cause – each cause is its own adjustment family, matching the per-cause tests above – with a note naming the method; under **None** the table is raw and a warning says so. {#pairwise-comparisons-gray}
+- **Interpretation** – with [interpretation](./settings.md#b-show-interpretation-column-when-applicable) on, each cause's [decision](./reading-results.md#b-verdict-decision) at the [significance level](./settings.md#significance-level), in its own hypothesis's words: *Cumulative incidence differs between groups* or *No significant difference in cumulative incidence*; the pairwise table carries none {#grays-k-sample-test-interpretation}
+
+**Pairwise comparisons.** With three or more groups, Gray's test per group pair and cause: χ², df, the raw p and the adjusted p, corrected within each cause – each cause is its own adjustment family, matching the per-cause tests above – and shown as the [log-rank pairwise table](#b-pairwise-comparisons) shows it, with a note naming the method; under **None** the table is raw and a warning as the run finishes says so. {#pairwise-comparisons-gray}
 
 **Cumulative incidence curves.** F(t) per cause and group as step curves, the legend naming each as `{group} / {cause}` – or the cause alone with no grouping variable – with the pointwise confidence band the [Confidence interval band](#b-confidence-interval-band) toggle controls.
 
@@ -330,9 +343,9 @@ The card of **Cumulative incidence (competing risks)**: the group sizes, the eve
 
 ### Competing-risks regression
 
-The card of **Competing-risks regression**: a fit summary, then one coefficient table per cause – with its overall tests under the cause-specific approach – and a combined forest plot. Under Fine-Gray a note says the grouping variable was ignored, and points at the covariates.
+The card of **Competing-risks regression**: a fit summary, then one coefficient table per cause – with its overall tests under the cause-specific approach – and a combined forest plot. Under Fine-Gray a note says the grouping variable was ignored and, with interpretation enabled, points at the covariates.
 
-**Fit summary.** One row per cause: the rows and the events of that cause the fit used, and whether it converged. A cause whose fit failed – a small subgroup, separation, a numerical problem – appears as a warning row with the message R returned, and has no coefficient table.
+**Fit summary.** One row per cause: the rows and the events of that cause the fit used, and whether it converged, as the [Fit](#b-fit) column reads. Under the cause-specific approach a note under the table states the ties method and whether the standard errors are robust – the [Cox options](#competing-risks-regression-options) the fits borrowed. A cause whose fit failed – a small subgroup, separation, a numerical problem – appears as a warning row with the message R returned, and has no coefficient table.
 
 **Cause-specific hazards: {cause}.** Under **Cause-specific hazards (Cox per cause)**: the Cox coefficient table for that cause, the other causes treated as censored, with the [Cox card's columns](#b-coefficients) – see [cause-specific hazard](./concepts/survival.md#b-cause-specific-hazard).
 
@@ -371,7 +384,7 @@ These exclusions are the module's own, method-local [listwise deletion](./concep
 - For parametric: family chosen and (when comparing) selection criterion
 - For competing risks: cause-specific or Fine-Gray, definition of each cause
 - Covariates and how factor reference levels were chosen
-- N before and after exclusions; events per cause where applicable
+- N before and after exclusions; events per cause where applicable, and the events per predictor when the low-events warning fired
 
 **Results:**
 - Median survival (or RMST, naming the τ it was restricted to) per group with confidence intervals
@@ -380,7 +393,7 @@ These exclusions are the module's own, method-local [listwise deletion](./concep
 - For an RMST comparison: Δ RMST per pair with its confidence interval, and the τ both arms were restricted to
 - For Cox: HRs with CIs, overall test χ²/p, and an explicit statement on the proportional-hazards assumption – with the per-interval HRs and the proportionality likelihood-ratio test when a time-varying coefficient was fitted
 - For interval-censored Cox: HRs with their bootstrap CIs, the number of Turnbull intervals the fit resolved, and the replication count – there is no omnibus test to report
-- For parametric: time ratios (or HRs for Gompertz) with CIs, AIC, and the comparison table where relevant
+- For parametric: time ratios (or HRs for Gompertz) with CIs, AIC, and the comparison table where relevant, ΔAIC read on Burnham, Anderson and Huyvaert's continuum
 - For competing-risks regression: per-cause coefficient table with the appropriate hazard label (HR or sHR)
 
 ## Reproducibility

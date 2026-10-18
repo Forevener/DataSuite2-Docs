@@ -4,6 +4,7 @@
 			"key": "nav_getting_started",
 			"pages": [
 				"getting-started",
+				"reading-results",
 				"settings",
 				"taking-an-exam"
 			]
@@ -83,7 +84,9 @@
 				"methods/analysis-planner",
 				"methods/time-to-event-analysis",
 				"methods/time-series-analysis",
-				"methods/cluster-analysis"
+				"methods/cluster-analysis",
+				"methods/interpretation",
+				"methods/resampling"
 			]
 		}
 	],
