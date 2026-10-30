@@ -42,7 +42,8 @@
 				"formula-reference",
 				"regex-reference",
 				"questionnaire-scoring-guide",
-				"r-console"
+				"r-console",
+				"agent-api"
 			]
 		},
 		{

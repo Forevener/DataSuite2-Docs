@@ -185,4 +185,5 @@ You can also export in other formats – CSV, Excel, ODS, and more – if you ju
 - Score questionnaires step by step in the [questionnaire scoring guide](./questionnaire-scoring-guide.md)
 - Explore specific analysis modules from the list above
 - Use the [R console](./r-console.md) to run custom R code or inspect what DataSuite does under the hood
+- Let an AI agent load data and run analyses on this page through the [agent API](./agent-api.md)
 - Adjust [settings](./settings.md) to match your reporting style

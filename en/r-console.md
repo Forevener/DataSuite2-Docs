@@ -48,22 +48,27 @@ str(df)
 
 The data frame includes all variables currently selected in DataSuite, with any active [filters](./getting-started.md#filtering-cases) and [transformations](./data-transformation.md) applied.
 
-### `/output <variable>` – render results in the output section
+### `/output <expression>` – render results in the output section
 
-Takes an R variable and displays it as a formatted result card alongside your other analysis results.
+Takes an R object's name or any R expression – `/output model`, `/output head(df, 10)`, `/output summary(model)` – and displays the result as a formatted result card alongside your other analysis results. The expression runs once, as the console would run it, and leaves nothing behind in your workspace; a mistake in it prints R's own message, such as *object 'x' not found*.
 
 ```r
 model <- lm(Score ~ Age + Group, data = df)
 /output model
 ```
 
+**R output: {name}.** The card `/output` draws, headed by the expression as you typed it, under the table-of-contents entry *R: {name}*. Like every card the console sends, it takes its help from this page, whichever analysis is open behind the console.
+
 Different types are rendered differently:
 
-- **Data frames and matrices** – formatted tables, with factor columns shown as their labels and dates and times as dates and times; row names, such as a correlation matrix's variables, lead each row as an unheaded label column, while R's automatic 1, 2, 3 … row names are left out
+- **Data frames and matrices** – formatted tables, with factor columns shown as their labels and dates and times as dates and times; row names, such as a correlation matrix's variables, lead each row as an unheaded label column, while R's automatic 1, 2, 3 … row names are left out; numbers print at **Precision: statistics & coefficients** and redraw on every settings save, while `TRUE`, `FALSE`, `NaN` and `Inf` print as R prints them
 - **Named vectors** – key-value tables
 - **Short unnamed vectors** – comma-separated values
 - **Long unnamed vectors** (more than 20 elements) – truncated with a count
-- **Lists** – rendered recursively, with each named element in its own subsection
+- **Lists** – rendered recursively, each element in its own subsection headed by its name as written, never translated, or by its position (`[2]`); every element is shown, repeated names included
+- **Lists with a `ds_type`** – a card of your own design, see [Output cards built in R](#output-cards-built-in-r)
+
+A data frame, matrix or named vector over 1,000 rows is refused, naming its size: output a part of it (`/output head(x, n)`), or draw it as a [table](#tables) with `max_rows`.
 
 ### `/upload` – bring in external files
 
@@ -101,6 +106,9 @@ Removes all plots from the **Plots** tab (see [plotting](#plotting) below).
 
 Sends a plot to the output section as a result card. Without an argument, sends the latest plot. With a number (e.g. `/outputplot 3`), sends that specific plot. With `all`, sends every plot in the gallery. A plot sent to results goes into the [Word report](./reading-results.md#exporting-results) as an image.
 
+- **R plot #{n}** – the card of one plot, numbered as in the gallery; its table-of-contents entry reads *R: Plot {n}*, one per plot
+- **R Plots** – the card `/outputplot all` sends, the whole gallery in one, under the table-of-contents entry *R: All plots* {#r-plots #r-all-plots}
+
 ### `/help` – show available commands
 
 Displays all slash commands and links to R documentation resources:
@@ -110,6 +118,85 @@ Displays all slash commands and links to R documentation resources:
 - [rdrr.io](https://rdrr.io/)
 - [rdocumentation.org](https://www.rdocumentation.org/)
 - [devdocs.io/r](https://devdocs.io/r/)
+
+## Output cards built in R
+
+`/output` draws a list that carries a `ds_type` element as a result card of your own: a title, then paragraphs, notes, lists and tables formatted the way the app's analyses format theirs. The card follows the [settings](./settings.md) like every result card – precision, p-value display, significance marks and language redraw it on every save – and goes into the [Word report](./reading-results.md#exporting-results) with its captions and notes.
+
+```r
+/data
+fit <- t.test(Score ~ Group, data = df)
+res <- data.frame(t = unname(fit$statistic), df = unname(fit$parameter), p = fit$p.value,
+	lo = fit$conf.int[1], hi = fit$conf.int[2])
+card <- ds_card("Score by group",
+	ds_text("Welch's *t*-test, two-sided."),
+	ds_table(res,
+		caption = "Difference in means",
+		formats = list(t = list(type = "statistic", p = "p"), p = "p",
+			lo = list(type = "ci", upper = "hi", level = 0.95)),
+		notes = "Unequal variances assumed.")
+)
+/output card
+```
+
+**Computed in the R console.** Every card built in R closes on this line, and no node removes it.
+
+### Nodes
+
+Each node has a helper, which checks its arguments and stops with an R error naming the function and the argument:
+
+| Node | Helper | Draws |
+|---|---|---|
+| `card` | `ds_card(title, ..., toc = NULL)` | the card – its title, then the nodes passed; `toc` is its table-of-contents entry, the title by default. The outermost node only |
+| `section` | `ds_section(title, ...)` | a subsection heading over its nodes; a section inside a section draws as a smaller heading and nests no further |
+| `text` | `ds_text(text)` | a paragraph |
+| `note` | `ds_note(text)` | a small note, a note in the Word report too |
+| `callout` | `ds_callout(text, kind = "info")` | a highlighted box, `"info"` or `"warning"` |
+| `list` | `ds_list(..., title = NULL)` | a bulleted list of the strings passed, under an optional heading |
+| `table` | `ds_table(data, ...)` | a table – see [Tables](#tables) |
+
+A helper returns a plain list – `ds_text("Hi")` is `list(ds_type = "text", text = "Hi")`, and a card's or a section's nodes sit in an unnamed `content` list – so a node can be built by hand too, its fields named as the helper's arguments (a list's strings are its `items`), and `/output` holds it to the same rules. A node other than a card, given to `/output` alone or inside a plain list, draws as itself on an [R output](#b-r-output-name) card.
+
+### Text and markup
+
+Titles, text, notes, captions and list items print as written and are never translated. A fixed set of inline markup styles them:
+
+- `*italic*` and `**bold**` – `*p*`, `*M*`, `*SD*` set in italics
+- `` `code` `` – a code run
+- `^superscript^` and `~subscript~` – `R^2^`, `H~0~`
+- a blank line – a new paragraph; a title stays on one line
+- `\` before a marker – the marker as typed, `\*`
+
+A marker opens before a non-space and closes after one, so `a * b * c` and `y ~ x` print as typed, as does a marker left unclosed; the text is never read as HTML. The table of contents shows a title with its markers stripped.
+
+### Tables
+
+`ds_table(data, caption, formats, notes, groups, na, max_rows, triangle, diagonal)` draws a data frame or a matrix. Column and row names show as written – name them in R (`names(x) <- …`, `data.frame(…, check.names = FALSE)`); row names other than R's automatic 1, 2, 3 … lead each row as a label column. Numbers align right and text left.
+
+- `caption` – a line above the table
+- `notes` – one note or several, below the table
+- `formats` – how a numeric column prints, by the column's name: a type, `formats = list(p = "p")`, or a list of the type and its parameters (below); a column with no format prints numbers at **Precision: statistics & coefficients** and anything else as written
+- `groups` – spanning headers over side-by-side columns, `groups = list(control = c("m1", "sd1"), treatment = c("m2", "sd2"))`; a member given a name shows that name as its header under the group, so headers can repeat across groups – `control = c(Mean = "m1", SD = "sd1")`
+- `na` – what a missing cell prints, *N/A* by default; set it here, since replacing `NA` in R turns a numeric column to text, which takes no format
+- `max_rows` – how many rows to draw (see [the row limit](#b-first-rows-of-total-rows))
+- `triangle`, `diagonal` – for a square matrix whose row names are its column names, such as a correlation matrix: `triangle` is `"both"` (the default), `"lower"` or `"upper"`, and `diagonal` is `"show"` (the default), `"hide"` or `"empty"`; a cell left out prints *-*
+
+| Format | Prints | Parameters |
+|---|---|---|
+| `number` | a number | `digits` – `"statistic"` (the default) follows **Precision: statistics & coefficients**, `"descriptive"` follows **Precision: descriptives & percentages**, a whole number fixes the places |
+| `integer` | a whole number | – |
+| `percent` | a percentage, from a proportion between 0 and 1 | – |
+| `p` | a p-value, as the app prints p-values | – |
+| `statistic` | a test statistic, with significance marks | `p` – the column whose p-values set the marks |
+| `ci` | the interval, both bounds in the lower bound's column | `upper` – the upper bound's column, which is not drawn; `level` – 0.95 for a 95% interval; `digits` – as for `number`; `header` |
+
+`upper` and `level` are required. A `ci` column is headed by the app's own *{level}% CI* (*95% CI*), translated with the app, unless its format gives a `header`; a name the column is given in `groups` wins over both.
+
+A column named `ds_row` in `data` styles the rows and is not drawn – each row `"heading"` (a bold group heading, its label cell alone), `"indent"` (the label cell indented, as levels under their predictor), `"emphasis"` (a bold row, as a total) or `NA` (a plain row).
+
+**First {rows} of {total} rows.** A table over 1,000 rows is refused, naming its size, unless `max_rows` says what to draw: `max_rows = n` draws the first *n* rows over this note, `max_rows = Inf` draws them all.
+
+A malformed node draws nothing: the console names it by its R path – `card$content[[2]]$formats[["p"]]` – and says what is wrong: an unknown `ds_type`, a field missing, of the wrong type, given twice or not one the node takes, a card below the outermost node, sections nested deeper than one level, a format on a column that is missing or not numeric, a column in two groups, a group whose columns don't sit side by side. The helpers catch most of these earlier, as R errors.
 
 ## Plotting
 
@@ -239,7 +326,7 @@ ds_library(psych)
 describe(df)
 ```
 
-Use `ds_library()` instead of `library()` to load packages. It installs the package if needed, retries automatically on network failures, and falls back to alternative repositories if the primary one is unavailable. Most popular packages are available as WebR-compiled versions, but some may not be – see [Things to know](#things-to-know) below.
+Use `ds_library()` instead of `library()` to load packages. It installs the package if needed, retries automatically on network failures, and falls back to alternative repositories if the primary one is unavailable. Every install ends with one line naming the result – `Installed fpc 2.2.15 from r-wasm, with 12 dependencies` – or with an error naming the repositories tried; a fallback repository that cannot be reached is reported once, as `Repository yrosseel unreachable: its package index did not download`, and a package that is already installed is loaded without trying any repository. Most popular packages are available as WebR-compiled versions, but some may not be – see [Things to know](#things-to-know) below.
 
 ## Things to know
 
@@ -247,3 +334,4 @@ Use `ds_library()` instead of `library()` to load packages. It installs the pack
 - **`help()` and `?` are not available.** Use `example(functionName)` to see usage examples, or consult the documentation links above.
 - **Your R session is temporary.** Variables and loaded packages don't persist across page reloads. Use `/download` to save any results you need to keep. (Command history *does* persist – see [running commands](#running-commands).)
 - **The console shares the R engine with analyses.** If you run a heavy computation in the console, built-in analyses will wait until it finishes (and vice versa).
+- **An agent's R runs here, as yours.** An AI agent connected through the [agent API](./agent-api.md) runs R by typing it into this console: each line it sends shows in the console and its history, and runs in your R session and workspace exactly as a line you typed would.

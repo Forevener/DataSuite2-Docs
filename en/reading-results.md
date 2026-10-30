@@ -70,7 +70,9 @@ A setup card lists its entries in four groups – data, variables, cases, run se
 
 **Settings this result was computed under.** The popover a card's **⚙** button opens: the card's own record of its setup, in up to four sections – **Data** (its dataset), **Variables** (the type each of the card's variables had when the run read it), **Cases** and **Run settings** – with every run setting that applies, an empty seed reading *random (drawn: 482913774)*. The settings the result's computation read are highlighted, and a legend says so. **Go to the setup card** scrolls to the setup card the result sits under. The popover reads the card alone, so it holds however far down the log the card is; Escape, a click outside or the button again closes it. {#settings-this-result-was-computed-under}
 
-[Export to DOCX](#exporting-results) carries every setup card in its place, as its title and one line per entry.
+[Export to DOCX](#exporting-results) carries every setup card in its place, as its title and one line per entry. A setup card has no table-of-contents entry and no **×** button, and its text is ordinary text: Ctrl+F finds it, and it copies with the cards you select.
+
+Why setup cards hold what they do: they state what every analysis shares, and an analysis's own options stay on its result card, beside the answer they shape. The first setup card lists every run setting that applies, whether or not the results below use it, so the full configuration always reaches your report; the [settings popover](#b-settings-this-result-was-computed-under) marks the ones a result used.
 
 ## Cards computed under earlier settings
 

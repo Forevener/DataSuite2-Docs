@@ -136,7 +136,7 @@ With interpretation on, the verdict under the table is read at your *c*: every i
 
 ## Dimensionality
 
-- **Dimensionality** – how many traits the model has, and whether you or the data say which item measures which. The rest of the panel follows the choice: the [model types](#model-types) a mode cannot fit are greyed out, and a selected one falls back to **Auto (detect from data)**; the [output options](#output-options) that belong to one structure appear only under it.
+- **Dimensionality** – how many traits the model has, and whether you or the data say which item measures which. The rest of the panel follows the choice: the [model types](#model-types) a mode cannot fit leave the list, and a selected one falls back to **Auto (detect from data)**; the [output options](#output-options) that belong to one structure appear only under it, and one hidden while ticked is ticked again when it returns.
 - **Unidimensional** – the default: every item measures one trait, θ – see [unidimensionality](./concepts/latent-variables.md#b-unidimensionality). The standard IRT setting, for a scale written to measure a single construct.
 - **Exploratory** – a [multidimensional IRT](./concepts/latent-variables.md#b-multidimensional-irt) (MIRT) model with the number of dimensions you set and every item free to load on every dimension – the IRT counterpart of an [exploratory factor analysis](./concepts/latent-variables.md#b-efa), fitted to the item responses themselves rather than to a correlation matrix. For when several traits are suspected but not which item measures which.
 - **Confirmatory** – a [MIRT](./concepts/latent-variables.md#b-multidimensional-irt) model with the structure you specify: each item loads only on the factors you assign it to – the IRT counterpart of a [confirmatory factor analysis](./concepts/latent-variables.md#b-cfa). For a scale whose subscales are known in advance. Only the assigned items are fitted.
@@ -186,7 +186,7 @@ Two families take a parameter, in a field under the rotation:
 
 ## Model types
 
-- **Model type** – the IRT model fitted to every item. The dropdown greys out what the [dimensionality](#dimensionality) cannot fit: the rating-scale, unfolding and nonparametric models are unidimensional only, and the partially compensatory ones confirmatory only. A model written for one response format on items of the other – a dichotomous model on a 1–5 item – stops the run with a message naming the items.
+- **Model type** – the IRT model fitted to every item. The dropdown lists only what the [dimensionality](#dimensionality) can fit: the rating-scale, unfolding and nonparametric models are unidimensional only, and the partially compensatory ones confirmatory only. A model written for one response format on items of the other – a dichotomous model on a 1–5 item – stops the run with a message naming the items.
 - **Auto (detect from data)** – the default: **2PL** for each dichotomous item and **Graded Response Model (GRM)** for each polytomous one, mixed in one model when the scale holds both.
 
 ### Dichotomous items
